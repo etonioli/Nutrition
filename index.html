@@ -723,6 +723,32 @@
     margin-bottom: 0.3rem;
   }
 
+  /* ---- citation marker: a REAL <button>, not a <span> — keyboard operability
+     is not optional (ANALYSIS.md §6.2 is the same defect in the older .chip
+     elements). Styled as a small superscript-ish pill inline with prose. ---- */
+  .cite-marker{
+    display: inline;
+    font: inherit;
+    font-family: var(--mono);
+    font-size: 0.78em;
+    font-weight: 700;
+    color: var(--ref);
+    background: var(--ref-soft);
+    border: none;
+    border-radius: 0.3em;
+    padding: 0 0.28em;
+    margin: 0 0.05em;
+    cursor: pointer;
+    vertical-align: text-top;
+    line-height: 1.5;
+  }
+  .cite-marker:active{ background: var(--accent-soft); color: var(--accent-ink); }
+  .cite-marker:focus-visible{ outline: 2px solid var(--accent); outline-offset: 1px; }
+  /* ---- a marker whose [n] has no matching REFERENCES entry: rendered loudly
+     in the warning color rather than failing silently (PLAN.md §3) ---- */
+  .cite-marker.cite-marker-dangling{ background: var(--warn-soft); color: var(--warn); }
+  .cite-marker.cite-marker-dangling:active{ background: var(--warn-soft); color: var(--warn); }
+
   .conf-tag{
     font-family: var(--mono);
     font-size: 0.68em;
@@ -1970,6 +1996,130 @@
 
   var INFO_TOPICS_BY_ID = {};
   INFO_TOPICS.forEach(function(topic){ INFO_TOPICS_BY_ID[topic.id] = topic; });
+
+  /* ============================================================
+     Citation-marker parser + block renderer (PLAN.md Task 4).
+
+     parseCitationsInto() splits a plain-text string on "[n]" markers and
+     appends alternating text nodes + real <button class="cite-marker">
+     elements into a container, via textContent/createElement only — never
+     innerHTML for content text (the marker buttons themselves are the one
+     exception the plan allows, and even those are built with createElement,
+     not string concatenation).
+
+     Anchor ids follow PLAN.md §2.4 EXACTLY: cite-<pageId>-<refNumber>-<occ>,
+     unique per OCCURRENCE (not per reference number) so two clicks on the
+     same [9] from two different places never collide. occCounters is a
+     plain object the caller creates once per PAGE (not per block) and
+     passes into every parseCitationsInto() call for that page, so the
+     occurrence index keeps counting across paragraphs/lists/notes on the
+     same page.
+
+     A [n] with no matching REFERENCES entry fails LOUDLY: console.error
+     plus a distinct warning-colored class — never a silent dangling link.
+     The actual navigation behavior (click -> push stack -> jump to
+     References) is wired separately in Task 7 via event delegation on
+     #pagesScroll, so this parser stays a pure rendering concern.
+     ============================================================ */
+  var CITE_MARKER_RE = /\[(\d+)\]/g;
+
+  function parseCitationsInto(container, text, pageId, occCounters){
+    var lastIndex = 0;
+    var match;
+    CITE_MARKER_RE.lastIndex = 0;
+    while ((match = CITE_MARKER_RE.exec(text))){
+      if (match.index > lastIndex){
+        container.appendChild(document.createTextNode(text.slice(lastIndex, match.index)));
+      }
+      var refN = match[1];
+      occCounters[refN] = (occCounters[refN] || 0) + 1;
+      var occIdx = occCounters[refN];
+      var btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'cite-marker';
+      btn.setAttribute('data-ref', refN);
+      btn.id = 'cite-' + pageId + '-' + refN + '-' + occIdx;
+      btn.textContent = '[' + refN + ']';
+      if (!REFERENCES_BY_N[refN]){
+        console.error('Dangling citation marker [' + refN + '] on page "' + pageId + '" (anchor #' + btn.id + ') has no matching REFERENCES entry.');
+        btn.classList.add('cite-marker-dangling');
+      }
+      container.appendChild(btn);
+      lastIndex = match.index + match[0].length;
+    }
+    if (lastIndex < text.length || container.childNodes.length === 0){
+      container.appendChild(document.createTextNode(text.slice(lastIndex)));
+    }
+  }
+
+  // reused by both the References page (Task 6) and the "info" landing page's
+  // note blocks — a small header line (label, optionally + heading) followed
+  // by parsed body text, reusing the existing .callout look.
+  function buildNoteBlock(block, pageId, occCounters){
+    var note = document.createElement('div');
+    note.className = 'callout info-note';
+    if (block.heading){
+      var h = document.createElement('strong');
+      h.className = 'info-note-heading';
+      h.textContent = block.heading + ' — ';
+      note.appendChild(h);
+    }
+    var labelEl = document.createElement('strong');
+    labelEl.textContent = block.label + ': ';
+    note.appendChild(labelEl);
+    var span = document.createElement('span');
+    parseCitationsInto(span, block.text, pageId, occCounters);
+    note.appendChild(span);
+    return note;
+  }
+
+  function buildMythBlock(block, pageId, occCounters){
+    var wrap = document.createDocumentFragment();
+    var beliefP = document.createElement('p');
+    beliefP.className = 'myth-belief';
+    beliefP.textContent = '"' + block.belief + '"';
+    wrap.appendChild(beliefP);
+    var truthP = document.createElement('p');
+    truthP.className = 'myth-truth';
+    parseCitationsInto(truthP, block.text, pageId, occCounters);
+    wrap.appendChild(truthP);
+    return wrap;
+  }
+
+  // Renders one INFO_TOPICS block into a DOM fragment. occCounters must be
+  // the SAME object across every block on a given page (see file header
+  // comment above) so occurrence indices are unique per page, not per block.
+  function renderInfoBlock(block, pageId, occCounters){
+    if (block.type === 'p'){
+      var wrap = document.createDocumentFragment();
+      if (block.heading){
+        var h = document.createElement('h3');
+        h.className = 'info-block-heading';
+        h.textContent = block.heading;
+        wrap.appendChild(h);
+      }
+      var p = document.createElement('p');
+      parseCitationsInto(p, block.text, pageId, occCounters);
+      wrap.appendChild(p);
+      return wrap;
+    }
+    if (block.type === 'ul'){
+      var ul = document.createElement('ul');
+      (block.items || []).forEach(function(itemText){
+        var li = document.createElement('li');
+        parseCitationsInto(li, itemText, pageId, occCounters);
+        ul.appendChild(li);
+      });
+      return ul;
+    }
+    if (block.type === 'note'){
+      return buildNoteBlock(block, pageId, occCounters);
+    }
+    if (block.type === 'myth'){
+      return buildMythBlock(block, pageId, occCounters);
+    }
+    return document.createDocumentFragment();
+  }
 
   /* ============================================================
      Pinned-Home-links — the ONE deliberate localStorage exception in this
