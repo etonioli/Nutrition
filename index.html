@@ -1634,7 +1634,7 @@
   </div>
 
   <!-- ================= ToC drawer (on top, CLOSED by default, slides left to reveal content) ================= -->
-  <div class="pane toc-closed" id="tocPanel">
+  <div class="pane toc-closed" id="tocPanel" inert>
     <div class="toc-head">
       <p class="eyebrow">Nutrition · Quick Reference</p>
       <h1 class="app-title">Toni's Nutrition</h1>
@@ -2948,9 +2948,15 @@
       if (parentId && navToggles[parentId]) navToggles[parentId].setExpanded(true);
     }
     tocPanel.classList.remove('toc-closed');
+    // PLAN.md Task 10 / ANALYSIS.md §6.1: transform alone moves the drawer
+    // off-screen visually but leaves all 28+ of its controls in the tab
+    // order and accessibility tree. `inert` removes it from both while the
+    // drawer is closed.
+    tocPanel.inert = false;
   }
   function closeToc(){
     tocPanel.classList.add('toc-closed');
+    tocPanel.inert = true;
   }
   function exitSelectMode(){
     selectMode = false;
@@ -3202,8 +3208,16 @@
   });
 
   /* ---- initial state: drawer CLOSED (.toc-closed is already on #tocPanel in the
-     markup), Home active — showPage() also triggers the first renderHome() call ---- */
-  showPage('home');
+     markup), Home active — _activatePage() also triggers the first renderHome()
+     call. Deliberately NOT the public showPage() here: this app has no hash
+     routing, so every load/reload always lands on Home regardless of where the
+     stack points -- using the stack-clearing showPage() would silently wipe a
+     citation stack that loadCitationStack() just restored from sessionStorage
+     a moment ago, breaking the reload-survives-mid-jump requirement (PLAN.md
+     AC-6). updateBackControl() shows the "Back to reading" bar immediately if
+     that restored stack is non-empty. ---- */
+  _activatePage('home');
+  updateBackControl();
 
   /* ============================================================
      PWA packaging addition: register the service worker (sw.js, same
