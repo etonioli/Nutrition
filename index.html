@@ -118,7 +118,7 @@
     *{ animation-duration: 0.001ms !important; transition-duration: 0.001ms !important; }
   }
 
-  html{ font-size: 16px; height: 100%; }
+  html{ font-size: 14.4px; height: 100%; } /* new 100% zoom baseline (was 16px pre-rebaseline) */
   html, body{ margin: 0; }
   body{
     background: var(--bg);
@@ -249,8 +249,8 @@
 
   /* ---- one nav-node per ToC row; a node with children gets a toggle + sublist,
      a leaf node gets neither — mirrors the desktop template's auto-built sub-ToC ---- */
-  .nav-node{ margin-bottom: 0.2rem; }
-  .nav-item-row{ display: flex; align-items: center; gap: 0.15rem; }
+  .nav-node{ margin-bottom: 0.14rem; } /* was 0.2rem — tightened ~30% */
+  .nav-item-row{ display: flex; align-items: center; gap: 0.1rem; } /* was 0.15rem — tightened ~33% */
   .nav-item{
     flex: 1 1 auto;
     min-width: 0;
@@ -262,8 +262,8 @@
     background: none;
     border: none;
     border-left: 3px solid transparent;
-    min-height: 3rem;
-    padding: 0.6rem 0.7rem;
+    min-height: 2.1rem; /* was 3rem — tightened 30% */
+    padding: 0.4rem 0.7rem; /* was 0.6rem 0.7rem — vertical tightened ~33% */
     border-radius: 0.625rem;
     cursor: pointer;
     color: var(--ink-soft);
@@ -321,8 +321,8 @@
     background: none;
     border: none;
     border-left: 3px solid transparent;
-    min-height: 2.75rem;
-    padding: 0.55rem 0.7rem;
+    min-height: 1.9rem; /* was 2.75rem — tightened ~31% */
+    padding: 0.4rem 0.7rem; /* was 0.55rem 0.7rem — vertical tightened ~27% */
     border-radius: 0.5rem;
     cursor: pointer;
     color: var(--ink-faint);
@@ -344,7 +344,7 @@
   .home-pin-sep{
     height: 1px;
     background: var(--border);
-    margin: 0.3rem 0.75rem 0.6rem;
+    margin: 0.2rem 0.75rem 0.4rem; /* was 0.3rem 0.75rem 0.6rem — top/bottom tightened ~33% */
   }
 
   /* ---- select-mode checkbox indicator: hidden in normal browse mode, shown when
@@ -1634,15 +1634,20 @@
   });
 
   /* ============================================================
-     Zoom: 5 levels, 80/90/100/110/120% of the 16px root, changed
-     via document.documentElement.style.fontSize. Nearly every other
-     size in this file is rem, so the whole UI scales together — no
-     CSS zoom/transform, which fights position:fixed overlays like
-     the drawer above. In-memory only, resets to 100% on reload.
+     Zoom: 15 levels, 80%–150% in 5% steps, of a 14.4px root (this
+     baseline == what used to render at the OLD "90%" under the prior
+     16px-root/10%-step scheme — the whole UI got rebaselined a bit
+     more compact, then relabeled so that compact size is the new
+     "100%"). Changed via document.documentElement.style.fontSize.
+     Nearly every other size in this file is rem, so the whole UI
+     scales together — no CSS zoom/transform, which fights
+     position:fixed overlays like the drawer above. In-memory only,
+     resets to the new 100% (14.4px) on reload.
      ============================================================ */
-  var ZOOM_LEVELS = [12.8, 14.4, 16, 17.6, 19.2]; // px, exact 80/90/100/110/120% of a 16px root
-  var ZOOM_PCT = [80, 90, 100, 110, 120];
-  var zoomIndex = 2; // 100%
+  var ZOOM_BASELINE_PX = 14.4; // new 100% reference point
+  var ZOOM_PCT = [80, 85, 90, 95, 100, 105, 110, 115, 120, 125, 130, 135, 140, 145, 150];
+  var ZOOM_LEVELS = ZOOM_PCT.map(function(pct){ return ZOOM_BASELINE_PX * (pct / 100); }); // px per level
+  var zoomIndex = ZOOM_PCT.indexOf(100); // 100% (14.4px) — default startup level
 
   var zoomOutBtn = document.getElementById('zoomOutBtn');
   var zoomInBtn = document.getElementById('zoomInBtn');
