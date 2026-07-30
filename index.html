@@ -749,6 +749,39 @@
   .cite-marker.cite-marker-dangling{ background: var(--warn-soft); color: var(--warn); }
   .cite-marker.cite-marker-dangling:active{ background: var(--warn-soft); color: var(--warn); }
 
+  /* ---- "Back to reading" control (PLAN.md Task 8): a global bar, first
+     child of #contentPane, so it always sits above the content header
+     ("sticky at the top") on whatever page is currently showing -- this is
+     deliberate: after a reload restores a non-empty stack from
+     sessionStorage, the app always lands on Home first (no hash routing),
+     so the control must not be scoped to the References page alone or a
+     restored stack would have no visible way back. Hidden entirely
+     (display:none, not just visually) when the stack is empty. ---- */
+  .back-control-bar{
+    display: none;
+    flex: 0 0 auto;
+    background: var(--accent);
+  }
+  .back-control-bar.show{ display: flex; }
+  .back-control-btn{
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.4rem;
+    font: inherit;
+    font-weight: 700;
+    font-size: 0.85rem;
+    color: var(--surface);
+    background: none;
+    border: none;
+    padding: calc(0.5rem + env(safe-area-inset-top)) 0.9rem 0.5rem;
+    cursor: pointer;
+  }
+  .back-control-btn svg{ width: 0.8125rem; height: 0.8125rem; flex-shrink: 0; }
+  .back-control-btn:active{ opacity: 0.8; }
+  .back-control-btn:focus-visible{ outline: 2px solid var(--surface); outline-offset: -3px; }
+
   .conf-tag{
     font-family: var(--mono);
     font-size: 0.68em;
@@ -2524,8 +2557,13 @@
   var pageTitleLive = document.getElementById('pageTitleLive');
   var currentPageId = 'home';
 
-  function showPage(id){
-    if (!LABEL_BY_ID[id]) return;
+  // Pure page-switch, no citation-stack side effects -- shared by the public
+  // showPage() (clears the stack, see below) and the internal
+  // showPageKeepStack() used ONLY by citation-jump and back-pop (PLAN.md §2.3:
+  // "Implement by having showPage() clear the stack by default, with
+  // citation-jump and back-pop calling an internal variant that does not").
+  function _activatePage(id){
+    if (!LABEL_BY_ID[id]) return false;
     currentPageId = id;
     pages.forEach(function(p){ p.classList.toggle('active', p.dataset.page === id); });
     pageTitleLive.textContent = LABEL_BY_ID[id];
@@ -2533,6 +2571,22 @@
     updateHeaderToggle();
     // re-render every time Home becomes active so it never shows stale pinned state
     if (id === 'home') renderHome();
+    return true;
+  }
+
+  // PUBLIC: every "manual" navigation (ToC row, Home button, pinned Home row,
+  // a .child-link-row, a .page-back button, the initial cold-start call) goes
+  // through this and clears the citation stack -- per PLAN.md §2.3, a
+  // deliberate navigation away means "that reading thread is over."
+  function showPage(id){
+    if (!_activatePage(id)) return;
+    clearCitationStack();
+  }
+
+  // INTERNAL: used only by the citation-click handler and the "Back to
+  // reading" pop handler below -- never clears the stack.
+  function showPageKeepStack(id){
+    _activatePage(id);
   }
 
   document.querySelectorAll('.child-link-row[data-goto]').forEach(function(row){
@@ -2541,6 +2595,164 @@
   document.querySelectorAll('.page-back[data-back]').forEach(function(btn){
     btn.addEventListener('click', function(){ showPage(btn.getAttribute('data-back')); });
   });
+
+  /* ============================================================
+     Citation navigation stack (PLAN.md §2, Task 7) — the core deliverable.
+
+     Storage: a module-scoped array, mirrored to sessionStorage (never
+     localStorage -- this is a "where was I reading" trail, not a
+     preference; it should die with the session, not linger across days).
+     sessionStorage is the mirror, never the source of truth: read once at
+     startup, the in-memory array is authoritative thereafter.
+
+     Independence requirement: a FULL origin record is pushed on every
+     citation click -- no "last clicked" variable, no map keyed by
+     reference number. Two clicks on the same [9] from two different pages
+     (or two different scroll positions on the same page) produce two
+     independent stack entries, popped LIFO.
+
+     originAnchorId is the PRIMARY restore target; originScrollTop is only
+     the fallback for when the anchor element can't be found (defensive;
+     should not normally happen since anchors are permanent DOM ids). This
+     ordering matters because the zoom control changes root font-size and
+     nearly every dimension is in rem -- a stored pixel offset can point at
+     the wrong paragraph after a zoom change, but the anchor element does not.
+     ============================================================ */
+  var CITATION_STACK_KEY = 'nutritionCitationStack';
+
+  function loadCitationStack(){
+    try {
+      var raw = window.sessionStorage.getItem(CITATION_STACK_KEY);
+      if (!raw) return [];
+      var parsed = JSON.parse(raw);
+      if (!Array.isArray(parsed)) return [];
+      return parsed.filter(function(e){
+        return e && typeof e.citationId === 'string' && typeof e.originPageId === 'string' &&
+          typeof e.originAnchorId === 'string' && typeof e.originScrollTop === 'number';
+      });
+    } catch (e) {
+      return []; // storage unavailable/malformed — fall back to empty, never throw
+    }
+  }
+  function saveCitationStack(){
+    try { window.sessionStorage.setItem(CITATION_STACK_KEY, JSON.stringify(citationStack)); }
+    catch (e) { /* storage unavailable — the stack just won't survive reload/kill */ }
+  }
+
+  var citationStack = loadCitationStack();
+
+  function clearCitationStack(){
+    if (citationStack.length === 0) return;
+    citationStack = [];
+    saveCitationStack();
+    updateBackControl();
+  }
+
+  function flashHighlight(el){
+    if (!el) return;
+    el.classList.remove('cite-highlight');
+    // force a reflow so re-adding the class restarts the animation even if
+    // it was already applied (e.g. clicking the same reference twice)
+    void el.offsetWidth;
+    el.classList.add('cite-highlight');
+    setTimeout(function(){ el.classList.remove('cite-highlight'); }, 1700);
+  }
+
+  function scrollElementIntoViewWithinPagesScroll(el, thirdFromTop){
+    // #pagesScroll is the ONLY real scroll container in this app (body has
+    // overflow:hidden, so window.scrollY is always 0 -- see file-level note
+    // in PLAN.md §1). Compute the target's offset relative to pagesScroll
+    // manually rather than relying on scrollIntoView, which scrolls the
+    // nearest scrollable ancestor correctly here too, but offset math gives
+    // us control over "roughly a third down" positioning on return.
+    var targetTop = el.offsetTop - (thirdFromTop ? pagesScroll.clientHeight / 3 : 24);
+    pagesScroll.scrollTop = Math.max(0, targetTop);
+  }
+
+  // ---- Citation click: delegated on #pagesScroll so it covers every
+  // .cite-marker on every page (existing at load time AND any rendered
+  // later), old-content and new-content alike -- no per-button listener. ----
+  pagesScroll.addEventListener('click', function(e){
+    var btn = e.target.closest ? e.target.closest('.cite-marker') : null;
+    if (!btn || !pagesScroll.contains(btn)) return;
+    var refN = btn.getAttribute('data-ref');
+    if (!REFERENCES_BY_N[refN]){
+      // dangling ref: already flagged loudly at render time (console.error +
+      // warning color) -- clicking it just shows a toast, no navigation.
+      showToast('Reference unavailable');
+      return;
+    }
+    if (!btn.id){
+      console.error('Citation marker for [' + refN + '] has no id -- cannot record an origin anchor.');
+      return;
+    }
+    citationStack.push({
+      citationId: 'ref-' + refN,
+      originPageId: currentPageId,
+      originAnchorId: btn.id,
+      originScrollTop: pagesScroll.scrollTop,
+      ts: Date.now()
+    });
+    saveCitationStack();
+    showPageKeepStack('info-references');
+    updateBackControl();
+    requestAnimationFrame(function(){
+      var target = document.getElementById('ref-' + refN);
+      if (target){
+        scrollElementIntoViewWithinPagesScroll(target, false);
+        flashHighlight(target);
+      }
+    });
+  });
+
+  // ---- "Back to reading" control (Task 8): a single global control (not
+  // scoped to just the References page) so it also works correctly right
+  // after a reload restores a non-empty stack from sessionStorage while the
+  // app is showing Home (there is no hash routing/deep-linking in this app,
+  // so every reload always lands on Home first, regardless of the stack) --
+  // see AC-3/AC-6. Lives as the first child of #contentPane so it sits
+  // above the content header whenever shown, i.e. "sticky at the top." ----
+  var backControlBar = document.createElement('div');
+  backControlBar.className = 'back-control-bar';
+  backControlBar.id = 'backControlBar';
+  var backControlBtn = document.createElement('button');
+  backControlBtn.type = 'button';
+  backControlBtn.className = 'back-control-btn';
+  backControlBtn.id = 'backControlBtn';
+  backControlBtn.appendChild(buildDecorativeIcon(ICON_CHEVRON_LEFT, ''));
+  var backControlLabel = document.createElement('span');
+  backControlLabel.textContent = 'Back to reading';
+  backControlBtn.appendChild(backControlLabel);
+  backControlBar.appendChild(backControlBtn);
+  var contentPaneEl = document.getElementById('contentPane');
+  contentPaneEl.insertBefore(backControlBar, contentPaneEl.firstChild);
+
+  function updateBackControl(){
+    backControlBar.classList.toggle('show', citationStack.length > 0);
+  }
+
+  backControlBtn.addEventListener('click', function(){
+    var entry = citationStack.pop();
+    saveCitationStack();
+    if (!entry){ updateBackControl(); return; }
+    showPageKeepStack(entry.originPageId);
+    requestAnimationFrame(function(){
+      var target = document.getElementById(entry.originAnchorId);
+      if (target){
+        scrollElementIntoViewWithinPagesScroll(target, true);
+        flashHighlight(target);
+      } else {
+        // fallback per PLAN.md §2.3 step 3 -- anchor not found (page markup
+        // changed, or a stale/malformed sessionStorage entry survived reload)
+        pagesScroll.scrollTop = entry.originScrollTop;
+      }
+      updateBackControl();
+    });
+  });
+
+  // cold start: stack is whatever loadCitationStack() found in sessionStorage
+  // (empty on a true cold start/new tab, since sessionStorage is empty then)
+  updateBackControl();
 
   /* ============================================================
      Content-header toggle slot: "+ Add" / "✓ Added" for the CURRENT
