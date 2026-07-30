@@ -570,9 +570,9 @@
   }
   .child-link-row:active{ border-color: var(--accent); background: var(--accent-soft); }
   .child-link-row:focus-visible{ outline: 2px solid var(--accent); outline-offset: 1px; }
-  .child-link-text{ min-width: 0; }
+  .child-link-text{ min-width: 0; display: flex; flex-direction: column; gap: 0.2rem; }
   .child-link-title{ font-weight: 600; font-size: 1rem; }
-  .child-link-sub{ font-size: 0.82rem; color: var(--ink-faint); margin-top: 0.1rem; }
+  .child-link-sub{ font-size: 0.82rem; color: var(--ink-faint); }
   /* ---- Home-only (Change 5): a pinned CHILD page's row shows its parent's name as
      this smaller italic sub-line instead of the normal description sub-line ---- */
   .child-link-sub.parent-hint{ font-style: italic; }
