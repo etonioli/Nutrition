@@ -91,9 +91,13 @@
     --mark-bg: #F6C453;
     --mark-ink: #3A2400;
     --shadow: 0 1px 2px rgba(23,35,53,0.06), 0 12px 32px rgba(23,35,53,0.10);
-    --serif: Calibri, ui-serif, "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif;
-    --sans: Calibri, Seravek, "Segoe UI", "Helvetica Neue", system-ui, sans-serif;
-    --mono: Calibri, "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
+    /* Unified font stack: all three variables point at the SAME stack on purpose (2026-07-30
+       fix) — Calibri doesn't exist on Android and the previous three divergent stacks resolved
+       to visibly different fonts there. Variable names kept as-is to minimize diff; every usage
+       site now renders identically, resolving to the system default (Roboto on Android). */
+    --serif: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    --sans: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    --mono: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
   }
 
   @media (prefers-color-scheme: dark){
@@ -499,12 +503,15 @@
     overflow: hidden;
     margin: 1rem 0;
   }
+  /* ---- compacted 2026-07-30 (Change 4): head/body padding trimmed ~25% so cards
+     hug their content tighter (1rem/1.1rem/0.6rem -> 0.75rem/0.85rem/0.45rem;
+     1.15rem -> 0.85rem) ---- */
   .page-card-head{
     display: flex;
     align-items: center;
     justify-content: space-between;
     gap: 0.75rem;
-    padding: 1rem 1.1rem 0.6rem;
+    padding: 0.75rem 0.85rem 0.45rem;
   }
   .page-card-titlewrap{ display: flex; align-items: center; gap: 0.6rem; flex-wrap: wrap; min-width: 0; }
   .page-card-head h2{
@@ -514,7 +521,7 @@
     margin: 0;
     color: var(--ink);
   }
-  .page-card-body{ padding: 0 1.1rem 1.15rem; }
+  .page-card-body{ padding: 0 0.85rem 0.85rem; }
   .page-card-body p{ margin: 0 0 0.85rem; }
   .page-card-body p:last-child{ margin-bottom: 0; }
   .page-card-body ul{ margin: 0 0 0.85rem; padding-left: 1.2rem; }
@@ -540,8 +547,11 @@
   .page-back:active{ color: var(--accent-ink); }
   .page-back:focus-visible{ outline: 2px solid var(--accent); outline-offset: 2px; }
 
-  /* ---- a tappable row on a parent page that jumps straight to one child page ---- */
-  .child-link-list{ display: flex; flex-direction: column; gap: 0.6rem; margin: 0.7rem 0 0.9rem; }
+  /* ---- a tappable row on a parent page that jumps straight to one child page ----
+     Compacted 2026-07-30 (Change 4): min-height 3.5rem -> 2.4rem, padding
+     0.7rem 0.9rem -> 0.4rem 0.75rem, list gap 0.6rem -> 0.4rem. Still comfortably
+     tappable with a thumb at default zoom (rem-based, scales with the zoom system). */
+  .child-link-list{ display: flex; flex-direction: column; gap: 0.4rem; margin: 0.7rem 0 0.9rem; }
   .child-link-row{
     display: flex;
     align-items: center;
@@ -553,8 +563,8 @@
     background: var(--surface-2);
     border: 1px solid var(--border);
     border-radius: 0.625rem;
-    min-height: 3.5rem;
-    padding: 0.7rem 0.9rem;
+    min-height: 2.4rem;
+    padding: 0.4rem 0.75rem;
     cursor: pointer;
     color: var(--ink);
   }
@@ -563,6 +573,9 @@
   .child-link-text{ min-width: 0; }
   .child-link-title{ font-weight: 600; font-size: 1rem; }
   .child-link-sub{ font-size: 0.82rem; color: var(--ink-faint); margin-top: 0.1rem; }
+  /* ---- Home-only (Change 5): a pinned CHILD page's row shows its parent's name as
+     this smaller italic sub-line instead of the normal description sub-line ---- */
+  .child-link-sub.parent-hint{ font-style: italic; }
   .child-link-row .chevron-right{ flex-shrink: 0; width: 1.125rem; height: 1.125rem; color: var(--ink-faint); }
   .child-link-list.tight{ margin: 0; }
 
@@ -572,22 +585,11 @@
   .home-block{ margin: 0 0 0.9rem; }
   .home-block:last-child{ margin-bottom: 0; }
 
-  /* ---- pinned pages WITH a parent: grouped under one outer box titled with the
-     parent's label; pinned pages with NO parent render as plain standalone rows
-     (via .child-link-list.tight above), deliberately NOT boxed like this ---- */
-  .home-group{
-    background: var(--surface-2);
-    border: 1px solid var(--border);
-    border-radius: 0.75rem;
-    padding: 0.85rem 0.85rem 0.9rem;
-  }
-  .home-group-title{
-    font-family: var(--serif);
-    font-weight: 500;
-    font-size: 1rem;
-    margin: 0 0 0.6rem;
-    color: var(--ink);
-  }
+  /* ---- (Change 5, 2026-07-30): the old .home-group outer box that grouped a
+     pinned child under its parent's label has been removed — every pinned page,
+     parentless or child, now renders as an equal, standalone .child-link-row in
+     one flat list (see renderHome()); a pinned child's row instead gets a small
+     italic parent-name sub-line via .child-link-sub.parent-hint above. ---- */
 
   .home-empty{
     text-align: center;
@@ -595,6 +597,8 @@
   }
   .home-empty p{ color: var(--ink-soft); }
 
+  /* ---- compacted 2026-07-30 (Change 4): min-height 2.75rem -> 2.2rem, padding
+     scaled down proportionally (0.6rem 1.1rem -> 0.45rem 0.85rem) ---- */
   .home-add-btn{
     display: inline-flex;
     align-items: center;
@@ -606,8 +610,8 @@
     background: var(--accent-soft);
     border: 1px solid var(--accent);
     border-radius: 0.625rem;
-    min-height: 2.75rem;
-    padding: 0.6rem 1.1rem;
+    min-height: 2.2rem;
+    padding: 0.45rem 0.85rem;
     cursor: pointer;
     margin: 0 auto;
   }
@@ -894,6 +898,13 @@
         <span class="home-toggle-gear" id="homeToggleGear" style="display:none;">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="14" height="14"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
         </span>
+      </button>
+      <!-- ---- "go to Home" shortcut: shown on every page EXCEPT Home (visibility wired
+           into updateHeaderToggle() below, same place that swaps +Add vs the gear icon).
+           Reuses .menu-btn for identical fixed-px sizing — a persistent nav control,
+           same reachability argument as the hamburger. ---- -->
+      <button type="button" class="menu-btn home-nav-btn" id="homeNavBtn" aria-label="Go to Home" style="display:none;">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 10.5 12 3l9 7.5"/><path d="M5 9.5V20a1 1 0 0 0 1 1h4v-6h4v6h4a1 1 0 0 0 1-1V9.5"/></svg>
       </button>
     </header>
 
@@ -1184,7 +1195,7 @@
       <!-- Pinned Home row: always visible (not part of the search-filterable nav-node
            set below), navigate-mode only — hidden entirely while in select mode ---- -->
       <button type="button" class="nav-item home-pin-row" id="homePinRow" data-goto="home">
-        <span class="nav-item-title">🏠 Home</span>
+        <span class="nav-item-title">Home</span>
       </button>
       <div class="home-pin-sep"></div>
 
@@ -1433,6 +1444,7 @@
   var homeToggleLabel = document.getElementById('homeToggleLabel');
   var homeToggleNormal = document.getElementById('homeToggleNormal');
   var homeToggleGear = document.getElementById('homeToggleGear');
+  var homeNavBtn = document.getElementById('homeNavBtn');
 
   // Home's header-right slot is a Settings gear button (opens the panel below);
   // every other page keeps the original "+ Add" / "✓ Added" per-page pin toggle.
@@ -1452,6 +1464,7 @@
       homeToggleBtn.classList.remove('b-ok', 'b-warn');
       homeToggleBtn.classList.add('b-ref');
       homeToggleBtn.setAttribute('aria-label', 'Open settings');
+      homeNavBtn.style.display = 'none';
       return;
     }
     homeToggleNormal.style.display = 'inline-flex';
@@ -1462,8 +1475,10 @@
     homeToggleBtn.classList.toggle('b-ok', pinned);
     homeToggleBtn.classList.toggle('b-warn', !pinned);
     homeToggleBtn.setAttribute('aria-label', pinned ? 'Remove this page from Home' : 'Add this page to Home');
+    homeNavBtn.style.display = 'flex';
   }
   homeToggleBtn.addEventListener('click', onHeaderToggleClick);
+  homeNavBtn.addEventListener('click', function(){ showPage('home'); });
 
   /* ============================================================
      Home page: rendered dynamically from the pinned-links list every
@@ -1472,7 +1487,9 @@
      ============================================================ */
   var homeBody = document.getElementById('homeBody');
 
-  function makeChildLinkRow(id){
+  // parentLabel (Change 5): passed only for a pinned CHILD page — renders as a
+  // smaller italic sub-line inside the row. Parentless pinned pages get no sub-line.
+  function makeChildLinkRow(id, parentLabel){
     var btn = document.createElement('button');
     btn.type = 'button';
     btn.className = 'child-link-row';
@@ -1482,6 +1499,12 @@
     title.className = 'child-link-title';
     title.textContent = LABEL_BY_ID[id];
     text.appendChild(title);
+    if (parentLabel){
+      var sub = document.createElement('span');
+      sub.className = 'child-link-sub parent-hint';
+      sub.textContent = parentLabel;
+      text.appendChild(sub);
+    }
     btn.appendChild(text);
     btn.insertAdjacentHTML('beforeend', '<svg class="chevron-right" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 6 15 12 9 18"/></svg>');
     btn.addEventListener('click', function(){ showPage(id); });
@@ -1518,36 +1541,27 @@
       return;
     }
 
+    // Change 5 (2026-07-30): flat list, NO .home-group boxes — every pinned page,
+    // parentless or child, is an equal standalone .child-link-row, in NAV_TREE
+    // depth-first order (a parent's pinned children fall right where they'd sit
+    // in that walk). A pinned child's row gets its parent's name as a smaller
+    // italic sub-line (see makeChildLinkRow); a parentless row gets none.
+    var flatWrap = document.createElement('div');
+    flatWrap.className = 'home-block';
+    var flatList = document.createElement('div');
+    flatList.className = 'child-link-list tight';
     NAV_TREE.forEach(function(node){
-      // standalone: the node itself was pinned directly (leaf, or a parent pinned
-      // on its own account) — plain row, deliberately NOT wrapped in a group box
       if (isPinned(node.id)){
-        var standaloneWrap = document.createElement('div');
-        standaloneWrap.className = 'home-block';
-        var standaloneList = document.createElement('div');
-        standaloneList.className = 'child-link-list tight';
-        standaloneList.appendChild(makeChildLinkRow(node.id));
-        standaloneWrap.appendChild(standaloneList);
-        homeBody.appendChild(standaloneWrap);
+        flatList.appendChild(makeChildLinkRow(node.id, null));
       }
-
-      // grouped: any pinned children of this node get one shared box titled
-      // with the parent's own label, children kept in nav-tree order
-      var pinnedChildren = (node.children || []).filter(function(c){ return isPinned(c.id); });
-      if (pinnedChildren.length){
-        var groupWrap = document.createElement('div');
-        groupWrap.className = 'home-block home-group';
-        var groupTitle = document.createElement('h3');
-        groupTitle.className = 'home-group-title';
-        groupTitle.textContent = node.label;
-        groupWrap.appendChild(groupTitle);
-        var groupList = document.createElement('div');
-        groupList.className = 'child-link-list tight';
-        pinnedChildren.forEach(function(c){ groupList.appendChild(makeChildLinkRow(c.id)); });
-        groupWrap.appendChild(groupList);
-        homeBody.appendChild(groupWrap);
-      }
+      (node.children || []).forEach(function(child){
+        if (isPinned(child.id)){
+          flatList.appendChild(makeChildLinkRow(child.id, node.label));
+        }
+      });
     });
+    flatWrap.appendChild(flatList);
+    homeBody.appendChild(flatWrap);
   }
 
   /* ============================================================
