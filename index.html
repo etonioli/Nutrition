@@ -1838,6 +1838,128 @@
   REFERENCES.forEach(function(ref){ REFERENCES_BY_N[String(ref.n)] = ref; });
 
   /* ============================================================
+     INFO_TOPICS — content for the "Nutrition info" section (PLAN.md Task 2).
+     Transcribed verbatim from CONTENT-SPEC.md. Block types:
+       'p'    — { heading?, text }            paragraph, [n] markers inline
+       'ul'   — { items: [text, ...] }        list, [n] markers inline per item
+       'note' — { label, heading?, text }     boxed callout (reuses .callout)
+       'myth' — { belief, text }               Common myths page only
+     Citations are parsed out of `text`/`items` strings by the renderer
+     added in a later task — do not hand-author <button> markup here.
+     ============================================================ */
+  var INFO_TOPICS = [
+    { id: 'info', label: 'Nutrition info',
+      summary: 'General nutrition education, separate from your personal plan.',
+      blocks: [
+        { type: 'p', text: 'General nutrition education, separate from your personal plan. Everything here is sourced to published guidelines and peer-reviewed research — tap any [n] to jump to the reference, then tap "Back to reading" to return to exactly where you were.' },
+        { type: 'note', label: 'Not medical advice', text: 'This section is general education, not personal medical advice. It describes what guideline bodies and published research say for general populations. It does not account for your individual medical history, and nothing here should be used to make a medical decision. Those belong with a physician.' },
+        { type: 'note', label: 'How to read the tiers', text: 'Each reference carries an evidence tier: Tier 1 is a systematic review or meta-analysis of randomised trials, Tier 2 a guideline or position stand from a professional or governmental body, Tier 3 a single randomised trial, Tier 4 observational (association only, never causation), Tier 5 mechanistic. Higher tier numbers are weaker evidence, not stronger.' }
+      ] },
+
+    { id: 'info-energy', label: 'Energy balance',
+      summary: 'How the body gains and loses fat, what a calorie deficit actually does, and why weight loss slows down over time.',
+      blocks: [
+        { type: 'p', text: 'Body weight change is governed by the balance between energy intake and energy expenditure [1]. When expenditure exceeds intake, the body increases its oxidation of stored fat for fuel [1]. When body weight changes because of an energy imbalance, roughly 60 to 80% of the resulting change in body mass is typically body fat [2] — the remainder is other tissue and body water.' },
+        { type: 'p', heading: 'Where does the fat actually go?', text: 'When fat is metabolised for energy, most of its mass leaves the body as exhaled carbon dioxide, with the remainder excreted as water [3]. Fat is not "burned off" as heat and it is not excreted — it is exhaled.' },
+        { type: 'p', heading: 'Why loss slows down', text: 'Weight loss produces changes in resting and non-resting energy expenditure that are independent of changes in fat-free mass — this is called adaptive thermogenesis [4]. It is a real effect that can slow further loss and favour regain, but it is a temporary metabolic adaptation, not permanent or irreversible metabolic damage [5].' },
+        { type: 'p', heading: 'Not all calories cost the same to process', text: 'The thermic effect of food — the energy spent digesting and processing what you eat — is highest for protein at about 20 to 30% of ingested energy, moderate for carbohydrate at about 5 to 10%, and lowest for fat at about 0 to 3% [6].' }
+      ] },
+
+    { id: 'info-protein', label: 'Protein',
+      summary: 'How much protein the evidence supports, why the number goes up in a deficit, and how to spread it across the day.',
+      blocks: [
+        { type: 'p', heading: 'Baseline requirements', text: 'EFSA has set the Population Reference Intake for protein at 0.83 g per kg of body weight per day for adults [7]. The US Recommended Dietary Allowance is 0.8 g per kg of body weight per day [8]. Both figures describe the amount needed to avoid deficiency in a general adult population — not the amount that optimises training adaptations.' },
+        { type: 'p', heading: 'If you train', text: 'For most exercising individuals, a daily protein intake of 1.4 to 2.0 g per kg of body weight is sufficient to build and maintain muscle mass [9].' },
+        { type: 'p', heading: 'If you train while in a calorie deficit', text: 'During a calorie deficit, resistance-trained individuals may need higher protein intakes of about 2.3 to 3.1 g per kg per day to maximise retention of lean body mass [9]. A systematic review and meta-analysis found that protein intakes above the RDA are associated with greater retention of lean body mass than consuming the RDA, with larger effects under energy restriction combined with resistance training [10].' },
+        { type: 'p', heading: 'Distribution across the day', text: 'For maximising muscle protein synthesis, the ISSN position stand recommends ingesting roughly 20 to 40 g of high-quality protein — about 0.25 to 0.40 g per kg of body mass — every three to four hours [11].' },
+        { type: 'p', heading: 'Protein and appetite', text: 'Higher dietary protein intake is associated with greater feelings of fullness and satiety in people with overweight or obesity [12].' },
+        { type: 'p', heading: 'Powder or food?', text: 'Physically active individuals can meet their daily protein requirements through whole foods alone; protein supplements are not strictly necessary, but they are a practical way of ensuring adequate protein quantity and quality [9].' }
+      ] },
+
+    { id: 'info-carbs', label: 'Carbohydrates & fibre',
+      summary: 'What carbohydrate does, how much the guidelines suggest, why fibre is the part almost everyone under-eats, and what glycogen does to the scale.',
+      blocks: [
+        { type: 'p', heading: 'What carbohydrate is for', text: 'Carbohydrates are broken down into glucose, which is the main energy source for the brain, central nervous system and red blood cells [13]. The energy value of dietary carbohydrate, whether from sugars or starches, is generally accepted to be 4 kilocalories per gram [13].' },
+        { type: 'p', heading: 'How much', text: 'EFSA\'s dietary reference values recommend that total carbohydrate intake make up 45 to 60% of total energy intake for both adults and children [14]. The US Acceptable Macronutrient Distribution Range is 45 to 65% of total daily calories for adults and children over age one [15].' },
+        { type: 'p', heading: 'Fibre — the one almost everyone misses', text: 'EFSA considers a daily intake of 25 g of dietary fibre adequate for normal bowel function in adults [14]. The US Institute of Medicine\'s Adequate Intake is 25 g per day for adult women and 38 g per day for adult men aged 19 to 50 [16]. Average intake falls far short: mean daily fibre intake in the US is about 16.2 g [16], and an estimated 95% of American adults and children do not consume the recommended amount [16].' },
+        { type: 'p', heading: 'Sugars', text: 'WHO strongly recommends reducing free sugar intake to less than 10% of total energy intake for both adults and children [17], and conditionally recommends a further reduction to below 5% of total energy intake [17].' },
+        { type: 'p', heading: 'Grain quality', text: 'Refined grains, which have had the bran and germ milled out, have a higher glycemic index than minimally processed whole grains [18]. However, a US Dietary Guidelines evidence review found strong evidence that glycemic index and glycemic load are not associated with body weight, so they do not need to be considered for weight management [19].' },
+        { type: 'p', heading: 'Glycogen, water, and the scale', text: 'Each gram of glycogen stored in the body is bound to at least 3 g of water [20]. Because of this, rapid initial weight loss when carbohydrate is restricted — and the weight regain when carbohydrate is reintroduced — partly reflects shifts in glycogen-bound water rather than change in fat mass [20]. The amount of water recovered per gram of restored glycogen depends on hydration status: about 3 g of water per gram of glycogen with limited fluid intake, versus about 17 g with adequate fluid intake [21].' },
+        { type: 'note', label: 'Worth knowing', heading: 'Carbohydrate and strength training', text: 'A systematic review found that in the large majority of long-term studies, carbohydrate intake was not associated with strength training performance or strength development — 15 of 17 studies found no significant effect [22]. In acute studies, 11 of 19 found no significant effect; benefits that did appear occurred mainly in fasted participants or against non-caloric placebos rather than against isocaloric controls [22].' },
+        { type: 'p', heading: 'Storage limits', text: 'The body can store roughly 15 g of glycogen per kg of body weight before excess dietary carbohydrate begins being converted into fat via de novo lipogenesis [23]. Muscle glycogen stores are maximised by a high-carbohydrate intake of about 8 to 12 g of carbohydrate per kg of body weight per day [11].' }
+      ] },
+
+    { id: 'info-fat', label: 'Dietary fat',
+      summary: 'How much fat, which kinds, and what the current guidelines actually say about saturated fat and cholesterol.',
+      blocks: [
+        { type: 'p', heading: 'How much', text: 'WHO\'s 2023 guideline recommends that adults limit total fat intake to 30% of total energy intake or less [24]. The US National Academies\' Acceptable Macronutrient Distribution Range sets total fat for adults at 20 to 35% of total energy [25]. EFSA has published EU-wide dietary reference values covering total fat and the individual fatty acid categories [26].' },
+        { type: 'p', heading: 'Saturated and trans fat', text: 'WHO recommends limiting saturated fatty acids to no more than 10% of total energy intake for people aged two and older, and trans fatty acids to no more than 1% [24]. The American Heart Association likewise advises that saturated fat make up less than 10% of daily calories for healthy adults [27]. Trans fat intake above 1% of total energy is associated with increased risk of coronary heart disease and death [28], and WHO\'s REPLACE action package gives countries a framework for eliminating industrially produced trans fat from national food supplies [28].' },
+        { type: 'p', heading: 'What to replace it with — this part matters', text: 'WHO\'s preferred replacements when cutting saturated and trans fat are polyunsaturated fats and plant-source monounsaturated fats, not refined carbohydrates [24]. Replacing saturated and trans fats with polyunsaturated fats from liquid vegetable oils, nuts and seeds is associated with a lower risk of type 2 diabetes [29].' },
+        { type: 'p', heading: 'The Mediterranean pattern', text: 'The Mediterranean dietary pattern designates olive oil as the primary added fat, used in place of butter and margarine [30]. In a randomised trial, a Mediterranean diet supplemented with extra-virgin olive oil or nuts reduced major cardiovascular events over 4.8 years of follow-up in high-risk patients [29]. Notably, in some Mediterranean-diet intervention studies total fat intake reached 39 to 42% of daily calories — well above the standard 20 to 35% range — while the pattern was still linked to cardiovascular benefit [30]. Which types of fat are eaten appears to matter more for health than the total percentage of calories from fat [30].' },
+        { type: 'p', heading: 'Oily fish', text: 'The American Heart Association recommends about two 3.5-ounce servings of non-fried fish per week for cardiovascular health [31]. The oily fish it highlights as rich in cardioprotective omega-3s include salmon, mackerel, herring, lake trout, sardines and albacore tuna [31].' },
+        { type: 'p', heading: 'Dietary cholesterol', text: 'An American Heart Association science advisory found that observational studies across several countries generally show no significant association between dietary cholesterol intake and cardiovascular disease risk [32]. Rather than setting a numeric dietary cholesterol cap, current AHA guidance favours promoting overall healthy dietary patterns such as Mediterranean- and DASH-style eating [32].' },
+        { type: 'p', heading: 'Why some fat is necessary', text: 'Vitamins A, D, E and K are called fat-soluble vitamins because they are absorbed and transported through the body in a manner similar to dietary fat [33]. Absorption of vitamin A and carotenoids from food is markedly reduced on diets containing very little fat — about 5 g per day or less [34].' }
+      ] },
+
+    { id: 'info-micros', label: 'Micronutrients',
+      summary: 'What vitamins and minerals do, roughly how much adults need, and why a long calorie deficit makes shortfalls more likely.',
+      blocks: [
+        { type: 'note', label: 'General reference intakes only', text: 'These are population-level reference intakes, not personal recommendations. They are here so the numbers are familiar, not so you can self-diagnose or self-dose.' },
+        { type: 'p', heading: 'Vitamin D', text: 'Vitamin D is needed to keep bones, teeth and muscles healthy, and helps the body absorb calcium and phosphorus [52]. The US/Canada Recommended Dietary Allowance for adults aged 19 to 70 is 600 IU (15 mcg) per day, rising to 800 IU (20 mcg) after age 70 [53], and the Tolerable Upper Intake Level for adults is 4,000 IU (100 mcg) per day [53]. UK guidance advises that everyone consider a daily 10 mcg vitamin D supplement during autumn and winter, because sunlight is too weak for the body to make it then [52].' },
+        { type: 'p', heading: 'Vitamin B12', text: 'The adult RDA for vitamin B12 is 2.4 micrograms per day for both men and women [54]. About 10 to 30% of adults over age 50 have difficulty absorbing B12 from food [54]. People who eat no meat, fish, poultry or dairy are at risk of deficiency, since B12 occurs naturally only in animal products [54]. Long-term use of metformin is also strongly associated with vitamin B12 deficiency [54].' },
+        { type: 'p', heading: 'Iron', text: 'The adult RDA for iron is 8 mg per day for men and postmenopausal women, and 18 mg per day for premenopausal women because of menstrual blood loss [55]. The Tolerable Upper Intake Level for adults is 45 mg per day, based on gastrointestinal distress as the adverse effect [55].' },
+        { type: 'p', heading: 'Calcium', text: 'The adult RDA for calcium is 1,000 mg per day for men and women aged 19 to 50, rising to 1,200 mg per day for women aged 51 to 70 [56]. The upper limit is 2,500 mg per day for adults aged 19 to 50 and 2,000 mg per day for adults over 50 [56].' },
+        { type: 'p', heading: 'Magnesium and zinc', text: 'The adult RDA for magnesium is 420 mg per day for men over age 30 and 320 mg per day for women [57]. Chronic heavy alcohol use is strongly associated with magnesium depletion [58]. The adult RDA for zinc is 11 mg per day for men and 8 mg per day for non-pregnant women [59].' },
+        { type: 'p', heading: 'Sodium and potassium', text: 'The Adequate Intake for potassium is 3,400 mg per day for adult men and 2,600 mg per day for adult women [60]. For sodium, US guidance sets a Chronic Disease Risk Reduction intake of 2,300 mg per day for adults aged 19 and older [61], and WHO recommends adults consume less than 2,000 mg of sodium per day — about 5 g of salt, just under a teaspoon [62].' },
+        { type: 'p', heading: 'The fat-soluble vitamins', text: 'The adult RDA for vitamin A is 900 mcg RAE per day for men and 700 mcg RAE per day for women [63]. The adult RDA for vitamin E is 15 mg per day of alpha-tocopherol, with an upper limit of 1,000 mg per day from supplemental forms because of bleeding risk [64]. The Adequate Intake for vitamin K is 120 mcg per day for adult men and 90 mcg per day for adult women; vitamin K is necessary to activate certain clotting factors in the liver [65]. These four vitamins are absorbed and transported in a manner similar to dietary fat [33], which is why very-low-fat intake affects their absorption [34].' },
+        { type: 'p', heading: 'Why a long deficit raises the risk', text: 'Inadequate micronutrient intake as a result of under-fuelling has been linked to poorer bone health outcomes in athletes, with vitamin D and calcium insufficiencies specifically implicated [66].' },
+        { type: 'note', label: 'Food first — and who decides', text: 'Guideline bodies advise that food should be your first source of nutrients, with a balanced eating pattern preferred over relying on supplements [67]. Testing for a suspected deficiency and any decision to start a supplement should be made with a health care provider or registered dietitian, not self-directed [67].' }
+      ] },
+
+    { id: 'info-hydration', label: 'Hydration',
+      summary: 'What water does, how much, and how to tell whether you have had enough.',
+      blocks: [
+        { type: 'p', text: 'Water in the body helps restore fluids lost through metabolism, breathing and sweating, and also helps regulate temperature and lubricate joints and tissues [35].' },
+        { type: 'p', heading: 'How to tell', text: 'Feeling thirsty and passing dark, strong-smelling urine are practical signs of dehydration; the NHS advises drinking enough during the day that urine stays a pale colour [36].' },
+        { type: 'p', heading: 'Training', text: 'Mild dehydration of as little as 2% of body weight can measurably impair physical performance [37].' },
+        { type: 'p', heading: 'Does coffee count?', text: 'Caffeinated beverages such as coffee and tea contribute to total daily water intake and do not necessarily cause dehydration at typical consumption levels [35].' }
+      ] },
+
+    { id: 'info-timing', label: 'Meal timing',
+      summary: 'What the evidence supports about when to eat — and how much of the conventional wisdom does not survive scrutiny.',
+      blocks: [
+        { type: 'p', heading: 'The post-workout window', text: 'Current evidence does not clearly support the existence of a narrow post-exercise "anabolic window" during which protein must be consumed for optimal muscle growth [38]. The size and timing of the pre-exercise meal can influence how much additional post-exercise protein feeding is actually needed [11].' },
+        { type: 'p', heading: 'What does seem to matter', text: 'Total daily protein and its distribution are better supported than precise post-workout timing: the ISSN position stand recommends roughly 20 to 40 g of high-quality protein every three to four hours [11].' },
+        { type: 'p', heading: 'Meal frequency', text: 'A systematic review of observational studies concluded there is not sufficient evidence confirming an association between eating frequency and body weight or body composition once measurement bias is accounted for [39]. A systematic review and meta-analysis of randomised controlled feeding trials found an insufficient number of studies to determine whether meal frequency itself affects body weight [40].' },
+        { type: 'p', heading: 'Eating late', text: 'Whether eating late at night causes weight gain independently of total calorie intake is not established; the underlying research is dominated by cross-sectional studies with inconsistent results, so a causal, intake-independent effect of meal timing on weight gain remains unproven [41].' }
+      ] },
+
+    { id: 'info-liver', label: 'Liver, alcohol & fructose',
+      summary: 'Why the liver is the organ most affected by alcohol and fructose, and what weight loss does to liver fat.',
+      blocks: [
+        { type: 'p', heading: 'Alcohol', text: 'WHO states that no level of alcohol consumption is safe for health, with risk beginning from the first drink [42]. Alcohol provides approximately 7 kilocalories per gram of metabolizable energy [43]. Evidence on whether moderate alcohol consumption protects against or worsens non-alcoholic fatty liver disease is mixed and has not been conclusively established [44].' },
+        { type: 'p', heading: 'Fructose and the liver', text: 'Fructose metabolism in the liver increases hepatic gluconeogenesis and de novo lipogenesis, raising plasma glucose and triglyceride levels [45]. Rates of de novo lipogenesis are about three times greater in people with non-alcoholic fatty liver disease than in healthy controls [45].' },
+        { type: 'p', heading: 'What weight loss does to liver fat', text: 'EASL-EASD-EASO clinical practice guidelines state that a sustained weight loss of at least 5% of body weight reduces liver fat in people with MASLD (metabolic dysfunction-associated steatotic liver disease) [46]. A 7 to 10% loss is associated with improved liver inflammation [46], and at least 10% is needed to improve liver fibrosis [46]. Separately, individuals achieving at least 7% weight loss experienced significant improvements in steatosis and lobular inflammation [47], and NASH resolution occurred most often in patients achieving at least 10% weight loss [47].' },
+        { type: 'p', heading: 'Drinks', text: 'EASL-EASD-EASO MASLD guidelines recommend avoiding sugar-sweetened beverages to help improve liver injury [46].' }
+      ] },
+
+    { id: 'info-myths', label: 'Common myths',
+      summary: 'Widely repeated claims that the evidence does not support.',
+      blocks: [
+        { type: 'myth', belief: 'Detox diets and cleanses flush toxins out and cause lasting weight loss.', text: 'There is no compelling scientific evidence that commercial detox diets or cleanse programmes remove toxins from the body or produce meaningful, sustained weight loss; any early weight loss reflects severe calorie restriction and tends to be regained [48].' },
+        { type: 'myth', belief: 'Dieting permanently damages your metabolism.', text: 'Weight loss triggers a real but time-limited drop in resting and non-resting energy expenditure beyond what reduced body size alone would predict. It can slow further loss and favour regain, but it is a temporary metabolic adaptation, not permanent, irreversible metabolic damage [5].' },
+        { type: 'myth', belief: 'Certain foods and supplements meaningfully boost metabolism or burn fat.', text: 'No single food or supplement produces a metabolic increase large enough to meaningfully affect body fat or weight loss; items like green tea and chili peppers cause only small, temporary rises in metabolic rate [49].' },
+        { type: 'myth', belief: 'Sugar is addictive in humans the way drugs are.', text: 'Evidence for sugar addiction comes mainly from animal studies of intermittent bingeing; very little empirical research has directly tested sugar addiction in humans, so the claim remains scientifically unsupported [50].' },
+        { type: 'myth', belief: 'Sweating more means burning more fat.', text: 'Weight lost through heavy sweating, saunas or rubber suits is water weight, not fat, and the resulting dehydration can also impair athletic performance [51].' },
+        { type: 'myth', belief: 'Eating after a certain hour makes you gain weight.', text: 'Whether eating late at night causes weight gain independently of total calorie intake is not established, and a causal, intake-independent effect remains unproven [41].' },
+        { type: 'myth', belief: 'You need protein powder to get enough protein.', text: 'Physically active individuals can meet their daily protein requirements through whole foods alone; supplements are a practical convenience, not a requirement [9].' }
+      ] }
+  ];
+
+  var INFO_TOPICS_BY_ID = {};
+  INFO_TOPICS.forEach(function(topic){ INFO_TOPICS_BY_ID[topic.id] = topic; });
+
+  /* ============================================================
      Pinned-Home-links — the ONE deliberate localStorage exception in this
      file (see the file-header comment). Everything else here is in-memory
      only and resets on reload; this alone survives, because a "customize
