@@ -10,9 +10,19 @@
 // cache-first since they never change and aren't worth a network round
 // trip. Offline capability is unchanged — everything still has a cache
 // fallback — this only removes the "stuck on an old version" failure mode.
+//
+// PLAN.md Task 12 / ANALYSIS.md §5.2-5.3: './' (the bare scope URL the
+// installed PWA's start_url resolves to) is now precached alongside
+// index.html -- previously only index.html was, so an install followed by
+// an immediately-offline first launch could fail to load. RULE: bump
+// CACHE_NAME on every content change to index.html/manifest.json/icons, even
+// though the network-first strategy above makes forgetting much less
+// damaging than it was pre-v2 -- there is no automated enforcement of this,
+// it is a manual discipline.
 
-var CACHE_NAME = 'nutrition-pwa-v2';
+var CACHE_NAME = 'nutrition-pwa-v3';
 var PRECACHE_URLS = [
+  './',
   'index.html',
   'manifest.json',
   'icons/icon-192.png',
