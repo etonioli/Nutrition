@@ -1,0 +1,1687 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<meta name="theme-color" media="(prefers-color-scheme: light)" content="#EDF1F3" />
+<meta name="theme-color" media="(prefers-color-scheme: dark)" content="#10161D" />
+<title>Toni's Nutrition — Quick Reference</title>
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="icons/icon-192.png" sizes="192x192" type="image/png">
+<link rel="icon" href="icons/icon-512.png" sizes="512x512" type="image/png">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+<!--
+  PWA-PACKAGED VARIANT — built 2026-07-30 from the plain-HTML design-preview dummy at
+  ..\nutrition-wrapper_2026-07-30_dummy-preview.html (that file is the design source of
+  truth and is left untouched — this folder is a separate, additional lineage, packaging
+  the SAME content/behavior as an installable PWA). New in this folder only: manifest.json,
+  sw.js, icons/icon-192.png, icons/icon-512.png, the <link rel="manifest"/icon/apple-touch-icon>
+  tags above, and the service-worker registration snippet near the bottom of the script block.
+  No UI/UX/content changes were made relative to the dummy — this is packaging only.
+
+  DESIGN-PREVIEW DUMMY CONTENT — not a production build.
+  Every number in this file is a placeholder invented purely to preview layout/interaction
+  on a phone screen. Nothing here has been sourced from a label, BLS/USDA, or the programme
+  sheets. See CLAUDE.md / initial_instruc.md for the real project's sourcing rules — this
+  file intentionally does not follow them, because it isn't real content yet.
+
+  Navigation model: a full-screen ToC "drawer" (CLOSED by default — "Home" is the landing
+  page instead) lists every section, with collapsible submenus for the two sections that
+  have children (Day targets, Session carbs) — the same nav-node / nav-toggle / nav-sublist
+  pattern the desktop template (C:\ProjectsClaude\NoteTaker\Templates\HTML Reference.html)
+  uses for its own collapsible sub-ToC, just built by hand here instead of auto-split from
+  <h3>s. Tapping a row's LABEL navigates to that item's own one-page-at-a-time content and
+  slides the drawer away like a curtain; tapping a row's chevron only expands/collapses
+  children. A persistent hamburger button in the content pane's slim header reopens the
+  drawer in normal "browse" mode from any page, including Home. A pinned "🏠 Home" row sits
+  above the regular sections (always visible, exempt from the search filter).
+
+  Home + pinning: Home is a page like any other (data-page="home") but is the default view
+  and renders its body dynamically from a user-curated "pinned pages" list instead of static
+  markup. Every other page's header shows a "+ Add" / "✓ Added" toggle for pinning itself to
+  Home; Home's own header (and body, when empty) shows "+ Add link" instead, which opens the
+  SAME ToC drawer but in a SELECT MODE (`.select-mode` on #tocPanel) — rows show a checkbox,
+  tapping a label toggles pinned state instead of navigating, and a "Done" bar closes it.
+
+  Design system reused (verbatim CSS custom properties + component look) from:
+  C:\ProjectsClaude\NoteTaker\Templates\HTML Reference.html
+  That template is a desktop two-pane research tool; this file is a single-column phone
+  layout wearing the same palette/typography/components, adapted for touch.
+
+  Sizing: nearly everything (padding, gaps, border-radius, icon dimensions, min-heights) is
+  expressed in rem against the root font-size, so the zoom control (bottom-right pill) can
+  scale the ENTIRE UI proportionally just by changing document.documentElement.style.fontSize —
+  no CSS zoom/transform hacks, which fight position:fixed overlays like this drawer. The zoom
+  pill itself and the drawer-reopen hamburger are the deliberate exception: fixed physical px,
+  so they never shrink out of reach even at the smallest zoom level.
+
+  Persistence — deliberate, single exception: EVERYTHING else in this file (zoom level,
+  search text, expand/collapse state, select mode) is in-memory only and resets on reload,
+  on purpose, per the project's dummy-preview conventions. The pinned-Home-links list is the
+  one deliberate exception: a "customize your home screen" feature that forgets itself on
+  every reload is pointless, so it alone is persisted to localStorage, under the key
+  "nutritionWrapperHomeLinks" (a JSON array of page ids), guarded with try/catch and falling
+  back to an empty list if missing/malformed. Nothing else in this file touches localStorage.
+-->
+<style>
+  :root{
+    --bg: #EDF1F3;
+    --surface: #FFFFFF;
+    --surface-2: #F4F7F8;
+    --ink: #172335;
+    --ink-soft: #51617A;
+    --ink-faint: #7C8CA0;
+    --border: #D7DEE3;
+    --accent: #1E7F76;
+    --accent-ink: #0E4A44;
+    --accent-soft: #DCEEEC;
+    --ok: #2E7D4F;
+    --ok-soft: #DFEEE3;
+    --warn: #A16A16;
+    --warn-soft: #F3E6D2;
+    --ref: #3E5C86;
+    --ref-soft: #E1E7F0;
+    --mark-bg: #F6C453;
+    --mark-ink: #3A2400;
+    --shadow: 0 1px 2px rgba(23,35,53,0.06), 0 12px 32px rgba(23,35,53,0.10);
+    --serif: "Palfinger Text Office", ui-serif, "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif;
+    --sans: "Palfinger Text Office", Seravek, "Segoe UI", Calibri, "Helvetica Neue", system-ui, sans-serif;
+    --mono: "Palfinger Text Office", "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
+  }
+
+  @media (prefers-color-scheme: dark){
+    :root{
+      --bg: #10161D;
+      --surface: #171F27;
+      --surface-2: #1B242E;
+      --ink: #E7ECEF;
+      --ink-soft: #9FB0BF;
+      --ink-faint: #6C7C8C;
+      --border: #2A3540;
+      --accent: #4FC3B8;
+      --accent-ink: #BEF0E9;
+      --accent-soft: rgba(79,195,184,0.14);
+      --ok: #5FBE86;
+      --ok-soft: rgba(95,190,134,0.14);
+      --warn: #E0A94A;
+      --warn-soft: rgba(224,169,74,0.14);
+      --ref: #8FADDD;
+      --ref-soft: rgba(143,173,221,0.14);
+      --mark-bg: #E0A94A;
+      --mark-ink: #1C1300;
+      --shadow: 0 1px 2px rgba(0,0,0,0.35), 0 12px 32px rgba(0,0,0,0.3);
+    }
+  }
+
+  *{ box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  @media (prefers-reduced-motion: reduce){
+    *{ animation-duration: 0.001ms !important; transition-duration: 0.001ms !important; }
+  }
+
+  html{ font-size: 16px; height: 100%; }
+  html, body{ margin: 0; }
+  body{
+    background: var(--bg);
+    color: var(--ink);
+    font-family: var(--sans);
+    line-height: 1.55;
+    -webkit-font-smoothing: antialiased;
+    height: 100vh;
+    height: 100dvh;
+    overflow: hidden;
+  }
+
+  a{ color: var(--accent); }
+  a:hover{ color: var(--accent-ink); }
+
+  /* ---- both the ToC drawer and the content pane are full-screen, stacked panes in the
+     same box — the drawer sits on top (higher z-index) and slides away to reveal the
+     content pane sitting still underneath, rather than the content pane moving at all ---- */
+  .pane{
+    position: fixed;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+    background: var(--bg);
+  }
+  #contentPane{ z-index: 10; }
+  #tocPanel{
+    z-index: 50;
+    transform: translateX(0);
+    transition: transform 0.28s ease;
+  }
+  #tocPanel.toc-closed{ transform: translateX(-100%); }
+
+  /* ==================================================================
+     ToC drawer
+     ================================================================== */
+  .toc-head{
+    flex: 0 0 auto;
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    padding: calc(0.9rem + env(safe-area-inset-top)) 1.1rem 0.9rem;
+    box-shadow: var(--shadow);
+  }
+  .eyebrow{
+    font-family: var(--mono);
+    font-size: 0.7rem;
+    letter-spacing: 0.09em;
+    text-transform: uppercase;
+    color: var(--ink-faint);
+    margin: 0 0 0.3rem;
+  }
+  .app-title{
+    font-family: var(--serif);
+    font-weight: 500;
+    font-size: 1.5rem;
+    line-height: 1.2;
+    margin: 0 0 0.7rem;
+    color: var(--ink);
+  }
+
+  .callout{
+    background: var(--warn-soft);
+    border-left: 3px solid var(--warn);
+    border-radius: 0.5rem;
+    padding: 0.9rem 1rem;
+    margin: 0 0 0.85rem;
+    font-size: 0.95rem;
+  }
+  .callout strong{ color: var(--warn); }
+
+  .search-wrap{ position: relative; }
+  .search-icon{
+    position: absolute;
+    left: 0.95rem;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 1.125rem; height: 1.125rem;
+    stroke: var(--ink-faint);
+    pointer-events: none;
+  }
+  .search-input{
+    width: 100%;
+    display: block;
+    font: inherit;
+    font-size: 1rem;
+    height: 3rem;
+    padding: 0.5rem 2.6rem 0.5rem 2.6rem;
+    border-radius: 0.625rem;
+    border: 1px solid var(--border);
+    background: var(--surface-2);
+    color: var(--ink);
+    -webkit-appearance: none;
+    appearance: none;
+  }
+  .search-input::placeholder{ color: var(--ink-faint); }
+  .search-input:focus-visible{ outline: 2px solid var(--accent); outline-offset: 1px; }
+
+  .search-clear{
+    position: absolute;
+    right: 0.5rem;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 2.25rem; height: 2.25rem;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    border: none;
+    background: none;
+    padding: 0;
+    margin: 0;
+    border-radius: 50%;
+    color: var(--ink-faint);
+    cursor: pointer;
+  }
+  .search-clear.show{ display: flex; }
+  .search-clear:active{ background: var(--surface); }
+  .search-clear:focus-visible{ outline: 2px solid var(--accent); outline-offset: 1px; }
+  .search-clear svg{ width: 0.9375rem; height: 0.9375rem; }
+
+  .toc-list{
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    padding: 0.6rem 0.75rem calc(1.5rem + env(safe-area-inset-bottom));
+  }
+
+  /* ---- one nav-node per ToC row; a node with children gets a toggle + sublist,
+     a leaf node gets neither — mirrors the desktop template's auto-built sub-ToC ---- */
+  .nav-node{ margin-bottom: 0.2rem; }
+  .nav-item-row{ display: flex; align-items: center; gap: 0.15rem; }
+  .nav-item{
+    flex: 1 1 auto;
+    min-width: 0;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    text-align: left;
+    font: inherit;
+    background: none;
+    border: none;
+    border-left: 3px solid transparent;
+    min-height: 3rem;
+    padding: 0.6rem 0.7rem;
+    border-radius: 0.625rem;
+    cursor: pointer;
+    color: var(--ink-soft);
+  }
+  .nav-item:active{ background: var(--surface); }
+  .nav-item.active{
+    background: var(--accent-soft);
+    border-left-color: var(--accent);
+    color: var(--accent-ink);
+  }
+  .nav-item .nav-item-title{
+    font-size: 1rem;
+    font-weight: 600;
+    flex: 1 1 auto;
+    min-width: 0;
+  }
+  .nav-item:focus-visible{ outline: 2px solid var(--accent); outline-offset: -2px; }
+
+  .nav-toggle{
+    flex: 0 0 auto;
+    width: 2.75rem; height: 2.75rem;
+    display: flex; align-items: center; justify-content: center;
+    background: none;
+    border: none;
+    border-radius: 0.5rem;
+    cursor: pointer;
+    color: var(--ink-faint);
+    padding: 0;
+  }
+  .nav-toggle svg{ width: 0.85rem; height: 0.85rem; transition: transform 0.15s ease; }
+  .nav-toggle.expanded svg{ transform: rotate(90deg); }
+  .nav-toggle:active{ background: var(--surface); }
+  .nav-toggle:focus-visible{ outline: 2px solid var(--accent); outline-offset: -2px; }
+
+  .nav-sublist{
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    overflow: hidden;
+    max-height: 0;
+    transition: max-height 0.2s ease;
+  }
+  .nav-sublist.expanded{ max-height: 20rem; }
+  .nav-sublist li{ margin: 0; }
+  .nav-subitem{
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    width: calc(100% - 2.6rem);
+    margin-left: 2.6rem;
+    text-align: left;
+    font: inherit;
+    font-size: 0.92rem;
+    font-weight: 600;
+    background: none;
+    border: none;
+    border-left: 3px solid transparent;
+    min-height: 2.75rem;
+    padding: 0.55rem 0.7rem;
+    border-radius: 0.5rem;
+    cursor: pointer;
+    color: var(--ink-faint);
+  }
+  .nav-subitem .nav-subitem-title{ flex: 1 1 auto; min-width: 0; }
+  .nav-subitem:active{ background: var(--surface); }
+  .nav-subitem.active{
+    background: var(--accent-soft);
+    border-left-color: var(--accent);
+    color: var(--accent-ink);
+  }
+  .nav-subitem:focus-visible{ outline: 2px solid var(--accent); outline-offset: -2px; }
+
+  .hidden-by-filter{ display: none !important; }
+
+  /* ---- pinned "Home" row: lives above the regular nav-nodes, outside the
+     search-filterable set, visually set apart by a thin separator + accent tint ---- */
+  .home-pin-row{ color: var(--accent-ink); }
+  .home-pin-sep{
+    height: 1px;
+    background: var(--border);
+    margin: 0.3rem 0.75rem 0.6rem;
+  }
+
+  /* ---- select-mode checkbox indicator: hidden in normal browse mode, shown when
+     #tocPanel carries .select-mode; toggled per-row via JS (.checked) ---- */
+  .pin-check{
+    display: none;
+    flex: 0 0 auto;
+    width: 1.3rem; height: 1.3rem;
+    border-radius: 50%;
+    border: 2px solid var(--border);
+    background: var(--surface);
+    position: relative;
+  }
+  #tocPanel.select-mode .pin-check{ display: block; }
+  .pin-check.checked{ background: var(--accent); border-color: var(--accent); }
+  .pin-check.checked::after{
+    content: '';
+    position: absolute;
+    left: 0.34rem; top: 0.14rem;
+    width: 0.36rem; height: 0.62rem;
+    border-right: 2px solid var(--surface);
+    border-bottom: 2px solid var(--surface);
+    transform: rotate(40deg);
+  }
+
+  /* ---- select-mode: hide the pinned Home row entirely (it isn't a pinnable target) ---- */
+  #tocPanel.select-mode .home-pin-row,
+  #tocPanel.select-mode .home-pin-sep{ display: none; }
+
+  /* ---- select-mode top bar: only visible while #tocPanel.select-mode is set ---- */
+  .select-mode-bar{
+    display: none;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.6rem;
+    background: var(--accent-soft);
+    border: 1px solid var(--accent);
+    border-radius: 0.625rem;
+    padding: 0.6rem 0.7rem 0.6rem 0.9rem;
+    margin: 0 0 0.7rem;
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: var(--accent-ink);
+  }
+  #tocPanel.select-mode .select-mode-bar{ display: flex; }
+  .select-mode-done{
+    flex: 0 0 auto;
+    font: inherit;
+    font-weight: 700;
+    font-size: 0.9rem;
+    color: var(--accent-ink);
+    background: var(--surface);
+    border: 1px solid var(--accent);
+    border-radius: 0.5rem;
+    min-height: 2.25rem;
+    padding: 0.35rem 0.85rem;
+    cursor: pointer;
+  }
+  .select-mode-done:active{ background: var(--accent-soft); }
+  .select-mode-done:focus-visible{ outline: 2px solid var(--accent); outline-offset: 1px; }
+
+  .toc-no-results{
+    display: none;
+    text-align: center;
+    color: var(--ink-faint);
+    font-size: 0.9rem;
+    padding: 2rem 1rem;
+  }
+  .toc-no-results.show{ display: block; }
+
+  /* ==================================================================
+     Content pane
+     ================================================================== */
+  .content-header{
+    flex: 0 0 auto;
+    display: flex;
+    align-items: center;
+    gap: 0.7rem;
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    padding: calc(0.6rem + env(safe-area-inset-top)) 0.9rem 0.6rem;
+    box-shadow: var(--shadow);
+  }
+  /* ---- hamburger: fixed physical size on purpose, so it never scales with zoom and
+     always stays a reachable, reopenable control at any zoom level ---- */
+  .menu-btn{
+    flex: 0 0 auto;
+    width: 40px; height: 40px;
+    display: flex; align-items: center; justify-content: center;
+    border: 1px solid var(--border);
+    background: var(--surface-2);
+    border-radius: 8px;
+    color: var(--ink);
+    cursor: pointer;
+    padding: 0;
+  }
+  .menu-btn:active{ background: var(--accent-soft); border-color: var(--accent); }
+  .menu-btn:focus-visible{ outline: 2px solid var(--accent); outline-offset: 1px; }
+  .menu-btn svg{ width: 20px; height: 20px; }
+
+  .content-header-titles{ flex: 1 1 auto; min-width: 0; }
+  .content-header-titles .eyebrow{ margin: 0 0 0.1rem; }
+  .page-title-live{
+    font-family: var(--serif);
+    font-weight: 500;
+    font-size: 1.2rem;
+    line-height: 1.25;
+    margin: 0;
+    color: var(--ink);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  /* ---- per-page "+ Add" / "+/- Added" toggle (Home's own header shows "+ Add link"
+     instead) — reuses the .badge pill look, reset to behave as a real button ---- */
+  .home-toggle-btn{
+    flex: 0 0 auto;
+    border: none;
+    font: inherit;
+    cursor: pointer;
+  }
+  .home-toggle-btn:active{ opacity: 0.75; }
+  .home-toggle-btn:focus-visible{ outline: 2px solid var(--accent); outline-offset: 2px; }
+
+  .pages-scroll{
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    padding: 0 1.1rem calc(1.5rem + env(safe-area-inset-bottom));
+  }
+
+  .page{ display: none; }
+  .page.active{ display: block; }
+
+  .page-card{
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 0.875rem;
+    box-shadow: var(--shadow);
+    overflow: hidden;
+    margin: 1rem 0;
+  }
+  .page-card-head{
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+    padding: 1rem 1.1rem 0.6rem;
+  }
+  .page-card-titlewrap{ display: flex; align-items: center; gap: 0.6rem; flex-wrap: wrap; min-width: 0; }
+  .page-card-head h2{
+    font-family: var(--serif);
+    font-weight: 500;
+    font-size: 1.18rem;
+    margin: 0;
+    color: var(--ink);
+  }
+  .page-card-body{ padding: 0 1.1rem 1.15rem; }
+  .page-card-body p{ margin: 0 0 0.85rem; }
+  .page-card-body p:last-child{ margin-bottom: 0; }
+  .page-card-body ul{ margin: 0 0 0.85rem; padding-left: 1.2rem; }
+  .page-card-body li{ margin-bottom: 0.55rem; }
+  .page-card-body li:last-child{ margin-bottom: 0; }
+
+  /* ---- "back to parent" link on a child page ---- */
+  .page-back{
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+    font: inherit;
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: var(--ink-faint);
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 0.4rem 1.1rem 0;
+    margin: 0.6rem 0 -0.2rem;
+  }
+  .page-back svg{ width: 0.8125rem; height: 0.8125rem; flex-shrink: 0; }
+  .page-back:active{ color: var(--accent-ink); }
+  .page-back:focus-visible{ outline: 2px solid var(--accent); outline-offset: 2px; }
+
+  /* ---- a tappable row on a parent page that jumps straight to one child page ---- */
+  .child-link-list{ display: flex; flex-direction: column; gap: 0.6rem; margin: 0.7rem 0 0.9rem; }
+  .child-link-row{
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+    width: 100%;
+    text-align: left;
+    font: inherit;
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    border-radius: 0.625rem;
+    min-height: 3.5rem;
+    padding: 0.7rem 0.9rem;
+    cursor: pointer;
+    color: var(--ink);
+  }
+  .child-link-row:active{ border-color: var(--accent); background: var(--accent-soft); }
+  .child-link-row:focus-visible{ outline: 2px solid var(--accent); outline-offset: 1px; }
+  .child-link-text{ min-width: 0; }
+  .child-link-title{ font-weight: 600; font-size: 1rem; }
+  .child-link-sub{ font-size: 0.82rem; color: var(--ink-faint); margin-top: 0.1rem; }
+  .child-link-row .chevron-right{ flex-shrink: 0; width: 1.125rem; height: 1.125rem; color: var(--ink-faint); }
+  .child-link-list.tight{ margin: 0; }
+
+  /* ==================================================================
+     Home page — rendered dynamically from the pinned-links list
+     ================================================================== */
+  .home-block{ margin: 0 0 0.9rem; }
+  .home-block:last-child{ margin-bottom: 0; }
+
+  /* ---- pinned pages WITH a parent: grouped under one outer box titled with the
+     parent's label; pinned pages with NO parent render as plain standalone rows
+     (via .child-link-list.tight above), deliberately NOT boxed like this ---- */
+  .home-group{
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    border-radius: 0.75rem;
+    padding: 0.85rem 0.85rem 0.9rem;
+  }
+  .home-group-title{
+    font-family: var(--serif);
+    font-weight: 500;
+    font-size: 1rem;
+    margin: 0 0 0.6rem;
+    color: var(--ink);
+  }
+
+  .home-empty{
+    text-align: center;
+    padding: 1.4rem 0.5rem 0.6rem;
+  }
+  .home-empty p{ color: var(--ink-soft); }
+
+  .home-add-btn{
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font: inherit;
+    font-weight: 700;
+    font-size: 0.95rem;
+    color: var(--accent-ink);
+    background: var(--accent-soft);
+    border: 1px solid var(--accent);
+    border-radius: 0.625rem;
+    min-height: 2.75rem;
+    padding: 0.6rem 1.1rem;
+    cursor: pointer;
+    margin: 0 auto;
+  }
+  .home-add-btn:active{ background: var(--accent); color: var(--surface); }
+  .home-add-btn:focus-visible{ outline: 2px solid var(--accent); outline-offset: 2px; }
+
+  .badge{
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    font-size: 0.68rem;
+    font-weight: 700;
+    padding: 0.24rem 0.55rem;
+    border-radius: 999px;
+    line-height: 1.4;
+    white-space: nowrap;
+  }
+  .badge.b-ok{ background: var(--ok-soft); color: var(--ok); }
+  .badge.b-warn{ background: var(--warn-soft); color: var(--warn); }
+  .badge.b-ref{ background: var(--ref-soft); color: var(--ref); }
+  .badge .dot{ width: 0.375rem; height: 0.375rem; border-radius: 50%; background: currentColor; }
+
+  .table-wrap{ overflow-x: auto; margin: 0.6rem 0 0.85rem; -webkit-overflow-scrolling: touch; }
+  table.compare{ width: 100%; border-collapse: collapse; font-size: 0.92rem; min-width: 420px; }
+  table.compare th, table.compare td{
+    text-align: left;
+    padding: 0.65rem 0.6rem;
+    border-bottom: 1px solid var(--border);
+    vertical-align: top;
+  }
+  table.compare th{
+    font-size: 0.68rem;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--ink-faint);
+    font-weight: 700;
+    white-space: nowrap;
+  }
+  table.compare td:first-child, table.compare th:first-child{
+    color: var(--ink-soft);
+    font-weight: 600;
+  }
+
+  /* ---- click-to-copy chip — task A: padding cut to roughly less than half of the previous
+     0.45rem/0.65rem, and the old min-height:44px removed outright (kept, it would have
+     overridden the padding cut and left the box the same height regardless). Font-size
+     is untouched. This is the one interactive element in the file allowed to sit below the
+     44px touch-target guidance used everywhere else — see CLAUDE.md task A. ---- */
+  .chip{
+    display: inline-flex;
+    align-items: center;
+    font-family: var(--mono);
+    font-size: 0.85rem;
+    font-weight: 600;
+    padding: 0.18rem 0.3rem;
+    border-radius: 0.5rem;
+    border: 1px solid var(--border);
+    background: var(--surface-2);
+    color: var(--accent-ink);
+    cursor: pointer;
+    line-height: 1.4;
+  }
+  .chip:active{ border-color: var(--accent); background: var(--accent-soft); transform: translateY(1px); }
+  .chip:focus-visible{ outline: 2px solid var(--accent); outline-offset: 1px; }
+
+  .duo{ display: grid; grid-template-columns: 1fr 1fr; gap: 0.7rem; margin: 0.6rem 0 0.85rem; }
+  @media (max-width: 360px){ .duo{ grid-template-columns: 1fr; } }
+  .duo .box{
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    border-radius: 0.625rem;
+    padding: 0.8rem 0.85rem;
+    min-width: 0;
+  }
+  .duo .box h4{ margin: 0 0 0.5rem; font-family: var(--mono); font-size: 0.8rem; color: var(--accent-ink); }
+  .duo .box ul{ margin: 0; padding-left: 1.05rem; font-size: 0.86rem; }
+  .duo .box li{ margin-bottom: 0.4rem; }
+  .duo .box li:last-child{ margin-bottom: 0; }
+
+  .spro-path{
+    display: block;
+    font-family: var(--mono);
+    font-size: 0.85rem;
+    line-height: 1.55;
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    border-left: 3px solid var(--accent);
+    border-radius: 0.5rem;
+    padding: 0.65rem 0.8rem;
+    margin: 0.5rem 0 0.85rem;
+    overflow-x: auto;
+    white-space: pre-wrap;
+    color: var(--ink);
+  }
+  .spro-label{
+    display: block;
+    font-family: var(--sans);
+    font-size: 0.68rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--ink-faint);
+    margin-bottom: 0.3rem;
+  }
+
+  .conf-tag{
+    font-family: var(--mono);
+    font-size: 0.68em;
+    font-weight: 700;
+    color: var(--ink-faint);
+    vertical-align: super;
+    margin-left: 0.2em;
+    white-space: nowrap;
+  }
+
+  mark.search-hit{
+    background: var(--mark-bg);
+    color: var(--mark-ink);
+    border-radius: 0.125rem;
+    padding: 0 0.0625rem;
+    font: inherit;
+  }
+
+  #toast{
+    position: fixed;
+    bottom: calc(1.5rem + env(safe-area-inset-bottom));
+    left: 50%;
+    transform: translateX(-50%) translateY(12px);
+    background: var(--ink);
+    color: var(--bg);
+    font-size: 0.85rem;
+    font-weight: 600;
+    padding: 0.6rem 1.1rem;
+    border-radius: 0.5rem;
+    box-shadow: var(--shadow);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.18s ease, transform 0.18s ease;
+    font-family: var(--mono);
+    z-index: 400;
+    max-width: calc(100vw - 2.5rem);
+    text-align: center;
+  }
+  #toast.show{ opacity: 1; transform: translateX(-50%) translateY(0); }
+
+  .footer-line{
+    text-align: center;
+    color: var(--ink-faint);
+    font-size: 0.75rem;
+    padding: 1.25rem 1rem 0.5rem;
+  }
+
+  /* ==================================================================
+     Zoom pill — task B: deliberately all fixed px, not rem/em, so this
+     control (and its label) stays the same physical size at every zoom
+     level, same reasoning as the hamburger above. Sits above both panes
+     so it is reachable whether the drawer or the content is showing.
+     ================================================================== */
+  #zoomPill{
+    position: fixed;
+    right: 14px;
+    bottom: 14px;
+    z-index: 300;
+    display: flex;
+    align-items: center;
+    gap: 2px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    box-shadow: var(--shadow);
+    padding: 4px;
+  }
+  .zoom-btn{
+    width: 34px; height: 34px;
+    display: flex; align-items: center; justify-content: center;
+    border: none;
+    background: var(--surface-2);
+    border-radius: 999px;
+    color: var(--ink);
+    font-size: 18px;
+    font-weight: 700;
+    line-height: 1;
+    cursor: pointer;
+    font-family: var(--sans);
+  }
+  .zoom-btn:active{ background: var(--accent-soft); color: var(--accent-ink); }
+  .zoom-btn:disabled{ opacity: 0.35; cursor: default; }
+  .zoom-btn:focus-visible{ outline: 2px solid var(--accent); outline-offset: 1px; }
+  .zoom-label{
+    width: 44px;
+    text-align: center;
+    font-family: var(--mono);
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--ink-soft);
+    white-space: nowrap;
+  }
+</style>
+</head>
+<body>
+
+  <!-- ================= Content pane (sits behind the drawer, full-screen, lower z-index) ================= -->
+  <div class="pane" id="contentPane">
+    <header class="content-header">
+      <button type="button" class="menu-btn" id="menuBtn" aria-label="Open menu">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="7" x2="20" y2="7"/><line x1="4" y1="12" x2="20" y2="12"/><line x1="4" y1="17" x2="20" y2="17"/></svg>
+      </button>
+      <div class="content-header-titles">
+        <p class="eyebrow">Nutrition · Quick Reference</p>
+        <h1 class="page-title-live" id="pageTitleLive">Home</h1>
+      </div>
+      <button type="button" class="badge b-warn home-toggle-btn" id="homeToggleBtn" aria-label="Add this page to Home"><span class="dot"></span><span id="homeToggleLabel">+ Add link</span></button>
+    </header>
+
+    <div class="pages-scroll" id="pagesScroll">
+
+      <!-- Home (default landing page; body is rendered dynamically by JS from the
+           pinned-links list — see renderHome() near the bottom of the script) -->
+      <section class="page active" data-page="home">
+        <div class="page-card">
+          <div class="page-card-head">
+            <span class="page-card-titlewrap">
+              <h2>Home</h2>
+              <span class="badge b-warn"><span class="dot"></span>Dummy data</span>
+            </span>
+          </div>
+          <div class="page-card-body" id="homeBody">
+            <!-- filled in by renderHome() on load and every time Home becomes active -->
+          </div>
+        </div>
+      </section>
+
+      <!-- Carb conversions (leaf) -->
+      <section class="page" data-page="carbs">
+        <div class="page-card">
+          <div class="page-card-head">
+            <span class="page-card-titlewrap">
+              <h2>Carb conversions</h2>
+              <span class="badge b-ref"><span class="dot"></span>programme sheet</span>
+            </span>
+          </div>
+          <div class="page-card-body">
+            <p>50 g carbohydrate equals any ONE of:</p>
+            <div class="table-wrap">
+              <table class="compare">
+                <thead><tr><th>Food</th><th>Amount</th></tr></thead>
+                <tbody>
+                  <tr><td>Pasta (dry)</td><td><span class="chip" data-copy="75 g pasta (dry)">75 g pasta (dry)</span></td></tr>
+                  <tr><td>Rice (dry)</td><td><span class="chip" data-copy="65 g rice (dry)">65 g rice (dry)</span></td></tr>
+                  <tr><td>Vollkornbrot</td><td><span class="chip" data-copy="130 g Vollkornbrot">130 g Vollkornbrot</span></td></tr>
+                  <tr><td>Potatoes</td><td><span class="chip" data-copy="350 g potatoes">350 g potatoes</span></td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Day targets (parent) -->
+      <section class="page" data-page="targets">
+        <div class="page-card">
+          <div class="page-card-head">
+            <span class="page-card-titlewrap">
+              <h2>Day targets</h2>
+              <span class="badge b-ok"><span class="dot"></span>targets</span>
+            </span>
+          </div>
+          <div class="page-card-body">
+            <p>Macro targets split by whether it's a training day or a rest day. Pick one below.</p>
+            <div class="child-link-list">
+              <button type="button" class="child-link-row" data-goto="targets-training">
+                <span class="child-link-text">
+                  <span class="child-link-title">Training day</span>
+                  <span class="child-link-sub">≈1,900 kcal · Carbohydrate ≈180 g</span>
+                </span>
+                <svg class="chevron-right" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 6 15 12 9 18"/></svg>
+              </button>
+              <button type="button" class="child-link-row" data-goto="targets-rest">
+                <span class="child-link-text">
+                  <span class="child-link-title">Rest day</span>
+                  <span class="child-link-sub">≈1,550 kcal · Carbohydrate ≈80 g</span>
+                </span>
+                <svg class="chevron-right" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 6 15 12 9 18"/></svg>
+              </button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Day targets > Training day (child) -->
+      <section class="page" data-page="targets-training">
+        <button type="button" class="page-back" data-back="targets">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+          <span>Day targets</span>
+        </button>
+        <div class="page-card">
+          <div class="page-card-head">
+            <span class="page-card-titlewrap"><h2>Training day</h2></span>
+          </div>
+          <div class="page-card-body">
+            <ul>
+              <li>≈1,900 kcal</li>
+              <li>Protein 180 g</li>
+              <li>Fat 50 g</li>
+              <li>Carbohydrate ≈180 g</li>
+            </ul>
+          </div>
+        </div>
+      </section>
+
+      <!-- Day targets > Rest day (child) -->
+      <section class="page" data-page="targets-rest">
+        <button type="button" class="page-back" data-back="targets">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+          <span>Day targets</span>
+        </button>
+        <div class="page-card">
+          <div class="page-card-head">
+            <span class="page-card-titlewrap"><h2>Rest day</h2></span>
+          </div>
+          <div class="page-card-body">
+            <ul>
+              <li>≈1,550 kcal</li>
+              <li>Protein 175 g</li>
+              <li>Fat 55 g</li>
+              <li>Carbohydrate ≈80 g</li>
+            </ul>
+          </div>
+        </div>
+      </section>
+
+      <!-- Timing rules (leaf) -->
+      <section class="page" data-page="timing">
+        <div class="page-card">
+          <div class="page-card-head">
+            <span class="page-card-titlewrap"><h2>Timing rules</h2></span>
+          </div>
+          <div class="page-card-body">
+            <ul>
+              <li>Full meal 3–5 h before training.</li>
+              <li>Protein + carbs within ~2 h after training.</li>
+              <li>If trained fasted: eat within 60 min of finishing.</li>
+            </ul>
+            <div class="spro-path"><span class="spro-label">Rule of thumb</span>When in doubt about pre-workout timing, eat the meal earlier rather than later — a session started too full costs more than one started slightly hungry.</div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Fat sources (leaf) -->
+      <section class="page" data-page="fats">
+        <div class="page-card">
+          <div class="page-card-head">
+            <span class="page-card-titlewrap"><h2>Fat sources</h2></span>
+          </div>
+          <div class="page-card-body">
+            <ul>
+              <li>Olive oil, 1 tbsp = <span class="chip" data-copy="14 g fat">14 g fat</span></li>
+              <li>Salmon, 100 g ≈ <span class="chip" data-copy="13 g fat">13 g fat</span></li>
+              <li>Almonds, 30 g ≈ <span class="chip" data-copy="15 g fat">15 g fat</span></li>
+              <li>Avocado, ½ ≈ <span class="chip" data-copy="15 g fat">15 g fat</span></li>
+            </ul>
+            <p>Fat needs scale mainly with total calorie target rather than body weight alone.<span class="conf-tag">[Likely]</span></p>
+          </div>
+        </div>
+      </section>
+
+      <!-- Session carbs (parent) -->
+      <section class="page" data-page="sessions">
+        <div class="page-card">
+          <div class="page-card-head">
+            <span class="page-card-titlewrap"><h2>Session carbs</h2></span>
+          </div>
+          <div class="page-card-body">
+            <p>Extra carbs on top of the day target, by session type. Pick one below.</p>
+            <div class="child-link-list">
+              <button type="button" class="child-link-row" data-goto="sessions-back-biceps">
+                <span class="child-link-text">
+                  <span class="child-link-title">Back + Biceps</span>
+                  <span class="child-link-sub">18 sets · ≈ +105 g</span>
+                </span>
+                <svg class="chevron-right" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 6 15 12 9 18"/></svg>
+              </button>
+              <button type="button" class="child-link-row" data-goto="sessions-chest-triceps">
+                <span class="child-link-text">
+                  <span class="child-link-title">Chest + Triceps</span>
+                  <span class="child-link-sub">18 sets · ≈ +105 g</span>
+                </span>
+                <svg class="chevron-right" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 6 15 12 9 18"/></svg>
+              </button>
+              <button type="button" class="child-link-row" data-goto="sessions-legs-shoulders">
+                <span class="child-link-text">
+                  <span class="child-link-title">Legs + Shoulders</span>
+                  <span class="child-link-sub">27 sets · ≈ +130 g</span>
+                </span>
+                <svg class="chevron-right" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 6 15 12 9 18"/></svg>
+              </button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Session carbs > Back + Biceps (child) -->
+      <section class="page" data-page="sessions-back-biceps">
+        <button type="button" class="page-back" data-back="sessions">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+          <span>Session carbs</span>
+        </button>
+        <div class="page-card">
+          <div class="page-card-head">
+            <span class="page-card-titlewrap"><h2>Back + Biceps</h2></span>
+          </div>
+          <div class="page-card-body">
+            <ul>
+              <li>18 sets</li>
+              <li>Extra carbs: ≈ +105 g</li>
+            </ul>
+          </div>
+        </div>
+      </section>
+
+      <!-- Session carbs > Chest + Triceps (child) -->
+      <section class="page" data-page="sessions-chest-triceps">
+        <button type="button" class="page-back" data-back="sessions">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+          <span>Session carbs</span>
+        </button>
+        <div class="page-card">
+          <div class="page-card-head">
+            <span class="page-card-titlewrap"><h2>Chest + Triceps</h2></span>
+          </div>
+          <div class="page-card-body">
+            <ul>
+              <li>18 sets</li>
+              <li>Extra carbs: ≈ +105 g</li>
+            </ul>
+          </div>
+        </div>
+      </section>
+
+      <!-- Session carbs > Legs + Shoulders (child) -->
+      <section class="page" data-page="sessions-legs-shoulders">
+        <button type="button" class="page-back" data-back="sessions">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+          <span>Session carbs</span>
+        </button>
+        <div class="page-card">
+          <div class="page-card-head">
+            <span class="page-card-titlewrap"><h2>Legs + Shoulders</h2></span>
+          </div>
+          <div class="page-card-body">
+            <ul>
+              <li>27 sets</li>
+              <li>Extra carbs: ≈ +130 g</li>
+            </ul>
+          </div>
+        </div>
+      </section>
+
+      <!-- About (leaf) -->
+      <section class="page" data-page="about">
+        <div class="page-card">
+          <div class="page-card-head">
+            <span class="page-card-titlewrap"><h2>About this preview</h2></span>
+          </div>
+          <div class="page-card-body">
+            <p>This is a design-preview dummy of a phone "nutrition quick-reference" app, built to evaluate the paginated drawer-navigation model, touch targets, zoom, and dark/light behaviour before any real content goes in.</p>
+            <p>Every figure in this file — carb conversions, day targets, timing windows, fat grams, session carb estimates — is invented placeholder data, not sourced from a label, BLS/USDA, or the programme sheets. The "Dummy data" badge on the Home screen is a permanent reminder of that; this page is where the full explanation lives so it doesn't need repeating on every screen.</p>
+            <p>Generated 2026-07-30.</p>
+          </div>
+        </div>
+      </section>
+
+      <p class="footer-line">Dummy preview · generated 2026-07-30 · works fully offline</p>
+
+    </div>
+  </div>
+
+  <!-- ================= ToC drawer (on top, CLOSED by default, slides left to reveal content) ================= -->
+  <div class="pane toc-closed" id="tocPanel">
+    <div class="toc-head">
+      <p class="eyebrow">Nutrition · Quick Reference</p>
+      <h1 class="app-title">Toni's Nutrition</h1>
+      <div class="callout"><strong>Design preview.</strong> All numbers in this file are dummy placeholders — not sourced, not advice. For look-and-feel evaluation only.</div>
+      <div class="select-mode-bar" id="selectModeBar">
+        <span>Selecting pages for Home</span>
+        <button type="button" class="select-mode-done" id="selectModeDoneBtn">Done</button>
+      </div>
+      <div class="search-wrap">
+        <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        <input id="searchInput" class="search-input" type="text" placeholder="Search sections…" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" />
+        <button type="button" class="search-clear" id="searchClearBtn" aria-label="Clear search">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+      </div>
+    </div>
+
+    <nav class="toc-list" id="tocList" aria-label="Table of contents">
+
+      <!-- Pinned Home row: always visible (not part of the search-filterable nav-node
+           set below), navigate-mode only — hidden entirely while in select mode ---- -->
+      <button type="button" class="nav-item home-pin-row" id="homePinRow" data-goto="home">
+        <span class="nav-item-title">🏠 Home</span>
+      </button>
+      <div class="home-pin-sep"></div>
+
+      <div class="nav-node" data-node="carbs">
+        <div class="nav-item-row">
+          <button type="button" class="nav-item" data-goto="carbs">
+            <span class="pin-check" data-pin-check aria-hidden="true"></span>
+            <span class="nav-item-title">Carb conversions</span>
+          </button>
+        </div>
+      </div>
+
+      <div class="nav-node" data-node="targets">
+        <div class="nav-item-row">
+          <button type="button" class="nav-item" data-goto="targets">
+            <span class="pin-check" data-pin-check aria-hidden="true"></span>
+            <span class="nav-item-title">Day targets</span>
+          </button>
+          <button type="button" class="nav-toggle" data-toggle="targets" aria-expanded="false" aria-label="Expand Day targets submenu">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 6 15 12 9 18"/></svg>
+          </button>
+        </div>
+        <ul class="nav-sublist" data-sublist="targets">
+          <li><button type="button" class="nav-subitem" data-goto="targets-training"><span class="pin-check" data-pin-check aria-hidden="true"></span><span class="nav-subitem-title">Training day</span></button></li>
+          <li><button type="button" class="nav-subitem" data-goto="targets-rest"><span class="pin-check" data-pin-check aria-hidden="true"></span><span class="nav-subitem-title">Rest day</span></button></li>
+        </ul>
+      </div>
+
+      <div class="nav-node" data-node="timing">
+        <div class="nav-item-row">
+          <button type="button" class="nav-item" data-goto="timing">
+            <span class="pin-check" data-pin-check aria-hidden="true"></span>
+            <span class="nav-item-title">Timing rules</span>
+          </button>
+        </div>
+      </div>
+
+      <div class="nav-node" data-node="fats">
+        <div class="nav-item-row">
+          <button type="button" class="nav-item" data-goto="fats">
+            <span class="pin-check" data-pin-check aria-hidden="true"></span>
+            <span class="nav-item-title">Fat sources</span>
+          </button>
+        </div>
+      </div>
+
+      <div class="nav-node" data-node="sessions">
+        <div class="nav-item-row">
+          <button type="button" class="nav-item" data-goto="sessions">
+            <span class="pin-check" data-pin-check aria-hidden="true"></span>
+            <span class="nav-item-title">Session carbs</span>
+          </button>
+          <button type="button" class="nav-toggle" data-toggle="sessions" aria-expanded="false" aria-label="Expand Session carbs submenu">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 6 15 12 9 18"/></svg>
+          </button>
+        </div>
+        <ul class="nav-sublist" data-sublist="sessions">
+          <li><button type="button" class="nav-subitem" data-goto="sessions-back-biceps"><span class="pin-check" data-pin-check aria-hidden="true"></span><span class="nav-subitem-title">Back + Biceps</span></button></li>
+          <li><button type="button" class="nav-subitem" data-goto="sessions-chest-triceps"><span class="pin-check" data-pin-check aria-hidden="true"></span><span class="nav-subitem-title">Chest + Triceps</span></button></li>
+          <li><button type="button" class="nav-subitem" data-goto="sessions-legs-shoulders"><span class="pin-check" data-pin-check aria-hidden="true"></span><span class="nav-subitem-title">Legs + Shoulders</span></button></li>
+        </ul>
+      </div>
+
+      <div class="nav-node" data-node="about">
+        <div class="nav-item-row">
+          <button type="button" class="nav-item" data-goto="about">
+            <span class="pin-check" data-pin-check aria-hidden="true"></span>
+            <span class="nav-item-title">About</span>
+          </button>
+        </div>
+      </div>
+
+      <p class="toc-no-results" id="tocNoResults">No sections match that search.</p>
+
+    </nav>
+  </div>
+
+  <!-- ================= Zoom pill: fixed physical size, scales everything else via root font-size ================= -->
+  <div id="zoomPill" role="group" aria-label="Zoom">
+    <button type="button" class="zoom-btn" id="zoomOutBtn" aria-label="Zoom out">&minus;</button>
+    <span class="zoom-label" id="zoomLabel">100%</span>
+    <button type="button" class="zoom-btn" id="zoomInBtn" aria-label="Zoom in">+</button>
+  </div>
+
+  <div id="toast"></div>
+
+<script>
+(function(){
+  'use strict';
+
+  /* ============================================================
+     Nav tree — single source of truth for parent/child relations,
+     labels, and which page is which. Everything below (search,
+     drawer expand-on-reopen, child-link teasers, back-links) reads
+     from this instead of re-deriving it from the DOM.
+     ============================================================ */
+  var NAV_TREE = [
+    { id: 'carbs', label: 'Carb conversions' },
+    { id: 'targets', label: 'Day targets', children: [
+        { id: 'targets-training', label: 'Training day' },
+        { id: 'targets-rest', label: 'Rest day' }
+      ] },
+    { id: 'timing', label: 'Timing rules' },
+    { id: 'fats', label: 'Fat sources' },
+    { id: 'sessions', label: 'Session carbs', children: [
+        { id: 'sessions-back-biceps', label: 'Back + Biceps' },
+        { id: 'sessions-chest-triceps', label: 'Chest + Triceps' },
+        { id: 'sessions-legs-shoulders', label: 'Legs + Shoulders' }
+      ] },
+    { id: 'about', label: 'About' }
+  ];
+
+  var LABEL_BY_ID = {};
+  var PARENT_OF = {}; // child id -> parent node id
+  NAV_TREE.forEach(function(node){
+    LABEL_BY_ID[node.id] = node.label;
+    (node.children || []).forEach(function(child){
+      LABEL_BY_ID[child.id] = child.label;
+      PARENT_OF[child.id] = node.id;
+    });
+  });
+  // 'home' deliberately lives outside NAV_TREE — it's the landing page, not a regular
+  // nav destination, so it never appears in the ToC list / search / select-mode picker.
+  LABEL_BY_ID['home'] = 'Home';
+
+  /* ============================================================
+     Pinned-Home-links — the ONE deliberate localStorage exception in this
+     file (see the file-header comment). Everything else here is in-memory
+     only and resets on reload; this alone survives, because a "customize
+     your home screen" feature that forgets itself every reload is useless.
+     Stored as a plain JSON array of page ids under a single dedicated key.
+     ============================================================ */
+  var HOME_LINKS_KEY = 'nutritionWrapperHomeLinks';
+
+  function loadPinnedIds(){
+    try {
+      var raw = window.localStorage.getItem(HOME_LINKS_KEY);
+      if (!raw) return [];
+      var parsed = JSON.parse(raw);
+      if (!Array.isArray(parsed)) return [];
+      return parsed.filter(function(id){ return typeof id === 'string' && LABEL_BY_ID[id]; });
+    } catch (e) {
+      return []; // missing or malformed — fall back to empty, never throw
+    }
+  }
+  function savePinnedIds(){
+    try { window.localStorage.setItem(HOME_LINKS_KEY, JSON.stringify(pinnedIds)); }
+    catch (e) { /* storage unavailable — pins just won't survive reload */ }
+  }
+
+  var pinnedIds = loadPinnedIds();
+  function isPinned(id){ return pinnedIds.indexOf(id) !== -1; }
+  function setPinned(id, shouldPin){
+    var idx = pinnedIds.indexOf(id);
+    if (shouldPin && idx === -1){ pinnedIds.push(id); }
+    else if (!shouldPin && idx !== -1){ pinnedIds.splice(idx, 1); }
+    savePinnedIds();
+  }
+  function togglePinned(id){
+    setPinned(id, !isPinned(id));
+    return isPinned(id);
+  }
+
+  var toast = document.getElementById('toast');
+  var toastTimer;
+  function showToast(text){
+    toast.textContent = text;
+    toast.classList.add('show');
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(function(){ toast.classList.remove('show'); }, 1200);
+  }
+
+  /* ---- click-to-copy chips ---- */
+  document.querySelectorAll('.chip[data-copy]').forEach(function(chip){
+    chip.addEventListener('click', function(e){
+      e.preventDefault();
+      var val = chip.getAttribute('data-copy');
+      if (navigator.clipboard && navigator.clipboard.writeText){
+        navigator.clipboard.writeText(val).then(function(){
+          showToast('Copied ' + val);
+        }).catch(function(){
+          showToast(val);
+        });
+      } else {
+        showToast(val);
+      }
+    });
+  });
+
+  /* ============================================================
+     Pages: exactly one visible at a time
+     ============================================================ */
+  var pages = Array.prototype.slice.call(document.querySelectorAll('.page[data-page]'));
+  var pagesScroll = document.getElementById('pagesScroll');
+  var pageTitleLive = document.getElementById('pageTitleLive');
+  var currentPageId = 'home';
+
+  function showPage(id){
+    if (!LABEL_BY_ID[id]) return;
+    currentPageId = id;
+    pages.forEach(function(p){ p.classList.toggle('active', p.dataset.page === id); });
+    pageTitleLive.textContent = LABEL_BY_ID[id];
+    pagesScroll.scrollTop = 0;
+    updateHeaderToggle();
+    // re-render every time Home becomes active so it never shows stale pinned state
+    if (id === 'home') renderHome();
+  }
+
+  document.querySelectorAll('.child-link-row[data-goto]').forEach(function(row){
+    row.addEventListener('click', function(){ showPage(row.getAttribute('data-goto')); });
+  });
+  document.querySelectorAll('.page-back[data-back]').forEach(function(btn){
+    btn.addEventListener('click', function(){ showPage(btn.getAttribute('data-back')); });
+  });
+
+  /* ============================================================
+     Content-header toggle slot: "+ Add" / "✓ Added" for the CURRENT
+     page everywhere except Home, where it becomes "+ Add link" and
+     opens the ToC in select mode instead of toggling a pin directly.
+     ============================================================ */
+  var homeToggleBtn = document.getElementById('homeToggleBtn');
+  var homeToggleLabel = document.getElementById('homeToggleLabel');
+
+  function onHeaderToggleClick(){
+    if (currentPageId === 'home'){
+      openToc('select');
+      return;
+    }
+    var nowPinned = togglePinned(currentPageId);
+    updateHeaderToggle();
+  }
+
+  function updateHeaderToggle(){
+    if (currentPageId === 'home'){
+      homeToggleLabel.textContent = '+ Add link';
+      homeToggleBtn.classList.remove('b-ok');
+      homeToggleBtn.classList.add('b-warn');
+      homeToggleBtn.setAttribute('aria-label', 'Add a link to Home');
+      return;
+    }
+    var pinned = isPinned(currentPageId);
+    homeToggleLabel.textContent = pinned ? '✓ Added' : '+ Add';
+    homeToggleBtn.classList.toggle('b-ok', pinned);
+    homeToggleBtn.classList.toggle('b-warn', !pinned);
+    homeToggleBtn.setAttribute('aria-label', pinned ? 'Remove this page from Home' : 'Add this page to Home');
+  }
+  homeToggleBtn.addEventListener('click', onHeaderToggleClick);
+
+  /* ============================================================
+     Home page: rendered dynamically from the pinned-links list every
+     time Home becomes the active page (see showPage() above), never
+     left stale from a previous visit.
+     ============================================================ */
+  var homeBody = document.getElementById('homeBody');
+
+  function makeChildLinkRow(id){
+    var btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'child-link-row';
+    var text = document.createElement('span');
+    text.className = 'child-link-text';
+    var title = document.createElement('span');
+    title.className = 'child-link-title';
+    title.textContent = LABEL_BY_ID[id];
+    text.appendChild(title);
+    btn.appendChild(text);
+    btn.insertAdjacentHTML('beforeend', '<svg class="chevron-right" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 6 15 12 9 18"/></svg>');
+    btn.addEventListener('click', function(){ showPage(id); });
+    return btn;
+  }
+
+  function makeAddLinkButton(){
+    var btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'home-add-btn';
+    btn.textContent = '+ Add link';
+    btn.addEventListener('click', function(){ openToc('select'); });
+    return btn;
+  }
+
+  function renderHome(){
+    homeBody.textContent = '';
+
+    if (pinnedIds.length === 0){
+      var empty = document.createElement('div');
+      empty.className = 'home-empty';
+      var p = document.createElement('p');
+      p.textContent = 'No shortcuts yet — tap + Add link above, or open any page and tap + Add to pin it here.';
+      empty.appendChild(p);
+      empty.appendChild(makeAddLinkButton());
+      homeBody.appendChild(empty);
+      return;
+    }
+
+    NAV_TREE.forEach(function(node){
+      // standalone: the node itself was pinned directly (leaf, or a parent pinned
+      // on its own account) — plain row, deliberately NOT wrapped in a group box
+      if (isPinned(node.id)){
+        var standaloneWrap = document.createElement('div');
+        standaloneWrap.className = 'home-block';
+        var standaloneList = document.createElement('div');
+        standaloneList.className = 'child-link-list tight';
+        standaloneList.appendChild(makeChildLinkRow(node.id));
+        standaloneWrap.appendChild(standaloneList);
+        homeBody.appendChild(standaloneWrap);
+      }
+
+      // grouped: any pinned children of this node get one shared box titled
+      // with the parent's own label, children kept in nav-tree order
+      var pinnedChildren = (node.children || []).filter(function(c){ return isPinned(c.id); });
+      if (pinnedChildren.length){
+        var groupWrap = document.createElement('div');
+        groupWrap.className = 'home-block home-group';
+        var groupTitle = document.createElement('h3');
+        groupTitle.className = 'home-group-title';
+        groupTitle.textContent = node.label;
+        groupWrap.appendChild(groupTitle);
+        var groupList = document.createElement('div');
+        groupList.className = 'child-link-list tight';
+        pinnedChildren.forEach(function(c){ groupList.appendChild(makeChildLinkRow(c.id)); });
+        groupWrap.appendChild(groupList);
+        homeBody.appendChild(groupWrap);
+      }
+    });
+  }
+
+  /* ============================================================
+     ToC drawer: CLOSED by default, slides to translateX(-100%) on
+     navigation, reopened via the hamburger (which re-expands the
+     branch containing the current page without disturbing any
+     other branch's expand/collapse state).
+     ============================================================ */
+  var tocPanel = document.getElementById('tocPanel');
+  var menuBtn = document.getElementById('menuBtn');
+  var homePinRow = document.getElementById('homePinRow');
+  var selectModeDoneBtn = document.getElementById('selectModeDoneBtn');
+  var selectMode = false; // true only while the drawer was opened via "+ Add link"
+
+  var navToggles = {}; // node id -> { toggleBtn, sublistEl, setExpanded(bool) }
+  Array.prototype.slice.call(document.querySelectorAll('.nav-node')).forEach(function(nodeEl){
+    var nodeId = nodeEl.dataset.node;
+    var toggleBtn = nodeEl.querySelector('.nav-toggle');
+    var sublistEl = nodeEl.querySelector('.nav-sublist');
+    if (!toggleBtn || !sublistEl) return;
+    var entry = {
+      toggleBtn: toggleBtn,
+      sublistEl: sublistEl,
+      setExpanded: function(state){
+        toggleBtn.classList.toggle('expanded', state);
+        toggleBtn.setAttribute('aria-expanded', String(state));
+        sublistEl.classList.toggle('expanded', state);
+      }
+    };
+    navToggles[nodeId] = entry;
+    // chevron: expands/collapses children ONLY — never navigates, never closes the drawer
+    toggleBtn.addEventListener('click', function(e){
+      e.stopPropagation();
+      entry.setExpanded(!toggleBtn.classList.contains('expanded'));
+    });
+  });
+
+  function refreshPinChecks(){
+    document.querySelectorAll('.nav-node .pin-check').forEach(function(check){
+      var btn = check.closest('[data-goto]');
+      var id = btn ? btn.getAttribute('data-goto') : null;
+      check.classList.toggle('checked', !!id && isPinned(id));
+    });
+  }
+
+  // mode: 'navigate' (default, via hamburger or the pinned Home row) or 'select'
+  // (via any "+ Add link" control) — select mode never navigates and never closes
+  // on a row tap, only on "Done".
+  function openToc(mode){
+    selectMode = (mode === 'select');
+    tocPanel.classList.toggle('select-mode', selectMode);
+    if (selectMode){
+      refreshPinChecks();
+    } else {
+      // reveal whichever branch contains the page currently open behind the drawer,
+      // without touching any other branch's current expand/collapse state
+      var parentId = PARENT_OF[currentPageId];
+      if (parentId && navToggles[parentId]) navToggles[parentId].setExpanded(true);
+    }
+    tocPanel.classList.remove('toc-closed');
+  }
+  function closeToc(){
+    tocPanel.classList.add('toc-closed');
+  }
+  function exitSelectMode(){
+    selectMode = false;
+    tocPanel.classList.remove('select-mode');
+    closeToc();
+    if (currentPageId === 'home') renderHome();
+  }
+
+  menuBtn.addEventListener('click', function(){ openToc('navigate'); });
+  selectModeDoneBtn.addEventListener('click', exitSelectMode);
+
+  // pinned "Home" row: always plain navigate-mode, regardless of how the drawer
+  // was opened (it's hidden outright while select-mode is active, see CSS)
+  homePinRow.addEventListener('click', function(){
+    showPage('home');
+    closeToc();
+  });
+
+  // tapping a row's LABEL (leaf or parent): in normal mode, navigates and slides
+  // the drawer away; in select mode, toggles that page's pinned state instead —
+  // no navigation, no closing, just an updated checkbox.
+  document.querySelectorAll('.nav-node .nav-item[data-goto]').forEach(function(btn){
+    btn.addEventListener('click', function(){
+      var id = btn.getAttribute('data-goto');
+      if (selectMode){
+        togglePinned(id);
+        refreshPinChecks();
+        return;
+      }
+      showPage(id);
+      closeToc();
+    });
+  });
+  document.querySelectorAll('.nav-node .nav-subitem[data-goto]').forEach(function(btn){
+    btn.addEventListener('click', function(){
+      var id = btn.getAttribute('data-goto');
+      if (selectMode){
+        togglePinned(id);
+        refreshPinChecks();
+        return;
+      }
+      showPage(id);
+      closeToc();
+    });
+  });
+
+  /* ============================================================
+     ToC search: filters/highlights rows by their own label text
+     only (not page body content). Auto-expands a parent whose
+     child matches; clearing restores whatever expand state was
+     there before the search started.
+     ============================================================ */
+  var searchInput = document.getElementById('searchInput');
+  var clearBtn = document.getElementById('searchClearBtn');
+  var tocNoResults = document.getElementById('tocNoResults');
+  var autoExpandedDuringSearch = {}; // node id -> true, only for nodes THIS search forced open
+
+  function clearHighlight(titleEl){
+    var mark = titleEl.querySelector('mark.search-hit');
+    if (mark){
+      titleEl.textContent = titleEl.textContent; // drops the mark, keeps plain text
+    }
+  }
+
+  function highlightLabel(titleEl, label, query){
+    var lower = label.toLowerCase();
+    var idx = lower.indexOf(query);
+    if (idx === -1){ titleEl.textContent = label; return; }
+    titleEl.textContent = '';
+    if (idx > 0) titleEl.appendChild(document.createTextNode(label.slice(0, idx)));
+    var mark = document.createElement('mark');
+    mark.className = 'search-hit';
+    mark.textContent = label.slice(idx, idx + query.length);
+    titleEl.appendChild(mark);
+    if (idx + query.length < label.length) titleEl.appendChild(document.createTextNode(label.slice(idx + query.length)));
+  }
+
+  function applyTocFilter(rawQuery){
+    var query = rawQuery.trim().toLowerCase();
+    clearBtn.classList.toggle('show', query.length > 0);
+    var anyVisible = false;
+
+    Array.prototype.slice.call(document.querySelectorAll('.nav-node')).forEach(function(nodeEl){
+      var nodeId = nodeEl.dataset.node;
+      var itemBtn = nodeEl.querySelector('.nav-item');
+      var titleEl = itemBtn.querySelector('.nav-item-title');
+      var label = LABEL_BY_ID[nodeId];
+      var subButtons = Array.prototype.slice.call(nodeEl.querySelectorAll('.nav-subitem'));
+
+      if (!query){
+        nodeEl.classList.remove('hidden-by-filter');
+        titleEl.textContent = label;
+        subButtons.forEach(function(sub){
+          sub.closest('li').classList.remove('hidden-by-filter');
+          sub.querySelector('.nav-subitem-title').textContent = LABEL_BY_ID[sub.getAttribute('data-goto')];
+        });
+        if (autoExpandedDuringSearch[nodeId] && navToggles[nodeId]){
+          navToggles[nodeId].setExpanded(false);
+        }
+        delete autoExpandedDuringSearch[nodeId];
+        anyVisible = true;
+        return;
+      }
+
+      var parentMatches = label.toLowerCase().indexOf(query) !== -1;
+      var anyChildMatches = false;
+
+      subButtons.forEach(function(sub){
+        var childId = sub.getAttribute('data-goto');
+        var childLabel = LABEL_BY_ID[childId];
+        var childMatches = parentMatches || childLabel.toLowerCase().indexOf(query) !== -1;
+        sub.closest('li').classList.toggle('hidden-by-filter', !childMatches);
+        if (childMatches){
+          anyChildMatches = true;
+          var subTitleEl = sub.querySelector('.nav-subitem-title');
+          if (parentMatches) subTitleEl.textContent = childLabel;
+          else highlightLabel(subTitleEl, childLabel, query);
+        }
+      });
+
+      var nodeVisible = parentMatches || anyChildMatches;
+      nodeEl.classList.toggle('hidden-by-filter', !nodeVisible);
+      if (nodeVisible) anyVisible = true;
+
+      if (parentMatches) highlightLabel(titleEl, label, query);
+      else titleEl.textContent = label;
+
+      if (navToggles[nodeId]){
+        if (anyChildMatches && !parentMatches){
+          if (!navToggles[nodeId].toggleBtn.classList.contains('expanded')){
+            autoExpandedDuringSearch[nodeId] = true;
+          }
+          navToggles[nodeId].setExpanded(true);
+        }
+      }
+    });
+
+    tocNoResults.classList.toggle('show', !anyVisible);
+  }
+
+  searchInput.addEventListener('input', function(){ applyTocFilter(searchInput.value); });
+  clearBtn.addEventListener('click', function(){
+    searchInput.value = '';
+    applyTocFilter('');
+    searchInput.focus();
+  });
+
+  /* ============================================================
+     Zoom: 5 levels, 80/90/100/110/120% of the 16px root, changed
+     via document.documentElement.style.fontSize. Nearly every other
+     size in this file is rem, so the whole UI scales together — no
+     CSS zoom/transform, which fights position:fixed overlays like
+     the drawer above. In-memory only, resets to 100% on reload.
+     ============================================================ */
+  var ZOOM_LEVELS = [12.8, 14.4, 16, 17.6, 19.2]; // px, exact 80/90/100/110/120% of a 16px root
+  var ZOOM_PCT = [80, 90, 100, 110, 120];
+  var zoomIndex = 2; // 100%
+
+  var zoomOutBtn = document.getElementById('zoomOutBtn');
+  var zoomInBtn = document.getElementById('zoomInBtn');
+  var zoomLabel = document.getElementById('zoomLabel');
+
+  function applyZoom(){
+    document.documentElement.style.fontSize = ZOOM_LEVELS[zoomIndex] + 'px';
+    zoomLabel.textContent = ZOOM_PCT[zoomIndex] + '%';
+    zoomOutBtn.disabled = zoomIndex === 0;
+    zoomInBtn.disabled = zoomIndex === ZOOM_LEVELS.length - 1;
+  }
+  zoomOutBtn.addEventListener('click', function(){
+    if (zoomIndex > 0){ zoomIndex -= 1; applyZoom(); }
+  });
+  zoomInBtn.addEventListener('click', function(){
+    if (zoomIndex < ZOOM_LEVELS.length - 1){ zoomIndex += 1; applyZoom(); }
+  });
+  applyZoom();
+
+  /* ---- initial state: drawer CLOSED (.toc-closed is already on #tocPanel in the
+     markup), Home active — showPage() also triggers the first renderHome() call ---- */
+  showPage('home');
+
+  /* ============================================================
+     PWA packaging addition: register the service worker (sw.js, same
+     folder) so the app becomes installable and works offline once
+     served over a real http(s) origin. Guarded so it never throws on
+     browsers/contexts without serviceWorker support (e.g. plain file://).
+     ============================================================ */
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', function(){
+      navigator.serviceWorker.register('sw.js').catch(function(err){
+        console.warn('Service worker registration failed:', err);
+      });
+    });
+  }
+
+})();
+</script>
+
+</body>
+</html>
