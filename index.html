@@ -2702,6 +2702,9 @@
       originPageId: currentPageId,
       originAnchorId: btn.id,
       originScrollTop: pagesScroll.scrollTop,
+      // root font-size at jump time -- the layout-change signal the pop handler
+      // uses to decide between exact-offset restore and anchor repositioning
+      originZoomPx: parseFloat(document.documentElement.style.fontSize) || null,
       ts: Date.now()
     });
     saveCitationStack();
@@ -2749,14 +2752,35 @@
     showPageKeepStack(entry.originPageId);
     requestAnimationFrame(function(){
       var target = document.getElementById(entry.originAnchorId);
-      if (target){
+      var maxScroll = Math.max(0, pagesScroll.scrollHeight - pagesScroll.clientHeight);
+
+      // EXACTNESS FIRST. The requirement is to return the reader to the exact
+      // spot they left -- same scroll position -- not merely to the same
+      // paragraph. Anchor-based repositioning would silently shift the page
+      // whenever the marker wasn't already sitting a third of the way down,
+      // which is most of the time. So the recorded offset wins by default.
+      //
+      // The one case where that offset is meaningless is a layout change, and
+      // in this app layout changes for exactly one reason: the zoom control
+      // rewrites the root font-size, and nearly every dimension here is rem-
+      // based. So compare the root font-size captured at jump time against the
+      // current one, and only fall back to the anchor when they differ.
+      // (Deliberately NOT a "is the marker on screen?" test -- the marker was
+      // on screen by definition, since the user tapped it.)
+      var originZoomPx = typeof entry.originZoomPx === 'number' ? entry.originZoomPx : null;
+      var currentZoomPx = parseFloat(document.documentElement.style.fontSize) || null;
+      var layoutChanged = originZoomPx !== null && currentZoomPx !== null &&
+                          Math.abs(originZoomPx - currentZoomPx) > 0.01;
+
+      if (target && layoutChanged){
         scrollElementIntoViewWithinPagesScroll(target, true);
-        flashHighlight(target);
       } else {
-        // fallback per PLAN.md §2.3 step 3 -- anchor not found (page markup
-        // changed, or a stale/malformed sessionStorage entry survived reload)
-        pagesScroll.scrollTop = entry.originScrollTop;
+        // Exact restore. Also the best available answer when the anchor is gone
+        // entirely (page markup changed, or a stale sessionStorage entry
+        // survived a reload).
+        pagesScroll.scrollTop = Math.min(entry.originScrollTop, maxScroll);
       }
+      if (target) flashHighlight(target);
       updateBackControl();
     });
   });
