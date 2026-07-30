@@ -2373,7 +2373,10 @@
     var body = document.createElement('div');
     body.className = 'page-card-body';
 
-    if (topic.summary){
+    // The 'info' landing page's own first block already opens with this exact
+    // sentence (CONTENT-SPEC.md's "Summary paragraph"), so skip the teaser
+    // line there to avoid showing it twice in a row.
+    if (topic.summary && topic.id !== 'info'){
       var summaryP = document.createElement('p');
       summaryP.className = 'info-summary';
       summaryP.textContent = topic.summary;
