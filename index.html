@@ -19,11 +19,17 @@
   tags above, and the service-worker registration snippet near the bottom of the script block.
   No UI/UX/content changes were made relative to the dummy — this is packaging only.
 
-  DESIGN-PREVIEW DUMMY CONTENT — not a production build.
-  Every number in this file is a placeholder invented purely to preview layout/interaction
-  on a phone screen. Nothing here has been sourced from a label, BLS/USDA, or the programme
-  sheets. See CLAUDE.md / initial_instruc.md for the real project's sourcing rules — this
-  file intentionally does not follow them, because it isn't real content yet.
+  REAL PERSONAL CONTENT — as of 2026-07-30, no longer a design-preview dummy.
+  Every fact/number in the pages below is sourced from the project's own seed document
+  (initial_instruc.md, source blocks A-J transcribed 2026-07-30) — Toni's own programme
+  sheets, his seca mBCA scans, his Hevy training log, the project's own derived
+  calculations, and the one external citation used throughout (Aragon & Schoenfeld 2013,
+  on the Timing rules page). Confidence tags ([Certain]/[Likely]/[Guessing]) and badges
+  (b-ok/b-warn/b-ref) carry the sourcing tier — see the "About & sources" page for the
+  full convention and a compiled citation list. Several sub-topics are explicitly marked
+  BACKLOG / not yet developed within their own pages (per-food fat grams, pre-workout
+  fuelling timing, Phase 3/4 transitions, etc.) rather than filled in with invented
+  numbers — see CLAUDE.md / initial_instruc.md §9 for the full backlog list.
 
   Navigation model: a full-screen ToC "drawer" (CLOSED by default — "Home" is the landing
   page instead) lists every section, with collapsible submenus for the two sections that
@@ -917,7 +923,7 @@
           <div class="page-card-head">
             <span class="page-card-titlewrap">
               <h2>Home</h2>
-              <span class="badge b-warn"><span class="dot"></span>Dummy data</span>
+              <span class="badge b-ref"><span class="dot"></span>Personal reference</span>
             </span>
           </div>
           <div class="page-card-body" id="homeBody">
@@ -933,6 +939,7 @@
             <span class="page-card-titlewrap">
               <h2>Carb conversions</h2>
               <span class="badge b-ref"><span class="dot"></span>programme sheet</span>
+              <span class="badge b-warn"><span class="dot"></span>not yet independently verified</span>
             </span>
           </div>
           <div class="page-card-body">
@@ -948,6 +955,7 @@
                 </tbody>
               </table>
             </div>
+            <div class="spro-path"><span class="spro-label">Source</span>Toni's own Leberfasten/Hepafast programme sheet (© 2026), transcribed. Not yet independently verified against current official Dr. Nicolai Worm documentation — tracked as an open backlog item.</div>
           </div>
         </div>
       </section>
@@ -958,10 +966,12 @@
           <div class="page-card-head">
             <span class="page-card-titlewrap">
               <h2>Day targets</h2>
-              <span class="badge b-ok"><span class="dot"></span>targets</span>
+              <span class="badge b-ref"><span class="dot"></span>derived calculation</span>
             </span>
           </div>
           <div class="page-card-body">
+            <p><strong>Method: Katch-McArdle.</strong> Lean body mass = 94.9 − 28.5 = 66.4 kg. BMR = 370 + (21.6 × 66.4) = 1,804 kcal. TDEE (3 sessions/week, desk work, infant) ≈ 2,650 kcal.</p>
+            <p>Weekly average ≈ 1,700 kcal · deficit ≈ 950 kcal/day · projected loss ~0.9 kg/week.</p>
             <p>Macro targets split by whether it's a training day or a rest day. Pick one below.</p>
             <div class="child-link-list">
               <button type="button" class="child-link-row" data-goto="targets-training">
@@ -979,6 +989,8 @@
                 <svg class="chevron-right" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 6 15 12 9 18"/></svg>
               </button>
             </div>
+            <div class="spro-path"><span class="spro-label">Recalculation rule</span>Recalculate when weight reaches ~90 kg. Consider a 1-2 week maintenance diet break every 8-12 weeks of continuous deficit.</div>
+            <p><span class="badge b-warn"><span class="dot"></span>project brief, not a pinned external citation</span> This BMR/TDEE method and the rationale on the child pages are from the project brief itself — not tied to a single named external citation, beyond the general ISSN range reference for protein noted on the Training day page.</p>
           </div>
         </div>
       </section>
@@ -991,7 +1003,7 @@
         </button>
         <div class="page-card">
           <div class="page-card-head">
-            <span class="page-card-titlewrap"><h2>Training day</h2></span>
+            <span class="page-card-titlewrap"><h2>Training day</h2><span class="badge b-ok"><span class="dot"></span>this number does not move</span></span>
           </div>
           <div class="page-card-body">
             <ul>
@@ -1000,6 +1012,22 @@
               <li>Fat 50 g</li>
               <li>Carbohydrate ≈180 g</li>
             </ul>
+            <div class="duo">
+              <div class="box">
+                <h4>Protein</h4>
+                <ul>
+                  <li>2.7 g/kg lean mass — inside the ISSN range for deficit conditions. Does not move on any day.</li>
+                </ul>
+              </div>
+              <div class="box">
+                <h4>Fat floor</h4>
+                <ul>
+                  <li>50 g ≈ 20% of calories. Below this, testosterone declines measurably and fat-soluble vitamins A, D, E, K are poorly absorbed. A floor, not a target to undercut.</li>
+                </ul>
+              </div>
+            </div>
+            <p>Carbohydrate is the only macro that moves, and it moves with training — see Session carbs.</p>
+            <p class="settings-row-sub">Rationale: project brief, not tied to a single named external citation beyond the general ISSN range reference for protein.</p>
           </div>
         </div>
       </section>
@@ -1021,6 +1049,8 @@
               <li>Fat 55 g</li>
               <li>Carbohydrate ≈80 g</li>
             </ul>
+            <p>Protein still sits at ~2.7 g/kg lean mass — it does not move on a rest day either. Fat stays above the 50 g floor. Carbohydrate is lower because there's no session to fuel — see Session carbs for how training days add on top of the baseline.</p>
+            <p class="settings-row-sub">Rationale: project brief, not tied to a single named external citation beyond the general ISSN range reference for protein.</p>
           </div>
         </div>
       </section>
@@ -1029,15 +1059,16 @@
       <section class="page" data-page="timing">
         <div class="page-card">
           <div class="page-card-head">
-            <span class="page-card-titlewrap"><h2>Timing rules</h2></span>
+            <span class="page-card-titlewrap"><h2>Timing rules</h2><span class="badge b-ok"><span class="dot"></span>externally cited</span></span>
           </div>
           <div class="page-card-body">
             <ul>
-              <li>Full meal 3–5 h before training.</li>
-              <li>Protein + carbs within ~2 h after training.</li>
-              <li>If trained fasted: eat within 60 min of finishing.</li>
+              <li>The 30-minute post-workout anabolic window is not supported when a pre-training meal was eaten.</li>
+              <li>Protein and carbohydrate within ~2 hours after training is sufficient.</li>
+              <li>Within 60 minutes if training was fasted, or 5+ hours after the last meal.</li>
             </ul>
-            <div class="spro-path"><span class="spro-label">Rule of thumb</span>When in doubt about pre-workout timing, eat the meal earlier rather than later — a session started too full costs more than one started slightly hungry.</div>
+            <div class="spro-path"><span class="spro-label">Source</span>Aragon &amp; Schoenfeld 2013</div>
+            <p><span class="badge b-warn"><span class="dot"></span>backlog — not yet developed</span> Pre-workout fuelling timing (whether to eat 1 h / 2 h / 3-5 h before a session) is still on the research backlog. The dummy build's old "3-5 h before training" / "eat earlier rather than later" rule of thumb had no real source and has been removed rather than re-sourced.</p>
           </div>
         </div>
       </section>
@@ -1046,16 +1077,16 @@
       <section class="page" data-page="fats">
         <div class="page-card">
           <div class="page-card-head">
-            <span class="page-card-titlewrap"><h2>Fat sources</h2></span>
+            <span class="page-card-titlewrap"><h2>Fat sources</h2><span class="badge b-ref"><span class="dot"></span>project brief</span></span>
           </div>
           <div class="page-card-body">
+            <p>Fat floor of 50 g ≈ 20% of calories. Below this, testosterone declines measurably and fat-soluble vitamins A, D, E, K are poorly absorbed. Treat 50 g as a floor, not a target to undercut.</p>
             <ul>
-              <li>Olive oil, 1 tbsp = <span class="chip" data-copy="14 g fat">14 g fat</span></li>
-              <li>Salmon, 100 g ≈ <span class="chip" data-copy="13 g fat">13 g fat</span></li>
-              <li>Almonds, 30 g ≈ <span class="chip" data-copy="15 g fat">15 g fat</span></li>
-              <li>Avocado, ½ ≈ <span class="chip" data-copy="15 g fat">15 g fat</span></li>
+              <li>Dietary fat is stored most efficiently (~2-3% processing loss) because it needs no conversion.</li>
+              <li>De novo lipogenesis is quantitatively minor in humans on normal intakes. Carbohydrate contributes to fat gain chiefly by sparing dietary fat from oxidation, not by converting to fat itself.</li>
             </ul>
-            <p>Fat needs scale mainly with total calorie target rather than body weight alone.<span class="conf-tag">[Likely]</span></p>
+            <p class="settings-row-sub">These statements are from the project brief itself, with no single external citation attached — presented plainly, not dressed up as more rigorously sourced than that.</p>
+            <p><span class="badge b-warn"><span class="dot"></span>backlog — not yet sourced</span> Specific per-food fat-gram values (olive oil, salmon, almonds, avocado) are an open backlog item — "olive oil quantity and evidence" and "oily fish frequency" haven't been researched yet. The dummy build's old per-food gram figures were invented and have been removed rather than re-sourced.</p>
           </div>
         </div>
       </section>
@@ -1064,10 +1095,10 @@
       <section class="page" data-page="sessions">
         <div class="page-card">
           <div class="page-card-head">
-            <span class="page-card-titlewrap"><h2>Session carbs</h2></span>
+            <span class="page-card-titlewrap"><h2>Session carbs</h2><span class="badge b-ref"><span class="dot"></span>derived allocation</span></span>
           </div>
           <div class="page-card-body">
-            <p>Extra carbs on top of the day target, by session type. Pick one below.</p>
+            <p>Baseline intake from Skyr and formula shakes is roughly 65 g carbohydrate. Added on top, on training days only, by session type. Pick one below.</p>
             <div class="child-link-list">
               <button type="button" class="child-link-row" data-goto="sessions-back-biceps">
                 <span class="child-link-text">
@@ -1091,6 +1122,7 @@
                 <svg class="chevron-right" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 6 15 12 9 18"/></svg>
               </button>
             </div>
+            <p class="settings-row-sub">This is a derived internal allocation by training volume, not from an external study.</p>
           </div>
         </div>
       </section>
@@ -1107,9 +1139,11 @@
           </div>
           <div class="page-card-body">
             <ul>
-              <li>18 sets</li>
+              <li>18 working sets</li>
               <li>Extra carbs: ≈ +105 g</li>
             </ul>
+            <p>Baseline ~65 g (Skyr/formula shakes) + this session's addition = the day's total training-day carbohydrate target.</p>
+            <p class="settings-row-sub">Derived internal allocation by training volume — not from an external study.</p>
           </div>
         </div>
       </section>
@@ -1126,9 +1160,11 @@
           </div>
           <div class="page-card-body">
             <ul>
-              <li>18 sets</li>
+              <li>18 working sets</li>
               <li>Extra carbs: ≈ +105 g</li>
             </ul>
+            <p>Baseline ~65 g (Skyr/formula shakes) + this session's addition = the day's total training-day carbohydrate target.</p>
+            <p class="settings-row-sub">Derived internal allocation by training volume — not from an external study.</p>
           </div>
         </div>
       </section>
@@ -1145,28 +1181,334 @@
           </div>
           <div class="page-card-body">
             <ul>
-              <li>27 sets</li>
+              <li>27 working sets</li>
               <li>Extra carbs: ≈ +130 g</li>
             </ul>
+            <p>Baseline ~65 g (Skyr/formula shakes) + this session's addition = the day's total training-day carbohydrate target.</p>
+            <p class="settings-row-sub">Derived internal allocation by training volume — not from an external study.</p>
           </div>
         </div>
       </section>
 
-      <!-- About (leaf) -->
+      <!-- Body composition (parent) -->
+      <section class="page" data-page="bodycomp">
+        <div class="page-card">
+          <div class="page-card-head">
+            <span class="page-card-titlewrap"><h2>Body composition</h2><span class="badge b-ref"><span class="dot"></span>seca mBCA</span></span>
+          </div>
+          <div class="page-card-body">
+            <p>Protocol: daily morning weight (post-void, pre-food), only weekly averages interpreted — never react to a single reading. Waist every 2 weeks (baseline 104 cm, 2026-07-20). Seca scan every 4 weeks. Primary success criterion is skeletal muscle mass (SMM) flat/rising while fat mass (FM) falls, not scale weight.</p>
+            <div class="child-link-list">
+              <button type="button" class="child-link-row" data-goto="bodycomp-latest">
+                <span class="child-link-text">
+                  <span class="child-link-title">Latest scan</span>
+                  <span class="child-link-sub">2026-07-20 · weight 94.9 kg · FM 30.0% · VAT 3.6 L</span>
+                </span>
+                <svg class="chevron-right" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 6 15 12 9 18"/></svg>
+              </button>
+              <button type="button" class="child-link-row" data-goto="bodycomp-reading">
+                <span class="child-link-text">
+                  <span class="child-link-title">Reading the numbers</span>
+                  <span class="child-link-sub">BIA caveats · why the raw SMM drop overstates muscle loss</span>
+                </span>
+                <svg class="chevron-right" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 6 15 12 9 18"/></svg>
+              </button>
+            </div>
+            <p class="settings-row-sub">Source: seca mBCA device (ID V27RV0) — personal biometric measurement, not a published study.</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- Body composition > Latest scan (child) -->
+      <section class="page" data-page="bodycomp-latest">
+        <button type="button" class="page-back" data-back="bodycomp">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+          <span>Body composition</span>
+        </button>
+        <div class="page-card">
+          <div class="page-card-head">
+            <span class="page-card-titlewrap"><h2>Latest scan</h2></span>
+          </div>
+          <div class="page-card-body">
+            <div class="table-wrap">
+              <table class="compare">
+                <thead><tr><th>Date</th><th>Weight</th><th>FM</th><th>SMM</th><th>VAT</th></tr></thead>
+                <tbody>
+                  <tr><td>2026-07-02</td><td>~100.0 kg</td><td>31.84 kg (~31.8%)</td><td>34.70 kg</td><td>~4.1 L</td></tr>
+                  <tr><td>2026-07-20</td><td>94.9 kg</td><td>28.50 kg (30.0%)</td><td>32.87 kg (34.6%)</td><td>3.6 L</td></tr>
+                </tbody>
+              </table>
+            </div>
+            <p>2026-07-20 also: waist 104 cm · BMI 29.9 · FMI 9 kg/m².</p>
+
+            <p><strong>Segmental SMM, 2026-07-20</strong> (change vs 07-02):</p>
+            <div class="table-wrap">
+              <table class="compare">
+                <thead><tr><th>Segment</th><th>SMM</th><th>Change</th></tr></thead>
+                <tbody>
+                  <tr><td>Right arm</td><td>2.13 kg</td><td>−0.09 kg</td></tr>
+                  <tr><td>Left arm</td><td>2.02 kg</td><td>−0.12 kg</td></tr>
+                  <tr><td>Torso</td><td>14.93 kg</td><td>−1.22 kg</td></tr>
+                  <tr><td>Right leg</td><td>6.94 kg</td><td>−0.14 kg</td></tr>
+                  <tr><td>Left leg</td><td>6.85 kg</td><td>−0.25 kg</td></tr>
+                </tbody>
+              </table>
+            </div>
+
+            <p><strong>Derived, 18-day window:</strong> weight −5.1 kg · fat −3.34 kg · skeletal muscle −1.83 kg · visceral fat −0.5 L.</p>
+            <div class="spro-path"><span class="spro-label">Project brief</span>Muscle accounted for ~36% of total loss; the target for muscle-sparing loss is under 20%, ideally nearer 10%.</div>
+            <p class="settings-row-sub">Source: seca mBCA device (ID V27RV0) — personal biometric measurement, not a published study. See "Reading the numbers" before treating the SMM figures at face value.</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- Body composition > Reading the numbers (child) -->
+      <section class="page" data-page="bodycomp-reading">
+        <button type="button" class="page-back" data-back="bodycomp">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+          <span>Body composition</span>
+        </button>
+        <div class="page-card">
+          <div class="page-card-head">
+            <span class="page-card-titlewrap"><h2>Reading the numbers</h2><span class="badge b-warn"><span class="dot"></span>required caveats</span></span>
+          </div>
+          <div class="page-card-body">
+            <ul>
+              <li>BIA infers muscle partly from body water. Muscle glycogen binds roughly 3 g water per gram of glycogen. Moving onto a low-carb protocol depletes glycogen, so a meaningful share of the −1.83 kg SMM change is glycogen and water, not contractile protein. Plausible true lean-tissue loss: 0.8-1.3 kg. Do not report the raw figure as if it were all muscle.</li>
+              <li>Torso is the least reliable BIA segment. It carried −1.22 kg of the −1.83 kg total, which is consistent with glycogen depletion rather than localised atrophy.</li>
+              <li>Creatine raises intracellular water and therefore inflates apparent SMM. If creatine was started between two measurements, real loss is worse than measured. Toni's creatine start date is <strong>not established</strong> — open backlog item.</li>
+              <li>VAT thresholds on this device: "Hoch" begins at 3.5 L. He is at 3.6 L — just above the boundary, down from ~4.1 L.</li>
+            </ul>
+            <p class="settings-row-sub">Source: seca mBCA device (ID V27RV0) — personal biometric measurement, not a published study.</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- Diet protocol (parent) -->
+      <section class="page" data-page="protocol">
+        <div class="page-card">
+          <div class="page-card-head">
+            <span class="page-card-titlewrap"><h2>Diet protocol</h2><span class="badge b-ref"><span class="dot"></span>programme sheet</span></span>
+          </div>
+          <div class="page-card-body">
+            <p>The Leberfasten/Hepafast programme runs across 4 phases. Toni is currently in the <strong>Reduktionsphase</strong> (10-12 weeks).</p>
+            <div class="child-link-list">
+              <button type="button" class="child-link-row" data-goto="protocol-phases">
+                <span class="child-link-text">
+                  <span class="child-link-title">The 4 phases</span>
+                  <span class="child-link-sub">Leberfasten → Reduktion → Stabilisierung → Erhaltung</span>
+                </span>
+                <svg class="chevron-right" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 6 15 12 9 18"/></svg>
+              </button>
+              <button type="button" class="child-link-row" data-goto="protocol-correction">
+                <span class="child-link-text">
+                  <span class="child-link-title">Phase 2 correction</span>
+                  <span class="child-link-sub">Highest-confidence finding in this project</span>
+                </span>
+                <svg class="chevron-right" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 6 15 12 9 18"/></svg>
+              </button>
+            </div>
+            <p class="settings-row-sub">Source: Toni's own programme sheet (© 2026), transcribed. Not yet independently verified against current official documentation.</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- Diet protocol > The 4 phases (child) -->
+      <section class="page" data-page="protocol-phases">
+        <button type="button" class="page-back" data-back="protocol">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+          <span>Diet protocol</span>
+        </button>
+        <div class="page-card">
+          <div class="page-card-head">
+            <span class="page-card-titlewrap"><h2>The 4 phases</h2></span>
+          </div>
+          <div class="page-card-body">
+            <div class="table-wrap">
+              <table class="compare">
+                <thead><tr><th>Phase</th><th>Rules</th></tr></thead>
+                <tbody>
+                  <tr><td>Leberfastenphase<br>(2 weeks)</td><td>3× Hepafast daily + ~200 kcal vegetables/salad at lunch and/or dinner + max 1 tsp oil.</td></tr>
+                  <tr><td>Reduktionsphase<br>(10-12 weeks) <span class="badge b-ok"><span class="dot"></span>current phase</span></td><td>2 meals Sana-Fit + 1 mediterranean low-carb meal; evening meal includes carbohydrate according to activity level.</td></tr>
+                  <tr><td>Stabilisierungsphase<br>(2 weeks)</td><td>1 meal Sana-Fit + 2 mediterranean low-carb meals + carbs per activity level.</td></tr>
+                  <tr><td>Erhaltungsphase<br>(permanent)</td><td>3 mediterranean low-carb meals + carbs per activity level; liver-fasting days 1×/week or 3×/month.</td></tr>
+                </tbody>
+              </table>
+            </div>
+            <p><strong>Hydration:</strong> minimum 1.5-2 L calorie-free fluid daily; no alcohol during the Leberfastenphase.</p>
+            <p class="settings-row-sub">Source: Toni's own programme sheet (© 2026), transcribed. Not yet independently verified against current official documentation — same caveat as Carb conversions.</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- Diet protocol > Phase 2 correction (child) -->
+      <section class="page" data-page="protocol-correction">
+        <button type="button" class="page-back" data-back="protocol">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+          <span>Diet protocol</span>
+        </button>
+        <div class="page-card">
+          <div class="page-card-head">
+            <span class="page-card-titlewrap"><h2>Phase 2 correction</h2><span class="badge b-ok"><span class="dot"></span>highest-confidence finding</span></span>
+          </div>
+          <div class="page-card-body">
+            <p>Toni was running Phase 1 rules while in Phase 2, on both axes:</p>
+            <div class="spro-path"><span class="spro-label">Carbs</span>Phase 2 explicitly prescribes carbohydrate with the evening meal, scaled to activity level. He was treating carbs as an occasional exception (3-4 days/week, unstructured).</div>
+            <div class="spro-path"><span class="spro-label">Fat</span>Phase 1 caps oil at 1 tsp. Phase 2 specifies mediterranean meals, where olive oil and oily fish are foundational. He was still restricting to ~18 g fat/day.</div>
+            <p><strong>Any future recommendation must be checked against the phase he is actually in, not the phase he started in. This is the highest-yield error pattern found so far.</strong></p>
+            <p class="settings-row-sub">Source: Toni's own programme sheet (© 2026), transcribed, cross-checked against his own logged behaviour.</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- Training (parent) -->
+      <section class="page" data-page="training">
+        <div class="page-card">
+          <div class="page-card-head">
+            <span class="page-card-titlewrap"><h2>Training</h2><span class="badge b-ref"><span class="dot"></span>Hevy log</span></span>
+          </div>
+          <div class="page-card-body">
+            <p>3-day split, hard constraint: max 6 main exercises per session (warm-ups/finishers excluded).</p>
+            <div class="child-link-list">
+              <button type="button" class="child-link-row" data-goto="training-programme">
+                <span class="child-link-text">
+                  <span class="child-link-title">Current programme</span>
+                  <span class="child-link-sub">3-Day Split — Gym</span>
+                </span>
+                <svg class="chevron-right" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 6 15 12 9 18"/></svg>
+              </button>
+              <button type="button" class="child-link-row" data-goto="training-history">
+                <span class="child-link-text">
+                  <span class="child-link-title">Recent history</span>
+                  <span class="child-link-sub">Why the SMM drop happened · 27 July working weights</span>
+                </span>
+                <svg class="chevron-right" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 6 15 12 9 18"/></svg>
+              </button>
+            </div>
+            <p class="settings-row-sub">Source: Hevy training log — personal training data, not yet re-confirmed via a fresh API pull (open backlog item).</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- Training > Current programme (child) -->
+      <section class="page" data-page="training-programme">
+        <button type="button" class="page-back" data-back="training">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+          <span>Training</span>
+        </button>
+        <div class="page-card">
+          <div class="page-card-head">
+            <span class="page-card-titlewrap"><h2>Current programme</h2></span>
+          </div>
+          <div class="page-card-body">
+            <p>Folder: "3-Day Split — Gym"</p>
+            <ul>
+              <li>WorkOut #1 Back+Biceps — 3 warm-up + 6 main + Pallof Press finisher</li>
+              <li>WorkOut #2 Chest+Triceps — 3 warm-up + 5 main + Dead Bug finisher</li>
+              <li>WorkOut #3 Legs+Shoulders — 3 warm-up + 6 main + Side Plank finisher</li>
+            </ul>
+            <p><strong>Hard constraint:</strong> max 6 main exercises per session (warm-ups/finishers excluded).</p>
+            <p><span class="badge b-warn"><span class="dot"></span>not confirmed</span> Default weekly pattern (48h spacing) would be Mon/Wed/Fri, but this has <strong>not been confirmed by Toni</strong> as his actual training days — open backlog item.</p>
+            <p class="settings-row-sub">Source: Hevy training log — personal training data, not yet re-confirmed via a fresh API pull.</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- Training > Recent history (child) -->
+      <section class="page" data-page="training-history">
+        <button type="button" class="page-back" data-back="training">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+          <span>Training</span>
+        </button>
+        <div class="page-card">
+          <div class="page-card-head">
+            <span class="page-card-titlewrap"><h2>Recent history</h2></span>
+          </div>
+          <div class="page-card-body">
+            <div class="spro-path"><span class="spro-label">Key finding</span>Between the two body scans (2-20 July) he trained twice, both bodyweight only, zero external load. Last loaded session before that was 12 June. He restarted with load on 27 July (54 min, 21 sets, 3,988 kg volume).</div>
+            <p>The 1.83 kg SMM drop is therefore explained primarily by absence of resistance training under a ~50% deficit, not by inadequate protein — protein was already at target.</p>
+            <p><strong>Reference working weights, 27 July 2026:</strong></p>
+            <div class="table-wrap">
+              <table class="compare">
+                <thead><tr><th>Exercise</th><th>Weight</th></tr></thead>
+                <tbody>
+                  <tr><td>Lat pulldown</td><td>30 kg</td></tr>
+                  <tr><td>Seated cable row</td><td>21.5 kg</td></tr>
+                  <tr><td>Dumbbell row</td><td>20 kg</td></tr>
+                  <tr><td>Face pull</td><td>17.5 kg</td></tr>
+                  <tr><td>Bicep curl</td><td>20 kg</td></tr>
+                  <tr><td>Hammer curl</td><td>10 kg</td></tr>
+                </tbody>
+              </table>
+            </div>
+            <p class="settings-row-sub">Source: Hevy training log — personal training data, not yet re-confirmed via a fresh API pull (open backlog item).</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- Established findings (leaf) -->
+      <section class="page" data-page="findings">
+        <div class="page-card">
+          <div class="page-card-head">
+            <span class="page-card-titlewrap"><h2>Established findings</h2><span class="badge b-ref"><span class="dot"></span>project brief</span></span>
+          </div>
+          <div class="page-card-body">
+            <p>General physiology findings established so far, mostly presented as project-brief-level statements rather than pinned to a single external citation (the one exception is called out below).</p>
+            <ul>
+              <li>Energy balance determines fat storage, not any individual macronutrient. In a deficit, no food is "stored as fat."</li>
+              <li>De novo lipogenesis is quantitatively minor in humans on normal intakes. Carbohydrate contributes to fat gain chiefly by sparing dietary fat from oxidation, not by converting to fat itself.</li>
+              <li>Dietary fat is stored most efficiently (~2-3% processing loss) because it needs no conversion. Protein is the least efficiently stored (20-30% thermic effect, plus expensive conversion).</li>
+              <li>Fructose and alcohol are the two dietary factors with the clearest link to visceral and hepatic fat, because both are metabolised primarily in the liver.</li>
+              <li>Visceral fat is the most responsive fat depot, with higher beta-adrenergic receptor density. It reduces proportionally faster than subcutaneous fat in early weight loss. Confirmed in his own data: −12% VAT in 18 days.</li>
+              <li>Fat leaves the body as CO2 and water, via lipolysis (ATGL and HSL) → beta-oxidation → Krebs cycle. Falling insulin is the permissive step.</li>
+              <li>The 30-minute post-workout anabolic window is not supported (Aragon &amp; Schoenfeld 2013) when a pre-training meal was eaten — see Timing rules for the full statement.</li>
+              <li>Training intensity is the primary signal for muscle retention in a deficit. Carbohydrate exists in the plan to make that signal possible, which is why carbs track training volume.</li>
+              <li>Aerobic exercise has specific evidence for visceral fat reduction beyond its calorie cost. 2-3 walks of 20-30 min on rest days were suggested and <strong>remain unimplemented</strong> — a suggestion, not yet acted on.</li>
+            </ul>
+            <p class="settings-row-sub">Source: project brief / Toni's own record, except the post-workout timing point which is Aragon &amp; Schoenfeld 2013 (see Timing rules).</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- About & sources (leaf) -->
       <section class="page" data-page="about">
         <div class="page-card">
           <div class="page-card-head">
-            <span class="page-card-titlewrap"><h2>About this preview</h2></span>
+            <span class="page-card-titlewrap"><h2>About &amp; sources</h2></span>
           </div>
           <div class="page-card-body">
-            <p>This is a design-preview dummy of a phone "nutrition quick-reference" app, built to evaluate the paginated drawer-navigation model, touch targets, zoom, and dark/light behaviour before any real content goes in.</p>
-            <p>Every figure in this file — carb conversions, day targets, timing windows, fat grams, session carb estimates — is invented placeholder data, not sourced from a label, BLS/USDA, or the programme sheets. The "Dummy data" badge on the Home screen is a permanent reminder of that; this page is where the full explanation lives so it doesn't need repeating on every screen.</p>
-            <p>Generated 2026-07-30.</p>
+            <p>This is a personal nutrition/training reference for one person (Toni), built from his own project brief, programme sheets, body-composition scans, and training log. It is <strong>not medical supervision</strong> — if anything on this page or elsewhere in the app suggests a medical decision, that decision belongs with a physician, not this app.</p>
+
+            <p><strong>Badge convention</strong> (top of most pages):</p>
+            <ul>
+              <li><span class="badge b-ok"><span class="dot"></span>b-ok</span> — well-sourced / high-confidence for this project (an externally cited fact, or a number that "does not move").</li>
+              <li><span class="badge b-warn"><span class="dot"></span>b-warn</span> — not yet independently verified, or explicitly a research-backlog item not yet developed.</li>
+              <li><span class="badge b-ref"><span class="dot"></span>b-ref</span> — personal record or measurement (programme sheet, seca scan, Hevy log, or a derived calculation from the project brief).</li>
+            </ul>
+            <p><strong>Confidence tags</strong> in prose — <span class="conf-tag">[Certain]</span> / <span class="conf-tag">[Likely]</span> / <span class="conf-tag">[Guessing]</span> — carry over unchanged from the source document wherever the source itself attached one. Where a fact has no tag, none has been added — it's presented plainly rather than dressed up as more or less certain than it is.</p>
+
+            <p><strong>Sources checked / cited across this app:</strong></p>
+            <div class="table-wrap">
+              <table class="compare">
+                <thead><tr><th>Source</th><th>Used on</th></tr></thead>
+                <tbody>
+                  <tr><td>Aragon &amp; Schoenfeld 2013</td><td>Timing rules — the only fully-external citation in the app</td></tr>
+                  <tr><td>Toni's own Leberfasten/Hepafast programme sheet (© 2026), transcribed</td><td>Carb conversions; Diet protocol (phases &amp; Phase 2 correction)</td></tr>
+                  <tr><td>Project brief / Toni's own record (derived calculation, not an external study)</td><td>Day targets; Session carbs; Fat sources; Established findings</td></tr>
+                  <tr><td>seca mBCA device (ID V27RV0) — personal biometric measurement, not a published study</td><td>Body composition (Latest scan; Reading the numbers)</td></tr>
+                  <tr><td>Hevy training log — personal training data</td><td>Training (Current programme; Recent history)</td></tr>
+                </tbody>
+              </table>
+            </div>
+
+            <p><strong>Deliberately not filled in this pass</strong> — flagged in-page as backlog rather than invented: pre-workout fuelling timing, per-food fat-gram values (olive oil/salmon/almonds/avocado quantities), creatine start date, confirmation of actual weekly training days, a fresh Hevy API re-pull, and independent verification of the programme-sheet figures against current official documentation. See initial_instruc.md §9 for the complete backlog.</p>
+
+            <p>Content last updated 2026-07-30.</p>
           </div>
         </div>
       </section>
 
-      <p class="footer-line">Dummy preview · generated 2026-07-30 · works fully offline</p>
+      <p class="footer-line">Personal nutrition/training reference · updated 2026-07-30 · works fully offline</p>
 
     </div>
   </div>
@@ -1176,7 +1518,7 @@
     <div class="toc-head">
       <p class="eyebrow">Nutrition · Quick Reference</p>
       <h1 class="app-title">Toni's Nutrition</h1>
-      <div class="callout"><strong>Design preview.</strong> All numbers in this file are dummy placeholders — not sourced, not advice. For look-and-feel evaluation only.</div>
+      <div class="callout"><strong>Personal reference, not medical advice.</strong> Sourced from Toni's own project brief, programme sheets, body-scan log, and training log — see "About &amp; sources". A few sub-topics are still marked backlog / not yet developed on their own page (look for the amber badge).</div>
       <div class="select-mode-bar" id="selectModeBar">
         <span>Selecting pages for Home</span>
         <button type="button" class="select-mode-done" id="selectModeDoneBtn">Done</button>
@@ -1259,11 +1601,68 @@
         </ul>
       </div>
 
+      <div class="nav-node" data-node="bodycomp">
+        <div class="nav-item-row">
+          <button type="button" class="nav-item" data-goto="bodycomp">
+            <span class="pin-check" data-pin-check aria-hidden="true"></span>
+            <span class="nav-item-title">Body composition</span>
+          </button>
+          <button type="button" class="nav-toggle" data-toggle="bodycomp" aria-expanded="false" aria-label="Expand Body composition submenu">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 6 15 12 9 18"/></svg>
+          </button>
+        </div>
+        <ul class="nav-sublist" data-sublist="bodycomp">
+          <li><button type="button" class="nav-subitem" data-goto="bodycomp-latest"><span class="pin-check" data-pin-check aria-hidden="true"></span><span class="nav-subitem-title">Latest scan</span></button></li>
+          <li><button type="button" class="nav-subitem" data-goto="bodycomp-reading"><span class="pin-check" data-pin-check aria-hidden="true"></span><span class="nav-subitem-title">Reading the numbers</span></button></li>
+        </ul>
+      </div>
+
+      <div class="nav-node" data-node="protocol">
+        <div class="nav-item-row">
+          <button type="button" class="nav-item" data-goto="protocol">
+            <span class="pin-check" data-pin-check aria-hidden="true"></span>
+            <span class="nav-item-title">Diet protocol</span>
+          </button>
+          <button type="button" class="nav-toggle" data-toggle="protocol" aria-expanded="false" aria-label="Expand Diet protocol submenu">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 6 15 12 9 18"/></svg>
+          </button>
+        </div>
+        <ul class="nav-sublist" data-sublist="protocol">
+          <li><button type="button" class="nav-subitem" data-goto="protocol-phases"><span class="pin-check" data-pin-check aria-hidden="true"></span><span class="nav-subitem-title">The 4 phases</span></button></li>
+          <li><button type="button" class="nav-subitem" data-goto="protocol-correction"><span class="pin-check" data-pin-check aria-hidden="true"></span><span class="nav-subitem-title">Phase 2 correction</span></button></li>
+        </ul>
+      </div>
+
+      <div class="nav-node" data-node="training">
+        <div class="nav-item-row">
+          <button type="button" class="nav-item" data-goto="training">
+            <span class="pin-check" data-pin-check aria-hidden="true"></span>
+            <span class="nav-item-title">Training</span>
+          </button>
+          <button type="button" class="nav-toggle" data-toggle="training" aria-expanded="false" aria-label="Expand Training submenu">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 6 15 12 9 18"/></svg>
+          </button>
+        </div>
+        <ul class="nav-sublist" data-sublist="training">
+          <li><button type="button" class="nav-subitem" data-goto="training-programme"><span class="pin-check" data-pin-check aria-hidden="true"></span><span class="nav-subitem-title">Current programme</span></button></li>
+          <li><button type="button" class="nav-subitem" data-goto="training-history"><span class="pin-check" data-pin-check aria-hidden="true"></span><span class="nav-subitem-title">Recent history</span></button></li>
+        </ul>
+      </div>
+
+      <div class="nav-node" data-node="findings">
+        <div class="nav-item-row">
+          <button type="button" class="nav-item" data-goto="findings">
+            <span class="pin-check" data-pin-check aria-hidden="true"></span>
+            <span class="nav-item-title">Established findings</span>
+          </button>
+        </div>
+      </div>
+
       <div class="nav-node" data-node="about">
         <div class="nav-item-row">
           <button type="button" class="nav-item" data-goto="about">
             <span class="pin-check" data-pin-check aria-hidden="true"></span>
-            <span class="nav-item-title">About</span>
+            <span class="nav-item-title">About &amp; sources</span>
           </button>
         </div>
       </div>
@@ -1329,7 +1728,20 @@
         { id: 'sessions-chest-triceps', label: 'Chest + Triceps' },
         { id: 'sessions-legs-shoulders', label: 'Legs + Shoulders' }
       ] },
-    { id: 'about', label: 'About' }
+    { id: 'bodycomp', label: 'Body composition', children: [
+        { id: 'bodycomp-latest', label: 'Latest scan' },
+        { id: 'bodycomp-reading', label: 'Reading the numbers' }
+      ] },
+    { id: 'protocol', label: 'Diet protocol', children: [
+        { id: 'protocol-phases', label: 'The 4 phases' },
+        { id: 'protocol-correction', label: 'Phase 2 correction' }
+      ] },
+    { id: 'training', label: 'Training', children: [
+        { id: 'training-programme', label: 'Current programme' },
+        { id: 'training-history', label: 'Recent history' }
+      ] },
+    { id: 'findings', label: 'Established findings' },
+    { id: 'about', label: 'About & sources' }
   ];
 
   var LABEL_BY_ID = {};
