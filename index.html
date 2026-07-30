@@ -323,7 +323,14 @@
     max-height: 0;
     transition: max-height 0.2s ease;
   }
-  .nav-sublist.expanded{ max-height: 20rem; }
+  /* ---- PLAN.md Task 9: the old 20rem ceiling clipped before 10 rows (the
+     new "Nutrition info" submenu has 10 children), worse at high zoom since
+     rem-based row heights and this max-height scale together, so their ratio
+     never actually changes across zoom levels -- the fix is simply a more
+     generous fixed ceiling, not a dynamic scrollHeight measurement. One of
+     the two explicitly authorized exceptions to additive-only (PLAN.md
+     Constraints), since it also affects the existing (smaller) submenus. ---- */
+  .nav-sublist.expanded{ max-height: 50rem; }
   .nav-sublist li{ margin: 0; }
   .nav-subitem{
     display: flex;
