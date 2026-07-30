@@ -759,6 +759,29 @@
     white-space: nowrap;
   }
 
+  /* ---- "Nutrition info" section-specific styles (PLAN.md Task 5) ---- */
+  .info-summary{
+    font-style: italic;
+    color: var(--ink-soft);
+    font-size: 0.95rem;
+  }
+  .info-block-heading{
+    font-family: var(--serif);
+    font-weight: 500;
+    font-size: 1rem;
+    margin: 1rem 0 0.4rem;
+    color: var(--ink);
+  }
+  .info-block-heading:first-child{ margin-top: 0; }
+  .info-note-heading{ display: block; margin-bottom: 0.2rem; color: var(--ink); }
+  .myth-belief{
+    color: var(--ink-faint);
+    text-decoration: line-through;
+    font-style: italic;
+    margin-bottom: 0.3rem !important;
+  }
+  .myth-truth{ color: var(--ink); }
+
   mark.search-hit{
     background: var(--mark-bg);
     color: var(--mark-ink);
@@ -2184,6 +2207,199 @@
       }
     });
   });
+
+  /* ============================================================
+     Data-driven "Nutrition info" section (PLAN.md Task 5/6): builds the
+     ToC nav-node (with its 10 children) and every page <section> for
+     INFO_TOPICS + the References page ENTIRELY FROM DATA -- no
+     hand-written markup, unlike the 22 existing pages above (which stay
+     untouched, per the additive-only rule). This MUST run before the
+     generic `pages` array / nav-node / child-link-row / page-back
+     queries directly below, so the freshly inserted DOM nodes get swept
+     up by those same generic selectors and wired for free, exactly like
+     every hand-written page already is -- no separate/duplicate wiring
+     for the new content.
+     ============================================================ */
+  var infoPagesScrollEl = document.getElementById('pagesScroll');
+  var infoFooterLineEl = infoPagesScrollEl.querySelector('.footer-line');
+  var infoTocListEl = document.getElementById('tocList');
+  var infoNavTreeNode = NAV_TREE.filter(function(n){ return n.id === 'info'; })[0];
+
+  // Trusted, static, decorative SVG icon markup only -- NEVER used for any
+  // content text (all content text below goes through parseCitationsInto /
+  // textContent). aria-hidden="true" from the start, per Task 11's rule for
+  // every decorative icon in the file, old and new alike.
+  function buildDecorativeIcon(pathHtml, extraClass){
+    var holder = document.createElement('span');
+    holder.innerHTML = '<svg aria-hidden="true" class="' + (extraClass || '') + '" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">' + pathHtml + '</svg>';
+    return holder.firstChild;
+  }
+  var ICON_CHEVRON_RIGHT = '<polyline points="9 6 15 12 9 18"/>';
+  var ICON_CHEVRON_LEFT = '<polyline points="15 18 9 12 15 6"/>';
+
+  function buildInfoChildLinkRow(id, subText){
+    var btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'child-link-row';
+    btn.setAttribute('data-goto', id);
+    var text = document.createElement('span');
+    text.className = 'child-link-text';
+    var title = document.createElement('span');
+    title.className = 'child-link-title';
+    title.textContent = LABEL_BY_ID[id];
+    text.appendChild(title);
+    if (subText){
+      var sub = document.createElement('span');
+      sub.className = 'child-link-sub';
+      sub.textContent = subText;
+      text.appendChild(sub);
+    }
+    btn.appendChild(text);
+    btn.appendChild(buildDecorativeIcon(ICON_CHEVRON_RIGHT, 'chevron-right'));
+    return btn;
+  }
+
+  function buildInfoPageBack(parentId){
+    var btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'page-back';
+    btn.setAttribute('data-back', parentId);
+    btn.appendChild(buildDecorativeIcon(ICON_CHEVRON_LEFT, ''));
+    var span = document.createElement('span');
+    span.textContent = LABEL_BY_ID[parentId];
+    btn.appendChild(span);
+    return btn;
+  }
+
+  function buildInfoPageSection(topic){
+    var section = document.createElement('section');
+    section.className = 'page';
+    section.setAttribute('data-page', topic.id);
+
+    var parentId = PARENT_OF[topic.id];
+    if (parentId) section.appendChild(buildInfoPageBack(parentId));
+
+    var card = document.createElement('div');
+    card.className = 'page-card';
+
+    var head = document.createElement('div');
+    head.className = 'page-card-head';
+    var titlewrap = document.createElement('span');
+    titlewrap.className = 'page-card-titlewrap';
+    var h2 = document.createElement('h2');
+    h2.textContent = topic.label;
+    titlewrap.appendChild(h2);
+    var badge = document.createElement('span');
+    badge.className = 'badge b-ok';
+    var dot = document.createElement('span');
+    dot.className = 'dot';
+    badge.appendChild(dot);
+    badge.appendChild(document.createTextNode('cited'));
+    titlewrap.appendChild(badge);
+    head.appendChild(titlewrap);
+    card.appendChild(head);
+
+    var body = document.createElement('div');
+    body.className = 'page-card-body';
+
+    if (topic.summary){
+      var summaryP = document.createElement('p');
+      summaryP.className = 'info-summary';
+      summaryP.textContent = topic.summary;
+      body.appendChild(summaryP);
+    }
+
+    var occCounters = {}; // per-PAGE occurrence counter, shared across every block below
+    (topic.blocks || []).forEach(function(block){
+      body.appendChild(renderInfoBlock(block, topic.id, occCounters));
+    });
+
+    // 'info' landing page only: a child-link-list to all 10 children, using
+    // each child topic's own summary as the teaser sub-line (References has
+    // no INFO_TOPICS entry, so it gets a short plain description instead).
+    if (topic.id === 'info'){
+      var list = document.createElement('div');
+      list.className = 'child-link-list';
+      (infoNavTreeNode.children || []).forEach(function(child){
+        var sub = child.id === 'info-references'
+          ? 'All ' + REFERENCES.length + ' sources cited in this section.'
+          : (INFO_TOPICS_BY_ID[child.id] ? INFO_TOPICS_BY_ID[child.id].summary : '');
+        list.appendChild(buildInfoChildLinkRow(child.id, sub));
+      });
+      body.appendChild(list);
+    }
+
+    card.appendChild(body);
+    section.appendChild(card);
+    return section;
+  }
+
+  INFO_TOPICS.forEach(function(topic){
+    infoPagesScrollEl.insertBefore(buildInfoPageSection(topic), infoFooterLineEl);
+  });
+
+  function buildInfoNavNode(){
+    var nodeEl = document.createElement('div');
+    nodeEl.className = 'nav-node';
+    nodeEl.setAttribute('data-node', 'info');
+
+    var row = document.createElement('div');
+    row.className = 'nav-item-row';
+
+    var itemBtn = document.createElement('button');
+    itemBtn.type = 'button';
+    itemBtn.className = 'nav-item';
+    itemBtn.setAttribute('data-goto', 'info');
+    var pinCheck = document.createElement('span');
+    pinCheck.className = 'pin-check';
+    pinCheck.setAttribute('data-pin-check', '');
+    pinCheck.setAttribute('aria-hidden', 'true');
+    itemBtn.appendChild(pinCheck);
+    var titleSpan = document.createElement('span');
+    titleSpan.className = 'nav-item-title';
+    titleSpan.textContent = infoNavTreeNode.label;
+    itemBtn.appendChild(titleSpan);
+    row.appendChild(itemBtn);
+
+    var toggleBtn = document.createElement('button');
+    toggleBtn.type = 'button';
+    toggleBtn.className = 'nav-toggle';
+    toggleBtn.setAttribute('data-toggle', 'info');
+    toggleBtn.setAttribute('aria-expanded', 'false');
+    toggleBtn.setAttribute('aria-label', 'Expand Nutrition info submenu');
+    toggleBtn.appendChild(buildDecorativeIcon(ICON_CHEVRON_RIGHT, ''));
+    row.appendChild(toggleBtn);
+
+    nodeEl.appendChild(row);
+
+    var sublist = document.createElement('ul');
+    sublist.className = 'nav-sublist';
+    sublist.setAttribute('data-sublist', 'info');
+    (infoNavTreeNode.children || []).forEach(function(child){
+      var li = document.createElement('li');
+      var subBtn = document.createElement('button');
+      subBtn.type = 'button';
+      subBtn.className = 'nav-subitem';
+      subBtn.setAttribute('data-goto', child.id);
+      var subPin = document.createElement('span');
+      subPin.className = 'pin-check';
+      subPin.setAttribute('data-pin-check', '');
+      subPin.setAttribute('aria-hidden', 'true');
+      subBtn.appendChild(subPin);
+      var subTitle = document.createElement('span');
+      subTitle.className = 'nav-subitem-title';
+      subTitle.textContent = child.label;
+      subBtn.appendChild(subTitle);
+      li.appendChild(subBtn);
+      sublist.appendChild(li);
+    });
+    nodeEl.appendChild(sublist);
+
+    return nodeEl;
+  }
+
+  var infoAboutNodeEl = infoTocListEl.querySelector('.nav-node[data-node="about"]');
+  infoTocListEl.insertBefore(buildInfoNavNode(), infoAboutNodeEl);
 
   /* ============================================================
      Pages: exactly one visible at a time
