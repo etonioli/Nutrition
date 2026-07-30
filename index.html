@@ -55,13 +55,20 @@
   pill itself and the drawer-reopen hamburger are the deliberate exception: fixed physical px,
   so they never shrink out of reach even at the smallest zoom level.
 
-  Persistence — deliberate, single exception: EVERYTHING else in this file (zoom level,
+  Persistence — two deliberate exceptions: EVERYTHING else in this file (live zoom level,
   search text, expand/collapse state, select mode) is in-memory only and resets on reload,
-  on purpose, per the project's dummy-preview conventions. The pinned-Home-links list is the
-  one deliberate exception: a "customize your home screen" feature that forgets itself on
-  every reload is pointless, so it alone is persisted to localStorage, under the key
-  "nutritionWrapperHomeLinks" (a JSON array of page ids), guarded with try/catch and falling
-  back to an empty list if missing/malformed. Nothing else in this file touches localStorage.
+  on purpose, per the project's dummy-preview conventions.
+    1. The pinned-Home-links list: a "customize your home screen" feature that forgets
+       itself on every reload is pointless, so it alone is persisted to localStorage, under
+       the key "nutritionWrapperHomeLinks" (a JSON array of page ids), guarded with
+       try/catch and falling back to an empty list if missing/malformed.
+    2. The Settings panel's "Default zoom" (Home-only gear button in the header): persisted
+       under "nutritionWrapperDefaultZoomIndex" (the array index, 0-14, into the same
+       80-150%/5%-step scale the floating zoom pill uses), guarded the same way and falling
+       back to the 100% index if missing/malformed/out of range. The floating pill itself
+       stays live-only and non-persisted — it just now starts from whatever this persisted
+       default resolves to, instead of always hardcoding the 100% index.
+  Nothing else in this file touches localStorage.
 -->
 <style>
   :root{
@@ -468,6 +475,10 @@
   }
   .home-toggle-btn:active{ opacity: 0.75; }
   .home-toggle-btn:focus-visible{ outline: 2px solid var(--accent); outline-offset: 2px; }
+  /* ---- the two alternate contents of the header toggle button: the normal
+     "+ Add"/"✓ Added" dot+label (all pages except Home) and the gear icon
+     (Home only) — JS toggles which one is display:inline-flex vs none ---- */
+  .home-toggle-normal, .home-toggle-gear{ display: inline-flex; align-items: center; gap: 0.35rem; }
 
   .pages-scroll{
     flex: 1 1 auto;
@@ -794,6 +805,76 @@
     color: var(--ink-soft);
     white-space: nowrap;
   }
+
+  /* ---- "+ Add link" now lives at the top of Home's own body (Change 3), always,
+     not just in the empty state — centered like the empty-state button was ---- */
+  .home-add-wrap{ text-align: center; }
+
+  /* ==================================================================
+     Settings panel — Home-only gear button opens this. Minimal centered
+     card over a dimmed backdrop, reusing .page-card / .zoom-btn look.
+     ================================================================== */
+  .settings-overlay{
+    position: fixed;
+    inset: 0;
+    z-index: 500;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    background: rgba(23,35,53,0.45);
+    padding: 1.25rem;
+  }
+  .settings-overlay.show{ display: flex; }
+  .settings-card{
+    width: 100%;
+    max-width: 22rem;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 0.875rem;
+    box-shadow: var(--shadow);
+    overflow: hidden;
+  }
+  .settings-card-head{
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+    padding: 1rem 1.1rem 0.6rem;
+  }
+  .settings-card-head h2{
+    font-family: var(--serif);
+    font-weight: 500;
+    font-size: 1.18rem;
+    margin: 0;
+    color: var(--ink);
+  }
+  .settings-close-btn{
+    flex: 0 0 auto;
+    width: 34px; height: 34px;
+    display: flex; align-items: center; justify-content: center;
+    border: 1px solid var(--border);
+    background: var(--surface-2);
+    border-radius: 8px;
+    color: var(--ink);
+    cursor: pointer;
+    padding: 0;
+  }
+  .settings-close-btn svg{ width: 16px; height: 16px; }
+  .settings-close-btn:active{ background: var(--accent-soft); border-color: var(--accent); }
+  .settings-close-btn:focus-visible{ outline: 2px solid var(--accent); outline-offset: 1px; }
+  .settings-card-body{ padding: 0 1.1rem 1.15rem; }
+  .settings-row-label{ font-weight: 600; font-size: 0.95rem; margin: 0 0 0.25rem; color: var(--ink); }
+  .settings-row-sub{ font-size: 0.82rem; color: var(--ink-faint); margin: 0 0 0.75rem; }
+  .settings-zoom-row{
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    padding: 0.35rem;
+    width: fit-content;
+  }
 </style>
 </head>
 <body>
@@ -808,7 +889,12 @@
         <p class="eyebrow">Nutrition · Quick Reference</p>
         <h1 class="page-title-live" id="pageTitleLive">Home</h1>
       </div>
-      <button type="button" class="badge b-warn home-toggle-btn" id="homeToggleBtn" aria-label="Add this page to Home"><span class="dot"></span><span id="homeToggleLabel">+ Add link</span></button>
+      <button type="button" class="badge b-warn home-toggle-btn" id="homeToggleBtn" aria-label="Add this page to Home">
+        <span class="home-toggle-normal" id="homeToggleNormal"><span class="dot"></span><span id="homeToggleLabel">+ Add</span></span>
+        <span class="home-toggle-gear" id="homeToggleGear" style="display:none;">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="14" height="14"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+        </span>
+      </button>
     </header>
 
     <div class="pages-scroll" id="pagesScroll">
@@ -1183,6 +1269,30 @@
     <button type="button" class="zoom-btn" id="zoomInBtn" aria-label="Zoom in">+</button>
   </div>
 
+  <!-- ================= Settings panel: Home-only, opened via the header gear button.
+       Minimal centered card over a dimmed backdrop — not a full page. Currently holds
+       only the "Default zoom" stepper (persisted startup zoom, separate from the live
+       floating zoom pill below). Closes via its own close button or a backdrop tap. ================= -->
+  <div class="settings-overlay" id="settingsOverlay">
+    <div class="settings-card" role="dialog" aria-modal="true" aria-label="Settings">
+      <div class="settings-card-head">
+        <h2>Settings</h2>
+        <button type="button" class="settings-close-btn" id="settingsCloseBtn" aria-label="Close settings">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+      </div>
+      <div class="settings-card-body">
+        <p class="settings-row-label">Default zoom</p>
+        <p class="settings-row-sub">Applies immediately and is used as the startup zoom on future loads.</p>
+        <div class="settings-zoom-row" role="group" aria-label="Default zoom">
+          <button type="button" class="zoom-btn" id="settingsZoomOutBtn" aria-label="Decrease default zoom">&minus;</button>
+          <span class="zoom-label" id="settingsZoomLabel">100%</span>
+          <button type="button" class="zoom-btn" id="settingsZoomInBtn" aria-label="Increase default zoom">+</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <div id="toast"></div>
 
 <script>
@@ -1321,10 +1431,14 @@
      ============================================================ */
   var homeToggleBtn = document.getElementById('homeToggleBtn');
   var homeToggleLabel = document.getElementById('homeToggleLabel');
+  var homeToggleNormal = document.getElementById('homeToggleNormal');
+  var homeToggleGear = document.getElementById('homeToggleGear');
 
+  // Home's header-right slot is a Settings gear button (opens the panel below);
+  // every other page keeps the original "+ Add" / "✓ Added" per-page pin toggle.
   function onHeaderToggleClick(){
     if (currentPageId === 'home'){
-      openToc('select');
+      openSettings();
       return;
     }
     var nowPinned = togglePinned(currentPageId);
@@ -1333,12 +1447,16 @@
 
   function updateHeaderToggle(){
     if (currentPageId === 'home'){
-      homeToggleLabel.textContent = '+ Add link';
-      homeToggleBtn.classList.remove('b-ok');
-      homeToggleBtn.classList.add('b-warn');
-      homeToggleBtn.setAttribute('aria-label', 'Add a link to Home');
+      homeToggleNormal.style.display = 'none';
+      homeToggleGear.style.display = 'inline-flex';
+      homeToggleBtn.classList.remove('b-ok', 'b-warn');
+      homeToggleBtn.classList.add('b-ref');
+      homeToggleBtn.setAttribute('aria-label', 'Open settings');
       return;
     }
+    homeToggleNormal.style.display = 'inline-flex';
+    homeToggleGear.style.display = 'none';
+    homeToggleBtn.classList.remove('b-ref');
     var pinned = isPinned(currentPageId);
     homeToggleLabel.textContent = pinned ? '✓ Added' : '+ Add';
     homeToggleBtn.classList.toggle('b-ok', pinned);
@@ -1382,13 +1500,20 @@
   function renderHome(){
     homeBody.textContent = '';
 
+    // "+ Add link" (Change 3): now rendered unconditionally at the very top of
+    // Home's body on every render — previously only shown in the empty-state
+    // branch, sourced from the header (superseded by the Settings gear button).
+    var addLinkWrap = document.createElement('div');
+    addLinkWrap.className = 'home-block home-add-wrap';
+    addLinkWrap.appendChild(makeAddLinkButton());
+    homeBody.appendChild(addLinkWrap);
+
     if (pinnedIds.length === 0){
       var empty = document.createElement('div');
       empty.className = 'home-empty';
       var p = document.createElement('p');
       p.textContent = 'No shortcuts yet — tap + Add link above, or open any page and tap + Add to pin it here.';
       empty.appendChild(p);
-      empty.appendChild(makeAddLinkButton());
       homeBody.appendChild(empty);
       return;
     }
@@ -1647,18 +1772,57 @@
   var ZOOM_BASELINE_PX = 14.4; // new 100% reference point
   var ZOOM_PCT = [80, 85, 90, 95, 100, 105, 110, 115, 120, 125, 130, 135, 140, 145, 150];
   var ZOOM_LEVELS = ZOOM_PCT.map(function(pct){ return ZOOM_BASELINE_PX * (pct / 100); }); // px per level
-  var zoomIndex = ZOOM_PCT.indexOf(100); // 100% (14.4px) — default startup level
+  var ZOOM_HARDCODED_DEFAULT_INDEX = ZOOM_PCT.indexOf(100); // 100% (14.4px) — fallback only
+
+  /* ---- persisted "default/startup zoom" (Settings panel) — a SEPARATE, independently
+     tracked value from the live in-session zoom pill below. Only the Settings stepper
+     writes this key; the floating pill never does. Guarded with try/catch exactly like
+     the pinned-Home-links read above, falling back to the hardcoded 100% index if the
+     key is missing, malformed, or out of range. ---- */
+  var DEFAULT_ZOOM_KEY = 'nutritionWrapperDefaultZoomIndex';
+
+  function loadDefaultZoomIndex(){
+    try {
+      var raw = window.localStorage.getItem(DEFAULT_ZOOM_KEY);
+      if (raw === null) return ZOOM_HARDCODED_DEFAULT_INDEX;
+      var idx = parseInt(raw, 10);
+      if (!Number.isInteger(idx) || idx < 0 || idx >= ZOOM_PCT.length) return ZOOM_HARDCODED_DEFAULT_INDEX;
+      return idx;
+    } catch (e) {
+      return ZOOM_HARDCODED_DEFAULT_INDEX; // storage unavailable/malformed — fall back, never throw
+    }
+  }
+  function saveDefaultZoomIndex(idx){
+    try { window.localStorage.setItem(DEFAULT_ZOOM_KEY, String(idx)); }
+    catch (e) { /* storage unavailable — the persisted default just won't stick */ }
+  }
+
+  // live, in-session zoom level — starts from the persisted default (Settings), not
+  // always the hardcoded 100% index, per Change 2
+  var zoomIndex = loadDefaultZoomIndex();
 
   var zoomOutBtn = document.getElementById('zoomOutBtn');
   var zoomInBtn = document.getElementById('zoomInBtn');
   var zoomLabel = document.getElementById('zoomLabel');
+  var settingsZoomOutBtn = document.getElementById('settingsZoomOutBtn');
+  var settingsZoomInBtn = document.getElementById('settingsZoomInBtn');
+  var settingsZoomLabel = document.getElementById('settingsZoomLabel');
+
+  function updateSettingsZoomUI(){
+    settingsZoomLabel.textContent = ZOOM_PCT[zoomIndex] + '%';
+    settingsZoomOutBtn.disabled = zoomIndex === 0;
+    settingsZoomInBtn.disabled = zoomIndex === ZOOM_LEVELS.length - 1;
+  }
 
   function applyZoom(){
     document.documentElement.style.fontSize = ZOOM_LEVELS[zoomIndex] + 'px';
     zoomLabel.textContent = ZOOM_PCT[zoomIndex] + '%';
     zoomOutBtn.disabled = zoomIndex === 0;
     zoomInBtn.disabled = zoomIndex === ZOOM_LEVELS.length - 1;
+    updateSettingsZoomUI();
   }
+  // floating pill: live, in-session, non-persisted quick-adjust — unchanged behavior,
+  // deliberately never writes to the Settings' persisted-default key
   zoomOutBtn.addEventListener('click', function(){
     if (zoomIndex > 0){ zoomIndex -= 1; applyZoom(); }
   });
@@ -1666,6 +1830,36 @@
     if (zoomIndex < ZOOM_LEVELS.length - 1){ zoomIndex += 1; applyZoom(); }
   });
   applyZoom();
+
+  // Settings panel stepper: same levels/formula, but every step here ALSO persists
+  // as the new default/startup zoom (Change 2) — the only place that writes the key
+  settingsZoomOutBtn.addEventListener('click', function(){
+    if (zoomIndex > 0){ zoomIndex -= 1; applyZoom(); saveDefaultZoomIndex(zoomIndex); }
+  });
+  settingsZoomInBtn.addEventListener('click', function(){
+    if (zoomIndex < ZOOM_LEVELS.length - 1){ zoomIndex += 1; applyZoom(); saveDefaultZoomIndex(zoomIndex); }
+  });
+
+  /* ============================================================
+     Settings panel open/close (Home-only gear button in the header
+     triggers openSettings() — see onHeaderToggleClick above). Minimal
+     centered card over a dimmed backdrop; closes via its own close
+     button or a tap on the backdrop itself.
+     ============================================================ */
+  var settingsOverlay = document.getElementById('settingsOverlay');
+  var settingsCloseBtn = document.getElementById('settingsCloseBtn');
+
+  function openSettings(){
+    settingsOverlay.classList.add('show');
+    updateSettingsZoomUI();
+  }
+  function closeSettings(){
+    settingsOverlay.classList.remove('show');
+  }
+  settingsCloseBtn.addEventListener('click', closeSettings);
+  settingsOverlay.addEventListener('click', function(e){
+    if (e.target === settingsOverlay) closeSettings(); // backdrop tap only, not the card itself
+  });
 
   /* ---- initial state: drawer CLOSED (.toc-closed is already on #tocPanel in the
      markup), Home active — showPage() also triggers the first renderHome() call ---- */
