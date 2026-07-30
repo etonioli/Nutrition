@@ -782,6 +782,37 @@
   }
   .myth-truth{ color: var(--ink); }
 
+  .ref-entry{
+    border-top: 1px solid var(--border);
+    padding: 0.85rem 0 0.85rem;
+  }
+  .ref-entry:first-of-type{ border-top: none; padding-top: 0; }
+  .ref-entry-head{
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin: 0 0 0.35rem !important;
+    flex-wrap: wrap;
+  }
+  .ref-entry-n{ font-family: var(--mono); font-weight: 700; color: var(--ref); }
+  .ref-entry-title{ font-weight: 600; margin: 0 0 0.2rem !important; }
+  .ref-entry-meta{ font-size: 0.88rem; color: var(--ink-soft); margin: 0 0 0.35rem !important; }
+  .ref-entry-url{
+    display: block;
+    font-family: var(--mono);
+    font-size: 0.8rem;
+    word-break: break-all;
+  }
+  /* ---- flash-highlight on jump-to / return-to, per PLAN.md §2.3 steps 4 and
+     "Back to reading" step 3 -- brief, reduced-motion-safe transition ---- */
+  .ref-entry.cite-highlight, .cite-marker.cite-highlight{
+    animation: cite-flash 1.6s ease;
+  }
+  @keyframes cite-flash{
+    0%   { background-color: var(--mark-bg); }
+    100% { background-color: transparent; }
+  }
+
   mark.search-hit{
     background: var(--mark-bg);
     color: var(--mark-ink);
@@ -2337,6 +2368,90 @@
   INFO_TOPICS.forEach(function(topic){
     infoPagesScrollEl.insertBefore(buildInfoPageSection(topic), infoFooterLineEl);
   });
+
+  /* ---- References page (Task 6): rendered directly from REFERENCES, one
+     entry per reference with id="ref-<n>" -- the jump target for every
+     citation marker anywhere in the app, and the pop target the "Back to
+     reading" control (Task 7/8) restores FROM. ---- */
+  function buildReferenceEntry(ref){
+    var wrap = document.createElement('div');
+    wrap.className = 'ref-entry';
+    wrap.id = 'ref-' + ref.n;
+
+    var head = document.createElement('p');
+    head.className = 'ref-entry-head';
+    var nSpan = document.createElement('span');
+    nSpan.className = 'ref-entry-n';
+    nSpan.textContent = '[' + ref.n + ']';
+    head.appendChild(nSpan);
+    var tierBadge = document.createElement('span');
+    tierBadge.className = 'badge b-ref';
+    var dot = document.createElement('span');
+    dot.className = 'dot';
+    tierBadge.appendChild(dot);
+    tierBadge.appendChild(document.createTextNode('Tier ' + ref.tier));
+    head.appendChild(tierBadge);
+    var confSpan = document.createElement('span');
+    confSpan.className = 'conf-tag';
+    confSpan.textContent = '[' + ref.confidence + ']';
+    head.appendChild(confSpan);
+    wrap.appendChild(head);
+
+    var titleP = document.createElement('p');
+    titleP.className = 'ref-entry-title';
+    titleP.textContent = ref.title;
+    wrap.appendChild(titleP);
+
+    var metaP = document.createElement('p');
+    metaP.className = 'ref-entry-meta';
+    metaP.textContent = ref.authors + ' (' + ref.year + '). ' + ref.publisher + '.';
+    wrap.appendChild(metaP);
+
+    var link = document.createElement('a');
+    link.className = 'ref-entry-url';
+    link.href = ref.url;
+    link.target = '_blank';
+    link.rel = 'noopener noreferrer';
+    link.textContent = ref.url;
+    wrap.appendChild(link);
+
+    return wrap;
+  }
+
+  function buildReferencesPageSection(){
+    var section = document.createElement('section');
+    section.className = 'page';
+    section.setAttribute('data-page', 'info-references');
+    section.appendChild(buildInfoPageBack('info'));
+
+    var card = document.createElement('div');
+    card.className = 'page-card';
+
+    var head = document.createElement('div');
+    head.className = 'page-card-head';
+    var titlewrap = document.createElement('span');
+    titlewrap.className = 'page-card-titlewrap';
+    var h2 = document.createElement('h2');
+    h2.textContent = 'References';
+    titlewrap.appendChild(h2);
+    head.appendChild(titlewrap);
+    card.appendChild(head);
+
+    var body = document.createElement('div');
+    body.className = 'page-card-body';
+    var intro = document.createElement('p');
+    intro.className = 'info-summary';
+    intro.textContent = 'All ' + REFERENCES.length + ' sources cited in this section, in reference-number order.';
+    body.appendChild(intro);
+
+    REFERENCES.forEach(function(ref){ body.appendChild(buildReferenceEntry(ref)); });
+
+    card.appendChild(body);
+    section.appendChild(card);
+    return section;
+  }
+
+  infoPagesScrollEl.insertBefore(buildReferencesPageSection(), infoFooterLineEl);
 
   function buildInfoNavNode(){
     var nodeEl = document.createElement('div');
