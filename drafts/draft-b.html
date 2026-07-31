@@ -1,0 +1,1275 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<title>Draft B — Clinical / data-forward</title>
+<style>
+  /* ---------------------------------------------------------------
+     DESIGN TOKENS
+     --------------------------------------------------------------- */
+  :root{
+    --bg:            #F6F7F7;
+    --bg-elevated:   #FFFFFF;
+    --text:          #14181B;
+    --text-muted:    #5C6970;
+    --text-faint:    #8A969D;
+    --hairline:      #DBE1E4;
+    --hairline-strong:#C3CBCF;
+    --accent:        #2C6975;
+    --accent-weak:   #DCE9EA;
+    --accent-contrast:#FFFFFF;
+    --status-good:   #1F7A4D;
+    --status-warn:   #A9720E;
+    --status-bad:    #B23B3B;
+    --focus-ring:    #2C6975;
+    --shadow-none:   none;
+
+    --sans: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    --mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+
+    --fs-micro: 0.6875rem;
+    --fs-xs:    0.75rem;
+    --fs-sm:    0.8125rem;
+    --fs-base:  0.9375rem;
+    --fs-md:    1.0625rem;
+    --fs-lg:    1.25rem;
+    --fs-xl:    1.6rem;
+    --fs-hero:  2.15rem;
+  }
+
+  @media (prefers-color-scheme: dark){
+    :root{
+      --bg:            #0A0C0D;
+      --bg-elevated:   #16191B;
+      --text:          #E7EAEB;
+      --text-muted:    #93A0A6;
+      --text-faint:    #667075;
+      --hairline:      #24292B;
+      --hairline-strong:#33393C;
+      --accent:        #71C3D1;
+      --accent-weak:   #163238;
+      --accent-contrast:#052024;
+      --status-good:   #52C089;
+      --status-warn:   #E0AC4C;
+      --status-bad:    #E37878;
+      --focus-ring:    #71C3D1;
+    }
+  }
+
+  *, *::before, *::after{ box-sizing: border-box; }
+  html, body{ margin:0; padding:0; }
+  body{
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--sans);
+    font-size: var(--fs-base);
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+    overflow-x: hidden;
+  }
+  button{ font-family: inherit; color: inherit; }
+  input{ font-family: inherit; }
+  a{ color: var(--accent); }
+  .tnum{
+    font-variant-numeric: tabular-nums;
+    font-feature-settings: "tnum" 1;
+  }
+  .mono{ font-family: var(--mono); }
+
+  *:focus-visible{
+    outline: 2px solid var(--focus-ring);
+    outline-offset: 2px;
+  }
+
+  .micro-label{
+    font-size: var(--fs-micro);
+    text-transform: uppercase;
+    letter-spacing: 0.09em;
+    color: var(--text-faint);
+    font-weight: 600;
+    margin: 0 0 0.4rem 0;
+  }
+
+  .hairline{ border: 0; border-top: 1px solid var(--hairline); margin: 0; }
+
+  .status-dot{
+    display: inline-block;
+    width: 0.5rem; height: 0.5rem;
+    border-radius: 50%;
+    margin-right: 0.4rem;
+    flex: 0 0 auto;
+  }
+  .status-good{ background: var(--status-good); }
+  .status-warn{ background: var(--status-warn); }
+  .status-bad{ background: var(--status-bad); }
+
+  .status-tag{
+    display: inline-flex;
+    align-items: center;
+    font-size: var(--fs-xs);
+    color: var(--text-muted);
+    white-space: nowrap;
+  }
+
+  /* ---------------------------------------------------------------
+     DRAFT PREVIEW CHROME (not part of the design being judged)
+     --------------------------------------------------------------- */
+  .draft-switcher{
+    position: sticky; top: 0; z-index: 50;
+    background: var(--bg);
+    border-bottom: 1px solid var(--hairline-strong);
+    padding: 0.5rem 0.75rem 0.55rem;
+  }
+  .draft-switcher-label{
+    display:block;
+    font-size: 0.6rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--text-faint);
+    margin-bottom: 0.35rem;
+  }
+  .draft-switcher-btns{
+    display: flex;
+    gap: 0.25rem;
+    overflow-x: auto;
+  }
+  .switch-btn{
+    appearance: none;
+    background: transparent;
+    border: 1px solid var(--hairline-strong);
+    border-radius: 3px;
+    padding: 0.3rem 0.6rem;
+    font-size: var(--fs-xs);
+    color: var(--text-muted);
+    cursor: pointer;
+    white-space: nowrap;
+  }
+  .switch-btn.active{
+    border-color: var(--accent);
+    color: var(--accent);
+    font-weight: 600;
+  }
+
+  /* ---------------------------------------------------------------
+     MAIN SCROLL AREA
+     --------------------------------------------------------------- */
+  #pagesScroll{
+    max-width: 412px;
+    margin: 0 auto;
+    min-height: 60vh;
+  }
+  .screen{ padding: 1rem 1rem 2rem; }
+  .screen[hidden]{ display: none; }
+
+  .page-title{
+    font-size: var(--fs-xl);
+    font-weight: 650;
+    margin: 0 0 0.15rem;
+    letter-spacing: -0.01em;
+  }
+  .page-sub{
+    font-size: var(--fs-sm);
+    color: var(--text-muted);
+    margin: 0 0 1.1rem;
+  }
+  .breadcrumb{
+    font-size: var(--fs-xs);
+    color: var(--text-faint);
+    margin: 0 0 0.25rem;
+  }
+
+  /* ---------------------------------------------------------------
+     HOME
+     --------------------------------------------------------------- */
+  .sync-row{
+    display: flex;
+    align-items: center;
+    font-size: var(--fs-xs);
+    color: var(--text-muted);
+    margin-bottom: 1.1rem;
+  }
+
+  .quicknums{
+    display: flex;
+    margin-bottom: 1.4rem;
+    border-top: 1px solid var(--hairline);
+    border-bottom: 1px solid var(--hairline);
+    padding: 0.65rem 0;
+  }
+  .quicknum{
+    flex: 1;
+    padding: 0 0.6rem;
+    border-left: 1px solid var(--hairline);
+  }
+  .quicknum:first-child{ border-left: 0; padding-left: 0; }
+  .quicknum-label{
+    font-size: var(--fs-micro);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--text-faint);
+    display: block;
+    margin-bottom: 0.2rem;
+  }
+  .quicknum-value{
+    font-size: var(--fs-md);
+    font-weight: 600;
+  }
+  .quicknum-unit{
+    font-size: var(--fs-xs);
+    color: var(--text-muted);
+    font-weight: 400;
+  }
+
+  .home-list-title{
+    font-size: var(--fs-micro);
+    text-transform: uppercase;
+    letter-spacing: 0.09em;
+    color: var(--text-faint);
+    margin: 0 0 0.15rem;
+  }
+  .home-row{
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+    padding: 0.7rem 0;
+    border-bottom: 1px solid var(--hairline);
+    background: transparent;
+    border-left: none; border-right: none; border-top: none;
+    width: 100%;
+    text-align: left;
+    cursor: pointer;
+  }
+  .home-row:last-child{ border-bottom: 0; }
+  .home-row-main{ min-width: 0; }
+  .home-row-title{
+    font-size: var(--fs-base);
+    font-weight: 500;
+    color: var(--text);
+    display: block;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .home-row-parent{
+    font-size: var(--fs-xs);
+    font-style: italic;
+    color: var(--text-faint);
+    display: block;
+  }
+  .home-row-chevron{
+    color: var(--text-faint);
+    flex: 0 0 auto;
+  }
+
+  /* ---------------------------------------------------------------
+     READING
+     --------------------------------------------------------------- */
+  .evidence-row{
+    display: flex;
+    align-items: center;
+    gap: 0.9rem;
+    padding: 0.55rem 0;
+    border-top: 1px solid var(--hairline);
+    border-bottom: 1px solid var(--hairline);
+    margin-bottom: 1.1rem;
+    font-size: var(--fs-xs);
+    color: var(--text-muted);
+    flex-wrap: wrap;
+  }
+  .evidence-tier{
+    font-family: var(--mono);
+    font-size: var(--fs-sm);
+    color: var(--text);
+    font-weight: 600;
+  }
+
+  .note-inset{
+    border-left: 2px solid var(--accent);
+    padding-left: 0.75rem;
+    margin: 0 0 1.2rem;
+    font-size: var(--fs-sm);
+    color: var(--text-muted);
+    font-style: italic;
+    line-height: 1.55;
+  }
+  .note-inset .note-label{
+    display: block;
+    font-style: normal;
+    font-size: var(--fs-micro);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--text-faint);
+    margin-bottom: 0.25rem;
+    font-weight: 600;
+  }
+
+  .reading-h{
+    font-size: var(--fs-md);
+    font-weight: 650;
+    margin: 1.4rem 0 0.4rem;
+  }
+  .reading-p{
+    font-size: var(--fs-base);
+    line-height: 1.65;
+    margin: 0 0 0.9rem;
+    color: var(--text);
+  }
+  .cite-btn{
+    appearance: none;
+    background: var(--accent-weak);
+    color: var(--accent);
+    border: none;
+    border-radius: 3px;
+    font-family: var(--mono);
+    font-size: 0.7rem;
+    font-weight: 700;
+    padding: 0.03rem 0.32rem;
+    margin: 0 0.05rem;
+    cursor: pointer;
+    line-height: 1.4;
+    vertical-align: 0.05em;
+  }
+  .cite-btn:hover{ background: var(--accent); color: var(--accent-contrast); }
+
+  .back-to-reading{
+    position: sticky;
+    bottom: 0.75rem;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    background: var(--text);
+    color: var(--bg);
+    border: none;
+    border-radius: 999px;
+    padding: 0.45rem 0.85rem;
+    font-size: var(--fs-xs);
+    font-weight: 600;
+    cursor: pointer;
+    margin: 0.5rem 0 1.2rem;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.18);
+  }
+  .back-to-reading[hidden]{ display: none; }
+
+  .refs-heading{
+    font-size: var(--fs-micro);
+    text-transform: uppercase;
+    letter-spacing: 0.09em;
+    color: var(--text-faint);
+    margin: 1.6rem 0 0.5rem;
+    border-top: 1px solid var(--hairline-strong);
+    padding-top: 1rem;
+  }
+  .ref-row{
+    padding: 0.6rem 0;
+    border-bottom: 1px solid var(--hairline);
+    scroll-margin-top: 4.5rem;
+  }
+  .ref-row:target, .ref-row.flash{
+    background: var(--accent-weak);
+  }
+  .ref-n{
+    font-family: var(--mono);
+    font-size: var(--fs-xs);
+    color: var(--accent);
+    font-weight: 700;
+    margin-right: 0.35rem;
+  }
+  .ref-meta{
+    font-size: var(--fs-xs);
+    color: var(--text-muted);
+    display: block;
+    margin-top: 0.15rem;
+  }
+  .ref-tier-line{
+    display: flex;
+    align-items: center;
+    margin-top: 0.3rem;
+    font-size: var(--fs-xs);
+    color: var(--text-faint);
+    gap: 0.35rem;
+  }
+  .ref-url{
+    display: block;
+    font-family: var(--mono);
+    font-size: 0.7rem;
+    color: var(--text-faint);
+    word-break: break-all;
+    margin-top: 0.15rem;
+  }
+
+  /* ---------------------------------------------------------------
+     FOOD TABLE + CALCULATOR
+     --------------------------------------------------------------- */
+  .table-scroll{
+    overflow-x: auto;
+    margin: 0 -1rem 0;
+    padding: 0 1rem;
+    -webkit-overflow-scrolling: touch;
+  }
+  table.food-table{
+    border-collapse: collapse;
+    width: 100%;
+    min-width: 560px;
+  }
+  .food-table thead th{
+    text-align: right;
+    font-size: var(--fs-micro);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--text-faint);
+    font-weight: 600;
+    padding: 0 0.4rem 0.5rem;
+    border-bottom: 1px solid var(--hairline-strong);
+    white-space: nowrap;
+  }
+  .food-table thead th:first-child,
+  .food-table thead th.col-tier{ text-align: left; }
+  .food-table tbody td{
+    padding: 0.55rem 0.4rem;
+    border-bottom: 1px solid var(--hairline);
+    text-align: right;
+    font-size: var(--fs-sm);
+    vertical-align: middle;
+    white-space: nowrap;
+  }
+  .food-table tbody td:first-child,
+  .food-table tbody td.col-tier{ text-align: left; }
+  .food-name{
+    font-size: var(--fs-base);
+    font-weight: 500;
+    display: block;
+  }
+  .food-state{
+    font-size: var(--fs-xs);
+    color: var(--text-muted);
+    display: block;
+  }
+  .food-tier{
+    font-size: var(--fs-xs);
+    color: var(--text-faint);
+  }
+  .grams-cell{
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+    justify-content: flex-end;
+  }
+  .grams-input{
+    width: 3.2rem;
+    background: transparent;
+    border: 1px solid var(--hairline-strong);
+    border-radius: 3px;
+    color: var(--text);
+    padding: 0.25rem 0.3rem;
+    font-size: var(--fs-sm);
+    text-align: right;
+    font-variant-numeric: tabular-nums;
+  }
+  .add-btn{
+    appearance: none;
+    background: var(--accent);
+    color: var(--accent-contrast);
+    border: none;
+    border-radius: 3px;
+    font-size: var(--fs-xs);
+    font-weight: 700;
+    padding: 0.3rem 0.5rem;
+    cursor: pointer;
+    line-height: 1;
+  }
+  .add-btn:active{ opacity: 0.85; }
+
+  .totals-block{
+    margin-top: 1.4rem;
+    padding-top: 0.9rem;
+    border-top: 2px solid var(--hairline-strong);
+  }
+  .totals-hero-row{
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    margin-bottom: 0.9rem;
+  }
+  .totals-hero-value{
+    font-size: var(--fs-hero);
+    font-weight: 700;
+    font-family: var(--mono);
+    letter-spacing: -0.02em;
+  }
+  .totals-hero-unit{
+    font-size: var(--fs-sm);
+    color: var(--text-muted);
+    margin-left: 0.25rem;
+    font-family: var(--sans);
+  }
+  .totals-target{
+    font-size: var(--fs-xs);
+    color: var(--text-muted);
+    text-align: right;
+  }
+  .totals-macros{
+    display: flex;
+    border-top: 1px solid var(--hairline);
+    border-bottom: 1px solid var(--hairline);
+    padding: 0.6rem 0;
+    margin-bottom: 0.9rem;
+  }
+  .totals-macro{
+    flex: 1;
+    border-left: 1px solid var(--hairline);
+    padding: 0 0.5rem;
+  }
+  .totals-macro:first-child{ border-left: 0; padding-left: 0; }
+  .totals-macro-label{
+    font-size: var(--fs-micro);
+    text-transform: uppercase;
+    letter-spacing: 0.07em;
+    color: var(--text-faint);
+    display: block;
+    margin-bottom: 0.15rem;
+  }
+  .totals-macro-value{
+    font-size: var(--fs-md);
+    font-weight: 600;
+    font-family: var(--mono);
+  }
+
+  .added-row{
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.5rem 0;
+    border-bottom: 1px solid var(--hairline);
+    font-size: var(--fs-sm);
+  }
+  .added-row-name{ color: var(--text); }
+  .added-row-grams{ color: var(--text-muted); font-size: var(--fs-xs); }
+  .added-row-kcal{ font-family: var(--mono); margin-left: 0.75rem; }
+  .remove-btn{
+    appearance: none;
+    background: none;
+    border: none;
+    color: var(--text-faint);
+    font-size: var(--fs-sm);
+    cursor: pointer;
+    padding: 0.1rem 0.3rem;
+    margin-left: 0.5rem;
+    line-height: 1;
+  }
+  .remove-btn:hover{ color: var(--status-bad); }
+  .added-empty{
+    font-size: var(--fs-xs);
+    color: var(--text-faint);
+    font-style: italic;
+    padding: 0.5rem 0;
+  }
+
+  /* ---------------------------------------------------------------
+     TRAINING
+     --------------------------------------------------------------- */
+  .stat-block{
+    padding: 1rem 0;
+    border-bottom: 1px solid var(--hairline);
+  }
+  .stat-block:first-of-type{ border-top: 1px solid var(--hairline); }
+  .stat-head{
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    margin-bottom: 0.5rem;
+  }
+  .stat-value{
+    font-size: var(--fs-xl);
+    font-weight: 700;
+    font-family: var(--mono);
+  }
+  .stat-value-unit{
+    font-size: var(--fs-sm);
+    color: var(--text-muted);
+    font-family: var(--sans);
+    margin-left: 0.2rem;
+  }
+  .stat-delta{
+    font-size: var(--fs-xs);
+    font-family: var(--mono);
+  }
+  .stat-delta.up{ color: var(--status-good); }
+  .stat-delta.down{ color: var(--status-bad); }
+  .sparkline{ display:block; margin: 0.35rem 0; }
+  .stat-note{
+    font-size: var(--fs-xs);
+    color: var(--text-faint);
+    margin: 0.3rem 0 0;
+    line-height: 1.5;
+  }
+  .stat-note.warn::before{ content: "⚠ "; }
+
+  .musclegroup-row{
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    padding: 0.35rem 0;
+  }
+  .musclegroup-label{
+    width: 5.2rem;
+    flex: 0 0 auto;
+    font-size: var(--fs-xs);
+    color: var(--text-muted);
+  }
+  .musclegroup-bar-track{
+    flex: 1;
+    height: 0.4rem;
+    background: var(--hairline);
+    border-radius: 2px;
+    overflow: hidden;
+  }
+  .musclegroup-bar-fill{
+    height: 100%;
+    background: var(--accent);
+    border-radius: 2px;
+  }
+  .musclegroup-value{
+    width: 2.6rem;
+    flex: 0 0 auto;
+    text-align: right;
+    font-size: var(--fs-xs);
+    font-family: var(--mono);
+    color: var(--text);
+  }
+
+  .changelog-row{
+    padding: 0.55rem 0;
+    border-bottom: 1px solid var(--hairline);
+    font-size: var(--fs-sm);
+  }
+  .changelog-date{
+    font-family: var(--mono);
+    font-size: var(--fs-xs);
+    color: var(--text-faint);
+    display: block;
+    margin-top: 0.1rem;
+  }
+  .changelog-added{ color: var(--status-good); font-weight: 600; }
+  .changelog-removed{ color: var(--status-bad); font-weight: 600; }
+
+  /* ---------------------------------------------------------------
+     TOC (only boxed component)
+     --------------------------------------------------------------- */
+  .toc-search-wrap{ margin-bottom: 0.9rem; }
+  .toc-search{
+    width: 100%;
+    background: var(--bg-elevated);
+    border: 1px solid var(--hairline-strong);
+    border-radius: 4px;
+    padding: 0.5rem 0.6rem;
+    font-size: var(--fs-base);
+    color: var(--text);
+  }
+  .toc-box{
+    border: 1px solid var(--hairline-strong);
+    border-radius: 6px;
+    background: var(--bg-elevated);
+    overflow: hidden;
+  }
+  .toc-item{
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+    background: none;
+    border: none;
+    border-bottom: 1px solid var(--hairline);
+    text-align: left;
+    padding: 0.6rem 0.8rem;
+    font-size: var(--fs-base);
+    color: var(--text);
+    cursor: pointer;
+  }
+  .toc-item.is-child{
+    padding-left: 1.7rem;
+    font-size: var(--fs-sm);
+    color: var(--text-muted);
+  }
+  .toc-item:last-child{ border-bottom: 0; }
+  .toc-item[aria-current="page"]{ color: var(--accent); font-weight: 600; }
+  .toc-item[hidden]{ display: none; }
+  .toc-item-arrow{ color: var(--text-faint); font-size: var(--fs-xs); }
+
+  .toast{
+    position: fixed;
+    left: 50%;
+    bottom: 1.2rem;
+    transform: translateX(-50%);
+    background: var(--text);
+    color: var(--bg);
+    font-size: var(--fs-xs);
+    padding: 0.5rem 0.9rem;
+    border-radius: 999px;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.2s ease;
+    z-index: 100;
+    white-space: nowrap;
+  }
+  .toast.show{ opacity: 1; }
+
+  /* ---------------------------------------------------------------
+     DESIGN NOTES FOOTER
+     --------------------------------------------------------------- */
+  .design-notes{
+    max-width: 412px;
+    margin: 0 auto;
+    padding: 1.4rem 1rem 3rem;
+    border-top: 1px solid var(--hairline-strong);
+  }
+  .design-notes p{
+    font-size: var(--fs-sm);
+    color: var(--text-muted);
+    line-height: 1.6;
+    margin: 0 0 0.7rem;
+  }
+</style>
+</head>
+<body>
+
+<nav class="draft-switcher" aria-label="Draft preview screen switcher">
+  <span class="draft-switcher-label">Design Draft B — clinical / data-forward — preview control, not part of the design</span>
+  <div class="draft-switcher-btns" role="tablist">
+    <button type="button" class="switch-btn active" data-screen="home" role="tab" aria-selected="true">Home</button>
+    <button type="button" class="switch-btn" data-screen="reading" role="tab" aria-selected="false">Reading</button>
+    <button type="button" class="switch-btn" data-screen="food" role="tab" aria-selected="false">Food</button>
+    <button type="button" class="switch-btn" data-screen="training" role="tab" aria-selected="false">Training</button>
+    <button type="button" class="switch-btn" data-screen="toc" role="tab" aria-selected="false">ToC</button>
+  </div>
+</nav>
+
+<main id="pagesScroll">
+
+  <!-- ============================================================
+       SCREEN 1 — HOME
+       ============================================================ -->
+  <section class="screen" id="screen-home" hidden aria-labelledby="home-title">
+    <h1 class="page-title" id="home-title">Home</h1>
+    <p class="page-sub">Pinned shortcuts</p>
+
+    <div class="sync-row">
+      <span class="status-dot status-good" aria-hidden="true"></span>
+      Last synced 2026-07-31 · 06:42
+    </div>
+
+    <div class="quicknums">
+      <div class="quicknum">
+        <span class="quicknum-label">Weight</span>
+        <span class="quicknum-value tnum mono">94.9<span class="quicknum-unit"> kg</span></span>
+      </div>
+      <div class="quicknum">
+        <span class="quicknum-label">Waist</span>
+        <span class="quicknum-value tnum mono">104<span class="quicknum-unit"> cm</span></span>
+      </div>
+      <div class="quicknum">
+        <span class="quicknum-label">Next scan</span>
+        <span class="quicknum-value tnum mono">08-17</span>
+      </div>
+    </div>
+
+    <p class="home-list-title">Pinned</p>
+    <button type="button" class="home-row" data-goto="food">
+      <span class="home-row-main">
+        <span class="home-row-title">Food calculator</span>
+      </span>
+      <svg class="home-row-chevron" width="14" height="14" viewBox="0 0 16 16" aria-hidden="true"><path d="M6 3l5 5-5 5" fill="none" stroke="currentColor" stroke-width="1.6"/></svg>
+    </button>
+    <button type="button" class="home-row" data-goto="training">
+      <span class="home-row-main">
+        <span class="home-row-title">Training — programme</span>
+      </span>
+      <svg class="home-row-chevron" width="14" height="14" viewBox="0 0 16 16" aria-hidden="true"><path d="M6 3l5 5-5 5" fill="none" stroke="currentColor" stroke-width="1.6"/></svg>
+    </button>
+    <button type="button" class="home-row" data-goto="reading">
+      <span class="home-row-main">
+        <span class="home-row-title">Session carbs</span>
+        <span class="home-row-parent">Back + Biceps</span>
+      </span>
+      <svg class="home-row-chevron" width="14" height="14" viewBox="0 0 16 16" aria-hidden="true"><path d="M6 3l5 5-5 5" fill="none" stroke="currentColor" stroke-width="1.6"/></svg>
+    </button>
+    <button type="button" class="home-row" data-goto="reading">
+      <span class="home-row-main">
+        <span class="home-row-title">Energy balance</span>
+        <span class="home-row-parent">Nutrition info</span>
+      </span>
+      <svg class="home-row-chevron" width="14" height="14" viewBox="0 0 16 16" aria-hidden="true"><path d="M6 3l5 5-5 5" fill="none" stroke="currentColor" stroke-width="1.6"/></svg>
+    </button>
+    <button type="button" class="home-row" data-goto="home">
+      <span class="home-row-main">
+        <span class="home-row-title">Body composition — latest reading</span>
+      </span>
+      <svg class="home-row-chevron" width="14" height="14" viewBox="0 0 16 16" aria-hidden="true"><path d="M6 3l5 5-5 5" fill="none" stroke="currentColor" stroke-width="1.6"/></svg>
+    </button>
+  </section>
+
+  <!-- ============================================================
+       SCREEN 2 — READING PAGE WITH CITATIONS
+       ============================================================ -->
+  <section class="screen" id="screen-reading" hidden aria-labelledby="reading-title">
+    <p class="breadcrumb">Nutrition info</p>
+    <h1 class="page-title" id="reading-title">Energy balance</h1>
+    <p class="page-sub">How the body gains and loses fat, what a calorie deficit actually does, and why weight loss slows down over time.</p>
+
+    <div class="evidence-row">
+      <span><span class="evidence-tier">Tier 2</span> predominant</span>
+      <span class="status-tag"><span class="status-dot status-good" aria-hidden="true"></span>Certain–Likely</span>
+      <span>6 sources</span>
+    </div>
+
+    <div class="note-inset">
+      <span class="note-label">Not medical advice</span>
+      This section is general education, not personal medical advice. It describes what guideline bodies and published research say for general populations. It does not account for your individual medical history, and nothing here should be used to make a medical decision. Those belong with a physician.
+    </div>
+
+    <p class="reading-p">
+      Body weight change is governed by the balance between energy intake and energy expenditure
+      <button type="button" class="cite-btn" data-ref="1">1</button>.
+      When expenditure exceeds intake, the body increases its oxidation of stored fat for fuel
+      <button type="button" class="cite-btn" data-ref="1">1</button>.
+      When body weight changes because of an energy imbalance, roughly 60 to 80% of the resulting change in body mass is typically body fat
+      <button type="button" class="cite-btn" data-ref="2">2</button> — the remainder is other tissue and body water.
+    </p>
+
+    <h2 class="reading-h">Where does the fat actually go?</h2>
+    <p class="reading-p">
+      When fat is metabolised for energy, most of its mass leaves the body as exhaled carbon dioxide, with the remainder excreted as water
+      <button type="button" class="cite-btn" data-ref="3">3</button>.
+      Fat is not "burned off" as heat and it is not excreted — it is exhaled.
+    </p>
+
+    <h2 class="reading-h">Why loss slows down</h2>
+    <p class="reading-p">
+      Weight loss produces changes in resting and non-resting energy expenditure that are independent of changes in fat-free mass — this is called adaptive thermogenesis
+      <button type="button" class="cite-btn" data-ref="4">4</button>.
+      It is a real effect that can slow further loss and favour regain, but it is a temporary metabolic adaptation, not permanent or irreversible metabolic damage
+      <button type="button" class="cite-btn" data-ref="5">5</button>.
+    </p>
+
+    <h2 class="reading-h">Not all calories cost the same to process</h2>
+    <p class="reading-p">
+      The thermic effect of food — the energy spent digesting and processing what you eat — is highest for protein at about 20 to 30% of ingested energy, moderate for carbohydrate at about 5 to 10%, and lowest for fat at about 0 to 3%
+      <button type="button" class="cite-btn" data-ref="6">6</button>.
+    </p>
+
+    <button type="button" class="back-to-reading" id="backToReadingBtn" hidden>
+      <svg width="12" height="12" viewBox="0 0 16 16" aria-hidden="true"><path d="M10 3L5 8l5 5" fill="none" stroke="currentColor" stroke-width="1.8"/></svg>
+      Back to reading
+    </button>
+
+    <h3 class="refs-heading">References cited on this page</h3>
+
+    <div class="ref-row" id="ref-1">
+      <span class="ref-n">[1]</span><strong>Endotext (NCBI Bookshelf, NIH)</strong> — Body Weight Regulation
+      <span class="ref-meta">Endotext / NCBI Bookshelf · 2018</span>
+      <span class="ref-tier-line"><span class="status-dot status-good" aria-hidden="true"></span>Tier 2 · Certain</span>
+      <span class="ref-url">ncbi.nlm.nih.gov/books/NBK278932/</span>
+    </div>
+    <div class="ref-row" id="ref-2">
+      <span class="ref-n">[2]</span><strong>Hill JO, Wyatt HR, Peters JC</strong> — Energy Balance and Obesity
+      <span class="ref-meta">Circulation · 2012</span>
+      <span class="ref-tier-line"><span class="status-dot status-warn" aria-hidden="true"></span>Tier 2 · Likely</span>
+      <span class="ref-url">pmc.ncbi.nlm.nih.gov/articles/PMC3401553/</span>
+    </div>
+    <div class="ref-row" id="ref-3">
+      <span class="ref-n">[3]</span><strong>Sripathi KN, et al.</strong> — Mixed Student Ideas about Mechanisms of Human Weight Loss
+      <span class="ref-meta">CBE Life Sciences Education · 2019</span>
+      <span class="ref-tier-line"><span class="status-dot status-good" aria-hidden="true"></span>Tier 5 · Certain</span>
+      <span class="ref-url">pmc.ncbi.nlm.nih.gov/articles/PMC6755313/</span>
+    </div>
+    <div class="ref-row" id="ref-4">
+      <span class="ref-n">[4]</span><strong>Müller MJ, Enderle J, Bosy-Westphal A</strong> — Changes in Energy Expenditure with Weight Gain and Weight Loss in Humans
+      <span class="ref-meta">Current Obesity Reports · 2016</span>
+      <span class="ref-tier-line"><span class="status-dot status-warn" aria-hidden="true"></span>Tier 2 · Likely</span>
+      <span class="ref-url">pmc.ncbi.nlm.nih.gov/articles/PMC5097076/</span>
+    </div>
+    <div class="ref-row" id="ref-5">
+      <span class="ref-n">[5]</span><strong>Müller MJ, Bosy-Westphal A</strong> — Adaptive thermogenesis with weight loss in humans
+      <span class="ref-meta">Obesity (Silver Spring) · 2013</span>
+      <span class="ref-tier-line"><span class="status-dot status-good" aria-hidden="true"></span>Tier 2 · Certain</span>
+      <span class="ref-url">pubmed.ncbi.nlm.nih.gov/23404923/</span>
+    </div>
+    <div class="ref-row" id="ref-6">
+      <span class="ref-n">[6]</span><strong>Tzeravini E, et al.</strong> — Diet induced thermogenesis, older and newer data with emphasis on obesity and diabetes mellitus
+      <span class="ref-meta">Metabolism Open · 2024</span>
+      <span class="ref-tier-line"><span class="status-dot status-good" aria-hidden="true"></span>Tier 2 · Certain</span>
+      <span class="ref-url">pmc.ncbi.nlm.nih.gov/articles/PMC11217690/</span>
+    </div>
+  </section>
+
+  <!-- ============================================================
+       SCREEN 3 — FOOD TABLE + CALCULATOR
+       ============================================================ -->
+  <section class="screen" id="screen-food" hidden aria-labelledby="food-title">
+    <h1 class="page-title" id="food-title">Food calculator</h1>
+    <p class="page-sub">Per 100 g values. Add a gram amount to build a running total.</p>
+
+    <div class="table-scroll">
+      <table class="food-table" id="foodTable">
+        <thead>
+          <tr>
+            <th>Food</th>
+            <th class="col-tier">Source</th>
+            <th>kcal</th>
+            <th>Prot g</th>
+            <th>Fat g</th>
+            <th>Carb g</th>
+            <th>Fib g</th>
+            <th>Add</th>
+          </tr>
+        </thead>
+        <tbody id="foodTableBody">
+          <!-- rows injected by JS from FOODS -->
+        </tbody>
+      </table>
+    </div>
+
+    <div class="totals-block">
+      <div class="totals-hero-row">
+        <div>
+          <span class="micro-label" style="margin-bottom:0.1rem;">Running total</span>
+          <div><span class="totals-hero-value tnum" id="totalKcal">0</span><span class="totals-hero-unit">kcal</span></div>
+        </div>
+        <div class="totals-target">of 2,600<br>target</div>
+      </div>
+
+      <div class="totals-macros">
+        <div class="totals-macro">
+          <span class="totals-macro-label">Protein</span>
+          <span class="totals-macro-value tnum" id="totalProt">0.0</span><span style="font-size:var(--fs-xs);color:var(--text-muted);"> g</span>
+        </div>
+        <div class="totals-macro">
+          <span class="totals-macro-label">Fat</span>
+          <span class="totals-macro-value tnum" id="totalFat">0.0</span><span style="font-size:var(--fs-xs);color:var(--text-muted);"> g</span>
+        </div>
+        <div class="totals-macro">
+          <span class="totals-macro-label">Carb</span>
+          <span class="totals-macro-value tnum" id="totalCarb">0.0</span><span style="font-size:var(--fs-xs);color:var(--text-muted);"> g</span>
+        </div>
+        <div class="totals-macro">
+          <span class="totals-macro-label">Fibre</span>
+          <span class="totals-macro-value tnum" id="totalFib">0.0</span><span style="font-size:var(--fs-xs);color:var(--text-muted);"> g</span>
+        </div>
+      </div>
+
+      <p class="micro-label">Added items</p>
+      <div id="addedList">
+        <p class="added-empty">Nothing added yet.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================================================
+       SCREEN 4 — TRAINING
+       ============================================================ -->
+  <section class="screen" id="screen-training" hidden aria-labelledby="training-title">
+    <h1 class="page-title" id="training-title">Training</h1>
+    <p class="page-sub">Programme: 3-day split — Back+Biceps · Chest+Triceps · Legs+Shoulders</p>
+
+    <div class="stat-block">
+      <div class="stat-head">
+        <span class="micro-label" style="margin-bottom:0;">Estimated 1RM — Lat Pulldown</span>
+      </div>
+      <div><span class="stat-value tnum">38.4<span class="stat-value-unit">kg</span></span> <span class="stat-delta up tnum">▲ +2.1</span></div>
+      <svg class="sparkline" width="220" height="40" viewBox="0 0 220 40" aria-hidden="true">
+        <polyline points="0,30 40,28 80,26 120,34 160,20 220,10" fill="none" stroke="var(--accent)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        <circle cx="220" cy="10" r="3" fill="var(--accent)"/>
+      </svg>
+      <p class="stat-note warn">Illustrative trend. Only the 2026-07-27 point (30 kg working weight) is an actual logged session; the gap reflects a real ~6-week bodyweight-only stretch between the two seca scans. Full rep-by-rep history pending a Hevy API re-pull.</p>
+    </div>
+
+    <div class="stat-block">
+      <div class="stat-head">
+        <span class="micro-label" style="margin-bottom:0;">Weekly volume load</span>
+      </div>
+      <div><span class="stat-value tnum">3,988<span class="stat-value-unit">kg</span></span> <span class="stat-delta tnum" style="color:var(--text-faint);">week of 07-27</span></div>
+      <svg class="sparkline" width="220" height="44" viewBox="0 0 220 44" aria-hidden="true">
+        <rect x="4"   y="40" width="34" height="2" fill="var(--hairline-strong)"/>
+        <rect x="58"  y="40" width="34" height="2" fill="var(--hairline-strong)"/>
+        <rect x="112" y="10" width="34" height="32" fill="var(--accent)" opacity="0.55"/>
+        <rect x="166" y="4"  width="34" height="38" fill="var(--accent)"/>
+      </svg>
+      <p class="stat-note warn">Illustrative 4-week series; weeks of 06-15 and 06-22 were bodyweight-only (near-zero external load) — a genuine training gap, not missing data. Only the rightmost bar (3,988 kg, 21 sets, 54 min) is an actual logged session.</p>
+    </div>
+
+    <div class="stat-block">
+      <span class="micro-label">Sets per muscle group · trailing 4 weeks</span>
+      <div class="musclegroup-row">
+        <span class="musclegroup-label">Back</span>
+        <div class="musclegroup-bar-track"><div class="musclegroup-bar-fill" style="width:72%"></div></div>
+        <span class="musclegroup-value tnum">26</span>
+      </div>
+      <div class="musclegroup-row">
+        <span class="musclegroup-label">Chest</span>
+        <div class="musclegroup-bar-track"><div class="musclegroup-bar-fill" style="width:50%"></div></div>
+        <span class="musclegroup-value tnum">18</span>
+      </div>
+      <div class="musclegroup-row">
+        <span class="musclegroup-label">Legs</span>
+        <div class="musclegroup-bar-track"><div class="musclegroup-bar-fill" style="width:61%"></div></div>
+        <span class="musclegroup-value tnum">22</span>
+      </div>
+      <div class="musclegroup-row">
+        <span class="musclegroup-label">Shoulders</span>
+        <div class="musclegroup-bar-track"><div class="musclegroup-bar-fill" style="width:39%"></div></div>
+        <span class="musclegroup-value tnum">14</span>
+      </div>
+      <div class="musclegroup-row">
+        <span class="musclegroup-label">Arms</span>
+        <div class="musclegroup-bar-track"><div class="musclegroup-bar-fill" style="width:44%"></div></div>
+        <span class="musclegroup-value tnum">16</span>
+      </div>
+      <p class="stat-note warn">Illustrative distribution — a confirmed weekly training-day pattern is still an open item (see hevy-reference.md backlog).</p>
+    </div>
+
+    <div class="stat-block" style="border-bottom:none;">
+      <span class="micro-label">Routine changelog</span>
+      <div class="changelog-row">
+        Reloaded programme after 6-week bodyweight-only gap
+        <span class="changelog-date">2026-07-27</span>
+      </div>
+      <div class="changelog-row" style="border-bottom:none;">
+        <span class="changelog-added">Added:</span> Incline DB Press · <span class="changelog-removed">Removed:</span> Leg Press
+        <span class="changelog-date">2026-08-03 (illustrative)</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================================================
+       SCREEN 5 — TABLE OF CONTENTS (only boxed component)
+       ============================================================ -->
+  <section class="screen" id="screen-toc" hidden aria-labelledby="toc-title">
+    <h1 class="page-title" id="toc-title">Table of contents</h1>
+
+    <div class="toc-search-wrap">
+      <label for="tocSearch" style="position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0,0,0,0);">Search table of contents</label>
+      <input type="search" id="tocSearch" class="toc-search" placeholder="Search pages…" aria-label="Search table of contents">
+    </div>
+
+    <div class="toc-box" id="tocBox" role="list">
+      <button type="button" class="toc-item" data-goto="home" role="listitem">Home <span class="toc-item-arrow" aria-hidden="true">›</span></button>
+
+      <button type="button" class="toc-item" data-goto="none" role="listitem">Body composition <span class="toc-item-arrow" aria-hidden="true">›</span></button>
+      <button type="button" class="toc-item is-child" data-goto="none" role="listitem">Latest reading <span class="toc-item-arrow" aria-hidden="true">›</span></button>
+
+      <button type="button" class="toc-item" data-goto="none" role="listitem">Diet protocol <span class="toc-item-arrow" aria-hidden="true">›</span></button>
+      <button type="button" class="toc-item is-child" data-goto="none" role="listitem">Phases <span class="toc-item-arrow" aria-hidden="true">›</span></button>
+      <button type="button" class="toc-item is-child" data-goto="none" role="listitem">Phase 1/2 correction <span class="toc-item-arrow" aria-hidden="true">›</span></button>
+
+      <button type="button" class="toc-item" data-goto="training" role="listitem">Training <span class="toc-item-arrow" aria-hidden="true">›</span></button>
+      <button type="button" class="toc-item is-child" data-goto="training" role="listitem">Programme <span class="toc-item-arrow" aria-hidden="true">›</span></button>
+      <button type="button" class="toc-item is-child" data-goto="none" role="listitem">Training history <span class="toc-item-arrow" aria-hidden="true">›</span></button>
+
+      <button type="button" class="toc-item" data-goto="none" role="listitem">Nutrition info <span class="toc-item-arrow" aria-hidden="true">›</span></button>
+      <button type="button" class="toc-item is-child" data-goto="reading" role="listitem">Energy balance <span class="toc-item-arrow" aria-hidden="true">›</span></button>
+      <button type="button" class="toc-item is-child" data-goto="none" role="listitem">Protein <span class="toc-item-arrow" aria-hidden="true">›</span></button>
+      <button type="button" class="toc-item is-child" data-goto="none" role="listitem">Carbohydrates &amp; fibre <span class="toc-item-arrow" aria-hidden="true">›</span></button>
+      <button type="button" class="toc-item is-child" data-goto="none" role="listitem">Dietary fat <span class="toc-item-arrow" aria-hidden="true">›</span></button>
+      <button type="button" class="toc-item is-child" data-goto="none" role="listitem">Micronutrients <span class="toc-item-arrow" aria-hidden="true">›</span></button>
+      <button type="button" class="toc-item is-child" data-goto="none" role="listitem">References <span class="toc-item-arrow" aria-hidden="true">›</span></button>
+
+      <button type="button" class="toc-item" data-goto="food" role="listitem">Food calculator <span class="toc-item-arrow" aria-hidden="true">›</span></button>
+
+      <button type="button" class="toc-item" data-goto="none" role="listitem">Established findings <span class="toc-item-arrow" aria-hidden="true">›</span></button>
+    </div>
+  </section>
+
+</main>
+
+<footer class="design-notes">
+  <h2 class="micro-label">Design notes</h2>
+  <p>Everything sits on bare background — no card borders, no shadows, no nested panels — except the ToC drawer, the one place a boxed container is allowed. Structure comes from hairline rules, uppercase micro-labels and tabular-numeral alignment instead. The food table is the strongest test of the concept: state (raw/dry/ready-to-eat) and source tier are surfaced per row precisely because they change what a number means.</p>
+  <p>Left out deliberately: filled pill badges (replaced everywhere with a dot + text tag), any drop shadow, and a manual light/dark toggle — this draft leans on <code>prefers-color-scheme</code> only. Food macro values and all Training-screen numbers except the two explicitly footnoted anchors (2026-07-27: 30 kg lat pulldown; 3,988 kg / 21 sets) are illustrative placeholders for layout purposes, not sourced data.</p>
+  <p>Next step if this direction is picked: replace the placeholder food macros with real BLS 4.0 / label figures per the project's sourcing gate, and wire the citation stack to real scroll-position persistence instead of this simplified single-level back button.</p>
+</footer>
+
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<script>
+(function(){
+  "use strict";
+
+  /* ---------- screen switching ---------- */
+  var screens = document.querySelectorAll(".screen");
+  var switchBtns = document.querySelectorAll(".switch-btn");
+  var pagesScroll = document.getElementById("pagesScroll");
+
+  function switchTo(id){
+    screens.forEach(function(s){
+      var match = s.id === "screen-" + id;
+      s.hidden = !match;
+    });
+    switchBtns.forEach(function(b){
+      var active = b.getAttribute("data-screen") === id;
+      b.classList.toggle("active", active);
+      b.setAttribute("aria-selected", active ? "true" : "false");
+    });
+    pagesScroll.scrollTop = 0;
+  }
+
+  switchBtns.forEach(function(b){
+    b.addEventListener("click", function(){ switchTo(b.getAttribute("data-screen")); });
+  });
+
+  document.querySelectorAll("[data-goto]").forEach(function(el){
+    el.addEventListener("click", function(){
+      var target = el.getAttribute("data-goto");
+      if (target === "none"){
+        showToast("Not part of this draft");
+        return;
+      }
+      switchTo(target);
+    });
+  });
+
+  /* ---------- toast ---------- */
+  var toastEl = document.getElementById("toast");
+  var toastTimer = null;
+  function showToast(msg){
+    toastEl.textContent = msg;
+    toastEl.classList.add("show");
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(function(){ toastEl.classList.remove("show"); }, 1600);
+  }
+
+  /* ---------- citations: jump + back to reading ---------- */
+  var lastScrollTop = 0;
+  var backBtn = document.getElementById("backToReadingBtn");
+
+  document.querySelectorAll(".cite-btn").forEach(function(btn){
+    btn.addEventListener("click", function(){
+      lastScrollTop = pagesScroll.scrollTop;
+      var refId = "ref-" + btn.getAttribute("data-ref");
+      var target = document.getElementById(refId);
+      if (!target) return;
+      target.scrollIntoView({ behavior: "smooth", block: "center" });
+      target.classList.add("flash");
+      setTimeout(function(){ target.classList.remove("flash"); }, 1400);
+      backBtn.hidden = false;
+    });
+  });
+
+  backBtn.addEventListener("click", function(){
+    pagesScroll.scrollTo({ top: lastScrollTop, behavior: "smooth" });
+    backBtn.hidden = true;
+  });
+
+  /* ---------- food calculator ---------- */
+  var FOODS = [
+    { id:"skyr",    name:"Skyr natur",        state:"ready-to-eat", tier:"Manufacturer label", kcal:63,  prot:11.0, fat:0.2, carb:4.0,  fib:0.0 },
+    { id:"vkbrot",  name:"Vollkornbrot",      state:"as sold",      tier:"BLS 4.0",             kcal:215, prot:8.0,  fat:1.5, carb:38.0, fib:7.0 },
+    { id:"pasta",   name:"Pasta",             state:"dry",          tier:"BLS 4.0",             kcal:353, prot:12.5, fat:1.5, carb:70.0, fib:3.0 },
+    { id:"rice",    name:"Rice, white",       state:"dry, uncooked",tier:"BLS 4.0",             kcal:349, prot:6.7,  fat:0.6, carb:77.0, fib:1.3 },
+    { id:"potato",  name:"Potatoes",          state:"raw",          tier:"BLS 4.0",             kcal:77,  prot:2.0,  fat:0.1, carb:17.0, fib:2.2 },
+    { id:"oil",     name:"Olive oil",         state:"as sold",      tier:"BLS 4.0",             kcal:828, prot:0.0,  fat:92.0,carb:0.0,  fib:0.0 },
+    { id:"whey",    name:"Whey protein",      state:"powder",       tier:"Manufacturer label",  kcal:380, prot:75.0, fat:6.0, carb:8.0,  fib:1.0 }
+  ];
+
+  var tbody = document.getElementById("foodTableBody");
+  FOODS.forEach(function(f){
+    var tr = document.createElement("tr");
+    tr.innerHTML =
+      '<td><span class="food-name">' + f.name + '</span><span class="food-state">' + f.state + '</span></td>' +
+      '<td class="col-tier"><span class="food-tier">' + f.tier + '</span></td>' +
+      '<td class="tnum mono">' + f.kcal + '</td>' +
+      '<td class="tnum mono">' + f.prot.toFixed(1) + '</td>' +
+      '<td class="tnum mono">' + f.fat.toFixed(1) + '</td>' +
+      '<td class="tnum mono">' + f.carb.toFixed(1) + '</td>' +
+      '<td class="tnum mono">' + f.fib.toFixed(1) + '</td>' +
+      '<td>' +
+        '<div class="grams-cell">' +
+          '<label style="position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0,0,0,0);" for="g-' + f.id + '">Grams of ' + f.name + '</label>' +
+          '<input type="number" class="grams-input tnum" id="g-' + f.id + '" value="100" min="0" step="5">' +
+          '<button type="button" class="add-btn" data-add="' + f.id + '" aria-label="Add ' + f.name + '">+</button>' +
+        '</div>' +
+      '</td>';
+    tbody.appendChild(tr);
+  });
+
+  var addedItems = [];
+  var listEl = document.getElementById("addedList");
+
+  function renderAdded(){
+    if (addedItems.length === 0){
+      listEl.innerHTML = '<p class="added-empty">Nothing added yet.</p>';
+    } else {
+      listEl.innerHTML = "";
+      addedItems.forEach(function(item, idx){
+        var row = document.createElement("div");
+        row.className = "added-row";
+        row.innerHTML =
+          '<span><span class="added-row-name">' + item.name + '</span> <span class="added-row-grams">' + item.grams + ' g</span></span>' +
+          '<span><span class="added-row-kcal tnum">' + Math.round(item.kcal) + ' kcal</span>' +
+          '<button type="button" class="remove-btn" data-remove="' + idx + '" aria-label="Remove ' + item.name + '">✕</button></span>';
+        listEl.appendChild(row);
+      });
+      listEl.querySelectorAll("[data-remove]").forEach(function(btn){
+        btn.addEventListener("click", function(){
+          addedItems.splice(parseInt(btn.getAttribute("data-remove"), 10), 1);
+          renderAdded();
+          renderTotals();
+        });
+      });
+    }
+  }
+
+  function renderTotals(){
+    var t = addedItems.reduce(function(acc, it){
+      acc.kcal += it.kcal; acc.prot += it.prot; acc.fat += it.fat; acc.carb += it.carb; acc.fib += it.fib;
+      return acc;
+    }, { kcal:0, prot:0, fat:0, carb:0, fib:0 });
+
+    document.getElementById("totalKcal").textContent = Math.round(t.kcal).toLocaleString("en-US");
+    document.getElementById("totalProt").textContent = t.prot.toFixed(1);
+    document.getElementById("totalFat").textContent  = t.fat.toFixed(1);
+    document.getElementById("totalCarb").textContent = t.carb.toFixed(1);
+    document.getElementById("totalFib").textContent  = t.fib.toFixed(1);
+  }
+
+  document.querySelectorAll("[data-add]").forEach(function(btn){
+    btn.addEventListener("click", function(){
+      var id = btn.getAttribute("data-add");
+      var food = FOODS.filter(function(f){ return f.id === id; })[0];
+      var input = document.getElementById("g-" + id);
+      var grams = parseFloat(input.value) || 0;
+      if (grams <= 0) return;
+      var factor = grams / 100;
+      addedItems.push({
+        name: food.name,
+        grams: grams,
+        kcal: food.kcal * factor,
+        prot: food.prot * factor,
+        fat:  food.fat  * factor,
+        carb: food.carb * factor,
+        fib:  food.fib  * factor
+      });
+      renderAdded();
+      renderTotals();
+      showToast(food.name + " added — " + grams + " g");
+    });
+  });
+
+  /* ---------- ToC search ---------- */
+  var tocSearch = document.getElementById("tocSearch");
+  var tocItems = document.querySelectorAll("#tocBox .toc-item");
+  tocSearch.addEventListener("input", function(){
+    var q = tocSearch.value.trim().toLowerCase();
+    tocItems.forEach(function(item){
+      var text = item.textContent.toLowerCase();
+      item.hidden = q.length > 0 && text.indexOf(q) === -1;
+    });
+  });
+
+  /* ---------- init ---------- */
+  switchTo("home");
+})();
+</script>
+
+</body>
+</html>

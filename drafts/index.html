@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<meta name="theme-color" media="(prefers-color-scheme: light)" content="#F7F5F1" />
+<meta name="theme-color" media="(prefers-color-scheme: dark)" content="#12151A" />
+<title>Design drafts — pick one</title>
+<!--
+  Design-draft chooser, 2026-07-31. Three alternative visual directions for the
+  nutrition reference app, built after Toni rejected the current card-heavy
+  design ("boxes around the texts... boring"). Each draft is a self-contained
+  static HTML file with no external requests, showing the SAME five screens so
+  they can be compared like for like. These are previews only — deliberately NOT
+  added to the service worker precache, and they do not affect the live app.
+-->
+<style>
+  :root{
+    --bg:#F7F5F1; --ink:#1C1A17; --soft:#5D564C; --rule:rgba(28,26,23,.14);
+    --accent:#1D6E63;
+  }
+  @media (prefers-color-scheme: dark){
+    :root{ --bg:#12151A; --ink:#EDEFF2; --soft:#9AA3AD; --rule:rgba(237,239,242,.14); --accent:#6FCBBC; }
+  }
+  *{ box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+  html,body{ margin:0; }
+  body{
+    background:var(--bg); color:var(--ink);
+    font-family:system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
+    line-height:1.6; padding:calc(1.6rem + env(safe-area-inset-top)) 1.25rem calc(2rem + env(safe-area-inset-bottom));
+    max-width:38rem; margin:0 auto;
+  }
+  .kicker{ font-size:.7rem; letter-spacing:.1em; text-transform:uppercase; color:var(--soft); margin:0 0 .4rem; }
+  h1{ font-size:1.65rem; line-height:1.2; margin:0 0 .5rem; font-weight:650; }
+  .dek{ color:var(--soft); margin:0 0 1.6rem; font-size:.98rem; }
+  hr{ border:0; border-top:1px solid var(--rule); margin:1.6rem 0; }
+  a.draft{
+    display:block; text-decoration:none; color:inherit; padding:1.1rem 0;
+    border-bottom:1px solid var(--rule);
+  }
+  a.draft:first-of-type{ border-top:1px solid var(--rule); }
+  a.draft:active{ opacity:.6; }
+  a.draft:focus-visible{ outline:2px solid var(--accent); outline-offset:3px; }
+  .name{ font-size:1.15rem; font-weight:650; margin:0 0 .2rem; display:flex; align-items:baseline; gap:.5rem; }
+  .letter{ color:var(--accent); font-variant-numeric:tabular-nums; }
+  .desc{ color:var(--soft); font-size:.92rem; margin:0; }
+  .go{ color:var(--accent); font-size:.85rem; font-weight:600; margin-top:.45rem; display:block; }
+  .note{ color:var(--soft); font-size:.85rem; margin-top:1.8rem; }
+  .note strong{ color:var(--ink); }
+</style>
+</head>
+<body>
+  <p class="kicker">Design review</p>
+  <h1>Three drafts — pick a direction</h1>
+  <p class="dek">Each shows the same five screens: Home, a reading page with citations, the new food table &amp; calculator, training stats, and the table of contents. Use the row of buttons at the top of each draft to switch screens.</p>
+
+  <a class="draft" href="draft-a.html">
+    <p class="name"><span class="letter">A</span> Editorial</p>
+    <p class="desc">Paper-like and calm. Serif headings, long-form reading, structure from whitespace and thin rules. The most literally “just background and text”.</p>
+    <span class="go">Open draft A →</span>
+  </a>
+
+  <a class="draft" href="draft-b.html">
+    <p class="name"><span class="letter">B</span> Clinical</p>
+    <p class="desc">Neutral and precise, like a well-set lab report. Aligned columns, tabular figures, hairline rules. Handles dense numbers best — strongest on the food table.</p>
+    <span class="go">Open draft B →</span>
+  </a>
+
+  <a class="draft" href="draft-c.html">
+    <p class="name"><span class="letter">C</span> Modern</p>
+    <p class="desc">Dark-first with one vivid accent and large display numerals. Grouping by subtle background tint instead of drawn boxes. Most like a current mobile app.</p>
+    <span class="go">Open draft C →</span>
+  </a>
+
+  <p class="note"><strong>All three obey the same rule:</strong> body text sits directly on the background — no card borders, no shadows around content. The table of contents is the one place a container is allowed. Numbers in the food calculator are illustrative placeholders, not yet sourced from BLS or product labels.</p>
+</body>
+</html>

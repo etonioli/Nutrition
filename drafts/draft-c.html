@@ -1,0 +1,1038 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Draft C — Modern app / soft contrast</title>
+<style>
+  /* ===================================================================
+     DESIGN DRAFT C — "Modern app / soft contrast"
+     Dark-first, one vivid accent, grouping via tint not borders/shadows.
+     See "Design notes" section at the bottom of the rendered page.
+     =================================================================== */
+
+  :root {
+    color-scheme: dark;
+    /* ---- Dark theme (default) ---- */
+    --bg: #12151a;
+    --surface: #1a1f26;      /* +~4-5% lightness vs bg — tint, no border */
+    --surface-2: #20262e;    /* stronger tint, used for ToC drawer / active rows */
+    --surface-hair: rgba(255,255,255,0.06); /* hairline separators only, never a box */
+    --text: #edeff2;
+    --text-dim: #9aa3ad;
+    --text-faint: #6b7580;
+    --accent: #ff8a4c;
+    --accent-strong: #ffa46e;
+    --on-accent: #1a0e05;
+    --accent-text: var(--accent); /* safe as text on --bg / --surface in dark mode */
+    --danger: #ff6b6b;
+    --good: #6bcf9a;
+    --radius-lg: 1.25rem;
+    --radius-md: 0.9rem;
+    --radius-sm: 0.6rem;
+    --space-1: 0.375rem;
+    --space-2: 0.625rem;
+    --space-3: 1rem;
+    --space-4: 1.5rem;
+    --space-5: 2.25rem;
+    --space-6: 3rem;
+    --font: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    --dur: 180ms;
+    --ease: cubic-bezier(.2,.7,.3,1);
+  }
+
+  @media (prefers-color-scheme: light) {
+    :root {
+      color-scheme: light;
+      --bg: #f7f5f1;
+      --surface: #efebe4;
+      --surface-2: #e7e2d9;
+      --surface-hair: rgba(0,0,0,0.07);
+      --text: #1c1a17;
+      --text-dim: #5d564c;
+      --text-faint: #857c6f;
+      --accent: #ff7a3d;        /* vivid — reserved for large numerals / accent fills */
+      --accent-strong: #e8672c;
+      --on-accent: #1a0e05;
+      --accent-text: #b8420f;   /* darker, verified ≥4.5:1 on bg/surface — for small text/links/buttons */
+      --danger: #c0392b;
+      --good: #1f8a54;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after { transition-duration: 0.001ms !important; animation-duration: 0.001ms !important; }
+  }
+
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--font);
+    font-size: 16px;
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+    overflow-x: hidden;
+    max-width: 100vw;
+  }
+  button { font-family: inherit; }
+  a { color: var(--accent-text); }
+
+  /* ---------- draft preview switcher ---------- */
+  .draft-bar {
+    background: #000;
+    color: #fff;
+    font-size: 0.7rem;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    padding: 0.5rem 0.75rem 0.4rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+  .draft-bar .draft-label {
+    opacity: 0.55;
+    font-weight: 600;
+    margin-right: 0.25rem;
+  }
+  .draft-bar button {
+    background: rgba(255,255,255,0.12);
+    color: #fff;
+    border: none;
+    border-radius: 999px;
+    padding: 0.35rem 0.7rem;
+    font-size: 0.7rem;
+    letter-spacing: 0.03em;
+    text-transform: uppercase;
+    cursor: pointer;
+  }
+  .draft-bar button[aria-pressed="true"] {
+    background: var(--accent);
+    color: var(--on-accent);
+    font-weight: 700;
+  }
+  .draft-bar button:focus-visible {
+    outline: 2px solid #fff;
+    outline-offset: 2px;
+  }
+
+  /* ---------- app shell ---------- */
+  .app-header {
+    position: sticky;
+    top: 34px; /* below draft bar */
+    z-index: 50;
+    background: color-mix(in srgb, var(--bg) 88%, transparent);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.7rem var(--space-4);
+    min-height: 3rem;
+  }
+  .app-header h1 {
+    font-size: 1.0625rem;
+    font-weight: 700;
+    margin: 0;
+    letter-spacing: -0.01em;
+  }
+  .icon-btn {
+    background: transparent;
+    border: none;
+    color: var(--text-dim);
+    width: 2.25rem;
+    height: 2.25rem;
+    border-radius: 999px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: background var(--dur) var(--ease), color var(--dur) var(--ease);
+  }
+  .icon-btn:hover, .icon-btn:focus-visible { background: var(--surface); color: var(--text); }
+  .icon-btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+  .icon-btn svg { width: 1.2rem; height: 1.2rem; }
+
+  main.screen {
+    display: none;
+    padding: 0 var(--space-4) var(--space-6);
+    animation: fadein var(--dur) var(--ease);
+  }
+  main.screen.active { display: block; }
+  @keyframes fadein { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: translateY(0); } }
+
+  .eyebrow {
+    font-size: 0.7rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--accent-text);
+    margin: var(--space-4) 0 var(--space-1);
+  }
+  h2.section-title {
+    font-size: 1rem;
+    font-weight: 700;
+    color: var(--text-dim);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    margin: var(--space-5) 0 var(--space-2);
+  }
+  p.lede { color: var(--text-dim); font-size: 0.9rem; margin: 0 0 var(--space-3); }
+
+  /* ---------- HOME ---------- */
+  .hero {
+    padding: var(--space-4) 0 var(--space-2);
+  }
+  .hero .hero-label {
+    font-size: 0.8125rem;
+    color: var(--text-dim);
+    font-weight: 600;
+    margin: 0 0 0.15rem;
+  }
+  .hero .hero-figure {
+    font-size: clamp(3.2rem, 16vw, 4.4rem);
+    font-weight: 800;
+    letter-spacing: -0.03em;
+    line-height: 1;
+    color: var(--text);
+    display: flex;
+    align-items: baseline;
+    gap: 0.4rem;
+  }
+  .hero .hero-figure .unit {
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: var(--accent-text);
+  }
+  .hero .hero-sub {
+    margin-top: var(--space-2);
+    font-size: 0.875rem;
+    color: var(--text-dim);
+    display: flex;
+    gap: var(--space-4);
+  }
+  .hero .hero-sub b { color: var(--text); font-weight: 700; }
+  .hero-bar {
+    margin-top: var(--space-3);
+    height: 0.5rem;
+    border-radius: 999px;
+    background: var(--surface);
+    overflow: hidden;
+  }
+  .hero-bar span {
+    display: block;
+    height: 100%;
+    border-radius: 999px;
+    background: var(--accent);
+  }
+
+  .shortcut-list { margin-top: var(--space-2); }
+  .shortcut-row {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+    width: 100%;
+    background: transparent;
+    border: none;
+    color: var(--text);
+    text-align: left;
+    padding: 0.85rem var(--space-3);
+    border-radius: var(--radius-md);
+    cursor: pointer;
+    transition: background var(--dur) var(--ease);
+  }
+  .shortcut-row:hover, .shortcut-row:focus-visible { background: var(--surface); }
+  .shortcut-row:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
+  .shortcut-row .dot {
+    width: 0.55rem; height: 0.55rem; border-radius: 999px; background: var(--accent); flex: none;
+  }
+  .shortcut-row .label { flex: 1; }
+  .shortcut-row .label .title { font-weight: 600; font-size: 0.9375rem; }
+  .shortcut-row .label .sub { font-size: 0.78rem; color: var(--text-dim); font-style: italic; margin-top: 0.1rem; }
+  .shortcut-row .chev { color: var(--text-faint); flex: none; }
+  .shortcut-row .chev svg { width: 1rem; height: 1rem; }
+
+  /* ---------- READING ---------- */
+  .reading h2.page-title {
+    font-size: 1.5rem;
+    font-weight: 800;
+    letter-spacing: -0.015em;
+    margin: var(--space-3) 0 var(--space-1);
+  }
+  .reading .summary { color: var(--text-dim); font-size: 0.9375rem; margin-bottom: var(--space-4); }
+  .reading h3 {
+    font-size: 0.95rem;
+    font-weight: 700;
+    color: var(--accent-text);
+    margin: var(--space-4) 0 0.4rem;
+  }
+  .reading p {
+    font-size: 1rem;
+    line-height: 1.65;
+    margin: 0 0 var(--space-3);
+  }
+  .cite {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 1.3rem;
+    height: 1.3rem;
+    padding: 0 0.3rem;
+    margin: 0 0.05rem;
+    border-radius: 0.4rem;
+    border: none;
+    background: var(--surface-2);
+    color: var(--accent-text);
+    font-size: 0.7rem;
+    font-weight: 700;
+    line-height: 1;
+    cursor: pointer;
+    vertical-align: 0.1em;
+    transition: background var(--dur) var(--ease), transform var(--dur) var(--ease);
+  }
+  .cite:hover, .cite:focus-visible { background: var(--accent); color: var(--on-accent); }
+  .cite:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+  .cite-panel {
+    position: fixed;
+    left: 0; right: 0; bottom: 0;
+    background: var(--surface-2);
+    border-radius: 1.25rem 1.25rem 0 0;
+    padding: var(--space-4) var(--space-4) calc(var(--space-4) + env(safe-area-inset-bottom, 0px));
+    transform: translateY(110%);
+    transition: transform 260ms var(--ease);
+    z-index: 200;
+    max-height: 70vh;
+    overflow-y: auto;
+  }
+  .cite-panel.open { transform: translateY(0); }
+  .cite-panel .handle {
+    width: 2.5rem; height: 0.28rem; border-radius: 999px; background: var(--text-faint);
+    margin: 0 auto var(--space-3);
+  }
+  .cite-panel .ref-tier {
+    display: inline-block;
+    font-size: 0.68rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    color: var(--on-accent);
+    background: var(--accent);
+    border-radius: 0.4rem;
+    padding: 0.15rem 0.45rem;
+    margin-bottom: 0.5rem;
+  }
+  .cite-panel h4 { margin: 0 0 0.3rem; font-size: 1rem; }
+  .cite-panel .meta { color: var(--text-dim); font-size: 0.85rem; margin: 0 0 0.75rem; }
+  .cite-panel .back-btn {
+    width: 100%;
+    background: var(--accent);
+    color: var(--on-accent);
+    border: none;
+    border-radius: var(--radius-md);
+    padding: 0.8rem;
+    font-weight: 700;
+    font-size: 0.9rem;
+    cursor: pointer;
+  }
+  .cite-panel .back-btn:focus-visible { outline: 2px solid var(--text); outline-offset: 2px; }
+  .scrim {
+    position: fixed; inset: 0; background: rgba(0,0,0,0.45);
+    opacity: 0; pointer-events: none; transition: opacity 220ms var(--ease); z-index: 150;
+  }
+  .scrim.open { opacity: 1; pointer-events: auto; }
+
+  /* ---------- FOOD ---------- */
+  .food-row {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 0.2rem var(--space-3);
+    align-items: center;
+    padding: 0.8rem var(--space-3);
+    border-radius: var(--radius-md);
+    background: transparent;
+    transition: background var(--dur) var(--ease);
+  }
+  .food-row:nth-of-type(odd) { background: var(--surface); }
+  .food-row .fname { font-weight: 700; font-size: 0.9375rem; }
+  .food-row .fstate {
+    font-size: 0.68rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    color: var(--accent-text);
+    background: var(--surface-2);
+    padding: 0.1rem 0.4rem;
+    border-radius: 0.35rem;
+    margin-left: 0.4rem;
+    vertical-align: 1px;
+  }
+  .food-row .fmacros {
+    grid-column: 1 / -1;
+    font-size: 0.8rem;
+    color: var(--text-dim);
+    margin-top: 0.1rem;
+  }
+  .food-row .fmacros b { color: var(--text); font-weight: 700; }
+  .food-row .fadd {
+    grid-column: 1 / -1;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-top: 0.5rem;
+  }
+  .fadd input[type="number"] {
+    width: 4.5rem;
+    background: var(--surface-2);
+    border: none;
+    border-radius: var(--radius-sm);
+    color: var(--text);
+    padding: 0.5rem 0.6rem;
+    font-size: 0.9rem;
+    font-family: inherit;
+  }
+  .fadd input[type="number"]:focus-visible { outline: 2px solid var(--accent); }
+  .fadd .g-label { font-size: 0.8rem; color: var(--text-dim); }
+  .fadd .add-btn {
+    margin-left: auto;
+    background: var(--accent);
+    color: var(--on-accent);
+    border: none;
+    border-radius: 999px;
+    padding: 0.5rem 0.9rem;
+    font-weight: 700;
+    font-size: 0.8125rem;
+    cursor: pointer;
+    transition: transform 120ms var(--ease), background var(--dur) var(--ease);
+  }
+  .fadd .add-btn:hover { background: var(--accent-strong); }
+  .fadd .add-btn:active { transform: scale(0.96); }
+  .fadd .add-btn:focus-visible { outline: 2px solid var(--text); outline-offset: 2px; }
+
+  .totals-block {
+    position: sticky;
+    bottom: 0;
+    margin: var(--space-4) calc(-1 * var(--space-4)) 0;
+    padding: var(--space-4);
+    background: linear-gradient(to top, var(--bg) 78%, transparent);
+  }
+  .totals-figure {
+    background: var(--surface-2);
+    border-radius: var(--radius-lg);
+    padding: var(--space-4);
+  }
+  .totals-figure .t-label { font-size: 0.78rem; color: var(--text-dim); font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em; }
+  .totals-figure .t-figure {
+    font-size: clamp(2.6rem, 13vw, 3.4rem);
+    font-weight: 800;
+    letter-spacing: -0.03em;
+    line-height: 1;
+    margin: 0.2rem 0 0.6rem;
+    color: var(--accent-text);
+  }
+  .totals-figure .t-figure .unit { font-size: 0.95rem; color: var(--text-dim); font-weight: 700; margin-left: 0.3rem; }
+  .totals-macros { display: flex; gap: var(--space-4); flex-wrap: wrap; }
+  .totals-macros div { font-size: 0.85rem; color: var(--text-dim); }
+  .totals-macros b { display: block; color: var(--text); font-size: 1.05rem; font-weight: 700; }
+  .totals-empty { color: var(--text-faint); font-size: 0.85rem; font-style: italic; }
+  .totals-list { margin-top: 0.75rem; font-size: 0.8rem; color: var(--text-dim); }
+  .totals-list .titem { display: flex; justify-content: space-between; padding: 0.15rem 0; }
+  .totals-list .titem span:last-child { color: var(--text); }
+  .clear-btn {
+    background: none; border: none; color: var(--text-faint);
+    font-size: 0.75rem; text-decoration: underline; cursor: pointer; margin-top: 0.5rem; padding: 0;
+  }
+
+  /* ---------- TRAINING ---------- */
+  .illustrative-tag {
+    font-size: 0.7rem;
+    color: var(--text-faint);
+    font-style: italic;
+    margin: 0.1rem 0 var(--space-3);
+  }
+  .stat-block { margin-bottom: var(--space-5); }
+  .stat-block .stat-label {
+    font-size: 0.78rem;
+    color: var(--text-dim);
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    margin-bottom: 0.2rem;
+  }
+  .stat-block .stat-figure {
+    font-size: clamp(2.4rem, 11vw, 2.9rem);
+    font-weight: 800;
+    letter-spacing: -0.02em;
+    line-height: 1.05;
+    display: flex;
+    align-items: baseline;
+    gap: 0.4rem;
+    flex-wrap: wrap;
+  }
+  .stat-block .stat-figure .unit { font-size: 1rem; font-weight: 700; color: var(--text-dim); }
+  .stat-block .stat-delta {
+    font-size: 0.85rem;
+    font-weight: 700;
+    margin-left: 0.25rem;
+  }
+  .stat-delta.up { color: var(--good); }
+  .stat-delta.down { color: var(--danger); }
+  .spark-wrap { margin-top: var(--space-2); }
+  .spark-wrap svg { width: 100%; height: 4.5rem; display: block; }
+
+  .bar-list { margin-top: var(--space-2); }
+  .bar-row { margin-bottom: var(--space-2); }
+  .bar-row .bar-top { display: flex; justify-content: space-between; font-size: 0.85rem; margin-bottom: 0.3rem; }
+  .bar-row .bar-top .m-label { font-weight: 600; }
+  .bar-row .bar-top .m-value { color: var(--text-dim); }
+  .bar-track { height: 0.55rem; border-radius: 999px; background: var(--surface); overflow: hidden; }
+  .bar-fill { height: 100%; border-radius: 999px; background: var(--accent); transition: width 500ms var(--ease); }
+
+  .changelog { margin-top: var(--space-2); }
+  .changelog-item {
+    padding: 0.7rem var(--space-3);
+    border-radius: var(--radius-md);
+    background: var(--surface);
+    margin-bottom: 0.5rem;
+    font-size: 0.85rem;
+  }
+  .changelog-item .cl-date { color: var(--text-faint); font-size: 0.72rem; display: block; margin-top: 0.2rem; }
+  .changelog-item .added { color: var(--good); font-weight: 700; }
+  .changelog-item .removed { color: var(--danger); font-weight: 700; }
+
+  /* ---------- TOC ---------- */
+  .toc-search-wrap { position: sticky; top: calc(34px + 3.5rem); z-index: 40; background: var(--bg); padding: var(--space-2) 0 var(--space-3); }
+  .toc-search {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    background: var(--surface);
+    border-radius: 999px;
+    padding: 0.6rem 0.9rem;
+  }
+  .toc-search svg { width: 1.05rem; height: 1.05rem; color: var(--text-faint); flex: none; }
+  .toc-search input {
+    border: none; background: transparent; color: var(--text);
+    font-size: 0.9375rem; width: 100%; font-family: inherit;
+  }
+  .toc-search input::placeholder { color: var(--text-faint); }
+  .toc-search input:focus { outline: none; }
+
+  .toc-container {
+    background: var(--surface);
+    border-radius: var(--radius-lg);
+    padding: var(--space-2);
+  }
+  .toc-row {
+    display: flex;
+    align-items: center;
+    gap: 0.65rem;
+    width: 100%;
+    background: transparent;
+    border: none;
+    color: var(--text);
+    text-align: left;
+    padding: 0.7rem 0.65rem;
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    font-size: 0.9375rem;
+    transition: background var(--dur) var(--ease);
+  }
+  .toc-row.child { padding-left: 2.1rem; font-size: 0.875rem; color: var(--text-dim); }
+  .toc-row:hover, .toc-row:focus-visible { background: var(--surface-2); }
+  .toc-row:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
+  .toc-row .pin-dot { width: 0.4rem; height: 0.4rem; border-radius: 999px; background: var(--accent); flex: none; opacity: 0.85; }
+  .toc-row.parent-row { font-weight: 700; }
+  .toc-row .badge-new {
+    font-size: 0.62rem; font-weight: 700; letter-spacing: 0.03em; text-transform: uppercase;
+    background: var(--accent); color: var(--on-accent); border-radius: 0.35rem; padding: 0.08rem 0.35rem;
+  }
+  .toc-hairline { height: 1px; background: var(--surface-hair); margin: 0.3rem 0.65rem; }
+  .toc-empty { text-align: center; color: var(--text-faint); font-size: 0.85rem; padding: var(--space-4); font-style: italic; }
+
+  /* ---------- design notes ---------- */
+  .design-notes {
+    margin-top: var(--space-6);
+    padding-top: var(--space-4);
+    border-top: 1px solid var(--surface-hair);
+  }
+  .design-notes h2 { font-size: 0.8125rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-dim); margin: 0 0 var(--space-2); }
+  .design-notes p { font-size: 0.875rem; color: var(--text-dim); line-height: 1.6; }
+
+  .toast {
+    position: fixed;
+    left: 50%; bottom: 1.5rem;
+    transform: translate(-50%, 120%);
+    background: var(--surface-2);
+    color: var(--text);
+    padding: 0.6rem 1rem;
+    border-radius: 999px;
+    font-size: 0.85rem;
+    z-index: 300;
+    transition: transform 220ms var(--ease);
+  }
+  .toast.show { transform: translate(-50%, 0); }
+</style>
+</head>
+<body>
+
+  <!-- Draft-preview screen switcher (not part of the product UI) -->
+  <div class="draft-bar" role="navigation" aria-label="Draft C screen preview switcher">
+    <span class="draft-label">Draft C preview:</span>
+    <button type="button" data-screen="home" aria-pressed="true">Home</button>
+    <button type="button" data-screen="reading" aria-pressed="false">Reading</button>
+    <button type="button" data-screen="food" aria-pressed="false">Food</button>
+    <button type="button" data-screen="training" aria-pressed="false">Training</button>
+    <button type="button" data-screen="toc" aria-pressed="false">ToC</button>
+  </div>
+
+  <!-- ============ HOME ============ -->
+  <header class="app-header" data-header-for="home">
+    <h1>Nutrition</h1>
+    <button class="icon-btn" type="button" aria-label="Settings">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+        <circle cx="12" cy="12" r="3"></circle>
+        <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.6 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.6a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+      </svg>
+    </button>
+  </header>
+  <main class="screen active" id="screen-home">
+    <div class="hero">
+      <p class="hero-label">Today at a glance</p>
+      <div class="hero-figure">1,840<span class="unit">kcal remaining</span></div>
+      <div class="hero-bar"><span style="width: 64%"></span></div>
+      <div class="hero-sub">
+        <span><b>96 g</b> protein logged</span>
+        <span><b>3</b> meals</span>
+        <span><b>Training</b> today</span>
+      </div>
+    </div>
+
+    <h2 class="section-title">Pinned</h2>
+    <div class="shortcut-list">
+      <button class="shortcut-row" type="button" data-goto="food">
+        <span class="dot" aria-hidden="true"></span>
+        <span class="label"><span class="title">Food calculator</span></span>
+        <span class="chev" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M9 18l6-6-6-6"/></svg></span>
+      </button>
+      <button class="shortcut-row" type="button" data-goto="training">
+        <span class="dot" aria-hidden="true"></span>
+        <span class="label"><span class="title">Training</span></span>
+        <span class="chev" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M9 18l6-6-6-6"/></svg></span>
+      </button>
+      <button class="shortcut-row" type="button" data-goto="reading">
+        <span class="dot" aria-hidden="true"></span>
+        <span class="label"><span class="title">Energy balance</span><span class="sub">Nutrition info</span></span>
+        <span class="chev" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M9 18l6-6-6-6"/></svg></span>
+      </button>
+      <button class="shortcut-row" type="button" data-goto="reading">
+        <span class="dot" aria-hidden="true"></span>
+        <span class="label"><span class="title">Back + Biceps</span><span class="sub">Session carbs</span></span>
+        <span class="chev" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M9 18l6-6-6-6"/></svg></span>
+      </button>
+      <button class="shortcut-row" type="button" data-goto="toc">
+        <span class="dot" aria-hidden="true"></span>
+        <span class="label"><span class="title">Diet protocol</span></span>
+        <span class="chev" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M9 18l6-6-6-6"/></svg></span>
+      </button>
+    </div>
+  </main>
+
+  <!-- ============ READING ============ -->
+  <header class="app-header" data-header-for="reading" style="display:none;">
+    <button class="icon-btn" type="button" aria-label="Go to Home" data-goto="home">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12l9-9 9 9"/><path d="M5 10v10h14V10"/></svg>
+    </button>
+    <h1>Energy balance</h1>
+    <button class="icon-btn" type="button" aria-label="Pin this page">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>
+    </button>
+  </header>
+  <main class="screen reading" id="screen-reading">
+    <p class="summary">How the body gains and loses fat, what a calorie deficit actually does, and why weight loss slows down over time.</p>
+
+    <p>Body weight change is governed by the balance between energy intake and energy expenditure<button class="cite" data-ref="1">1</button>. When expenditure exceeds intake, the body increases its oxidation of stored fat for fuel<button class="cite" data-ref="1">1</button>. When body weight changes because of an energy imbalance, roughly 60 to 80% of the resulting change in body mass is typically body fat<button class="cite" data-ref="2">2</button> — the remainder is other tissue and body water.</p>
+
+    <h3>Where does the fat actually go?</h3>
+    <p>When fat is metabolised for energy, most of its mass leaves the body as exhaled carbon dioxide, with the remainder excreted as water<button class="cite" data-ref="3">3</button>. Fat is not "burned off" as heat and it is not excreted — it is exhaled.</p>
+
+    <h3>Why loss slows down</h3>
+    <p>Weight loss produces changes in resting and non-resting energy expenditure that are independent of changes in fat-free mass — this is called adaptive thermogenesis<button class="cite" data-ref="4">4</button>. It is a real effect that can slow further loss and favour regain, but it is a temporary metabolic adaptation, not permanent or irreversible metabolic damage<button class="cite" data-ref="5">5</button>.</p>
+
+    <h3>Not all calories cost the same to process</h3>
+    <p>The thermic effect of food — the energy spent digesting and processing what you eat — is highest for protein at about 20 to 30% of ingested energy, moderate for carbohydrate at about 5 to 10%, and lowest for fat at about 0 to 3%<button class="cite" data-ref="6">6</button>.</p>
+  </main>
+
+  <!-- ============ FOOD ============ -->
+  <header class="app-header" data-header-for="food" style="display:none;">
+    <button class="icon-btn" type="button" aria-label="Go to Home" data-goto="home">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12l9-9 9 9"/><path d="M5 10v10h14V10"/></svg>
+    </button>
+    <h1>Food calculator</h1>
+    <span style="width:2.25rem"></span>
+  </header>
+  <main class="screen" id="screen-food">
+    <p class="lede">Per 100 g values. Add a gram amount for each food to build a running total. Generic reference values for this layout draft — not sourced from Toni's actual product labels.</p>
+
+    <div id="foodList"></div>
+
+    <div class="totals-block">
+      <div class="totals-figure">
+        <div class="t-label">Running total</div>
+        <div class="t-figure" id="totalKcal">0<span class="unit">kcal</span></div>
+        <div class="totals-macros">
+          <div>Protein<b id="totalP">0 g</b></div>
+          <div>Fat<b id="totalF">0 g</b></div>
+          <div>Carbs<b id="totalC">0 g</b></div>
+          <div>Fibre<b id="totalFib">0 g</b></div>
+        </div>
+        <div class="totals-empty" id="totalsEmpty">Nothing added yet — enter grams above and tap Add.</div>
+        <div class="totals-list" id="totalsList"></div>
+        <button class="clear-btn" type="button" id="clearTotals">Clear all</button>
+      </div>
+    </div>
+  </main>
+
+  <!-- ============ TRAINING ============ -->
+  <header class="app-header" data-header-for="training" style="display:none;">
+    <button class="icon-btn" type="button" aria-label="Go to Home" data-goto="home">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12l9-9 9 9"/><path d="M5 10v10h14V10"/></svg>
+    </button>
+    <h1>Training</h1>
+    <span style="width:2.25rem"></span>
+  </header>
+  <main class="screen" id="screen-training">
+    <p class="illustrative-tag">Illustrative figures for this layout draft — not a real Hevy pull.</p>
+
+    <div class="stat-block">
+      <div class="stat-label">Est. 1RM trend · Bench Press</div>
+      <div class="stat-figure">92<span class="unit">kg</span><span class="stat-delta up">▲ +10 kg / 8 wks</span></div>
+      <div class="spark-wrap">
+        <svg viewBox="0 0 300 60" preserveAspectRatio="none" aria-hidden="true">
+          <polyline points="0,48 37,40 75,44 112,32 150,24 187,16 225,20 262,8 300,4" fill="none" stroke="var(--accent)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+          <circle cx="300" cy="4" r="4.5" fill="var(--accent)"/>
+        </svg>
+      </div>
+    </div>
+
+    <div class="stat-block">
+      <div class="stat-label">Weekly volume load</div>
+      <div class="stat-figure">18,420<span class="unit">kg</span><span class="stat-delta up">▲ +6% vs 4-wk avg</span></div>
+    </div>
+
+    <div class="stat-block">
+      <div class="stat-label">Sets per muscle group · last 4 weeks</div>
+      <div class="bar-list">
+        <div class="bar-row"><div class="bar-top"><span class="m-label">Back</span><span class="m-value">48 sets</span></div><div class="bar-track"><div class="bar-fill" style="width:100%"></div></div></div>
+        <div class="bar-row"><div class="bar-top"><span class="m-label">Legs</span><span class="m-value">44 sets</span></div><div class="bar-track"><div class="bar-fill" style="width:92%"></div></div></div>
+        <div class="bar-row"><div class="bar-top"><span class="m-label">Chest</span><span class="m-value">36 sets</span></div><div class="bar-track"><div class="bar-fill" style="width:75%"></div></div></div>
+        <div class="bar-row"><div class="bar-top"><span class="m-label">Arms</span><span class="m-value">32 sets</span></div><div class="bar-track"><div class="bar-fill" style="width:67%"></div></div></div>
+        <div class="bar-row"><div class="bar-top"><span class="m-label">Shoulders</span><span class="m-value">28 sets</span></div><div class="bar-track"><div class="bar-fill" style="width:58%"></div></div></div>
+        <div class="bar-row"><div class="bar-top"><span class="m-label">Core</span><span class="m-value">20 sets</span></div><div class="bar-track"><div class="bar-fill" style="width:42%"></div></div></div>
+      </div>
+    </div>
+
+    <h2 class="section-title">Routine changelog</h2>
+    <div class="changelog">
+      <div class="changelog-item">
+        <span class="added">Added:</span> Incline DB Press &nbsp;·&nbsp; <span class="removed">Removed:</span> Leg Press
+        <span class="cl-date">2026-08-03</span>
+      </div>
+      <div class="changelog-item">
+        <span class="added">Added:</span> Romanian Deadlift &nbsp;·&nbsp; <span class="removed">Removed:</span> Leg Curl
+        <span class="cl-date">2026-07-15</span>
+      </div>
+    </div>
+  </main>
+
+  <!-- ============ TOC ============ -->
+  <header class="app-header" data-header-for="toc" style="display:none;">
+    <button class="icon-btn" type="button" aria-label="Go to Home" data-goto="home">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12l9-9 9 9"/><path d="M5 10v10h14V10"/></svg>
+    </button>
+    <h1>Table of contents</h1>
+    <span style="width:2.25rem"></span>
+  </header>
+  <main class="screen" id="screen-toc">
+    <div class="toc-search-wrap">
+      <div class="toc-search">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
+        <input type="search" id="tocSearch" placeholder="Search pages" aria-label="Search table of contents">
+      </div>
+    </div>
+    <div class="toc-container" id="tocContainer"></div>
+  </main>
+
+  <div class="scrim" id="scrim"></div>
+  <div class="cite-panel" id="citePanel" role="dialog" aria-modal="true" aria-labelledby="citeTitle">
+    <div class="handle" aria-hidden="true"></div>
+    <span class="ref-tier" id="citeTier">Tier 2 · Certain</span>
+    <h4 id="citeTitle">—</h4>
+    <p class="meta" id="citeMeta">—</p>
+    <button class="back-btn" type="button" id="backToReading">Back to reading</button>
+  </div>
+
+  <div class="toast" id="toast"></div>
+
+<script>
+(function () {
+  "use strict";
+
+  // ---------- screen switching ----------
+  var screens = document.querySelectorAll('main.screen');
+  var headers = document.querySelectorAll('[data-header-for]');
+  var switcherBtns = document.querySelectorAll('.draft-bar button[data-screen]');
+
+  function showScreen(id) {
+    screens.forEach(function (s) { s.classList.toggle('active', s.id === 'screen-' + id); });
+    headers.forEach(function (h) { h.style.display = (h.getAttribute('data-header-for') === id) ? 'flex' : 'none'; });
+    switcherBtns.forEach(function (b) { b.setAttribute('aria-pressed', b.getAttribute('data-screen') === id ? 'true' : 'false'); });
+    document.getElementById('pagesTop') && document.getElementById('pagesTop').scrollIntoView();
+    window.scrollTo(0, 0);
+  }
+
+  switcherBtns.forEach(function (b) {
+    b.addEventListener('click', function () { showScreen(b.getAttribute('data-screen')); });
+  });
+
+  document.querySelectorAll('[data-goto]').forEach(function (el) {
+    el.addEventListener('click', function () {
+      var target = el.getAttribute('data-goto');
+      showScreen(target);
+      switcherBtns.forEach(function (b) { b.setAttribute('aria-pressed', b.getAttribute('data-screen') === target ? 'true' : 'false'); });
+    });
+  });
+
+  // ---------- toast ----------
+  var toastEl = document.getElementById('toast');
+  var toastTimer = null;
+  function showToast(msg) {
+    toastEl.textContent = msg;
+    toastEl.classList.add('show');
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(function () { toastEl.classList.remove('show'); }, 1800);
+  }
+
+  // ---------- citations ----------
+  var REFS = {
+    "1": { title: "Body Weight Regulation", meta: "Endotext (NCBI Bookshelf, NIH) · 2018 · Tier 2", tier: "Tier 2 · Certain" },
+    "2": { title: "Energy Balance and Obesity", meta: "Hill JO, Wyatt HR, Peters JC · Circulation, 2012 · Tier 2", tier: "Tier 2 · Likely" },
+    "3": { title: "Mixed Student Ideas about Mechanisms of Human Weight Loss", meta: "Sripathi KN, et al. · CBE Life Sciences Education, 2019 · Tier 5", tier: "Tier 5 · Certain" },
+    "4": { title: "Changes in Energy Expenditure with Weight Gain and Weight Loss in Humans", meta: "Müller MJ, Enderle J, Bosy-Westphal A · Current Obesity Reports, 2016 · Tier 2", tier: "Tier 2 · Likely" },
+    "5": { title: "Adaptive thermogenesis with weight loss in humans", meta: "Müller MJ, Bosy-Westphal A · Obesity (Silver Spring), 2013 · Tier 2", tier: "Tier 2 · Certain" },
+    "6": { title: "Diet induced thermogenesis, older and newer data with emphasis on obesity and diabetes mellitus", meta: "Tzeravini E, et al. · Metabolism Open, 2024 · Tier 2", tier: "Tier 2 · Certain" }
+  };
+
+  var citePanel = document.getElementById('citePanel');
+  var scrim = document.getElementById('scrim');
+  var lastFocused = null;
+
+  function openCite(refNum) {
+    var r = REFS[refNum];
+    if (!r) return;
+    lastFocused = document.activeElement;
+    document.getElementById('citeTitle').textContent = r.title;
+    document.getElementById('citeMeta').textContent = r.meta;
+    document.getElementById('citeTier').textContent = r.tier;
+    citePanel.classList.add('open');
+    scrim.classList.add('open');
+    document.getElementById('backToReading').focus();
+  }
+  function closeCite() {
+    citePanel.classList.remove('open');
+    scrim.classList.remove('open');
+    if (lastFocused) lastFocused.focus();
+  }
+  document.querySelectorAll('.cite').forEach(function (btn) {
+    btn.addEventListener('click', function () { openCite(btn.getAttribute('data-ref')); });
+  });
+  document.getElementById('backToReading').addEventListener('click', closeCite);
+  scrim.addEventListener('click', closeCite);
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape' && citePanel.classList.contains('open')) closeCite();
+  });
+
+  // ---------- food calculator ----------
+  var FOODS = [
+    { id: 'skyr',   name: 'Skyr natur',      state: 'Ready-to-eat', kcal: 63,  p: 11,  f: 0.2, c: 4,  fib: 0 },
+    { id: 'bread',  name: 'Vollkornbrot',    state: 'As sold',      kcal: 220, p: 8,   f: 2.5, c: 38, fib: 7 },
+    { id: 'pasta',  name: 'Pasta',           state: 'Dry',          kcal: 353, p: 12.5,f: 1.5, c: 71, fib: 3 },
+    { id: 'rice',   name: 'Rice, white',     state: 'Dry',          kcal: 356, p: 7,   f: 0.6, c: 79, fib: 1.3 },
+    { id: 'potato', name: 'Potatoes',        state: 'Raw',          kcal: 77,  p: 2,   f: 0.1, c: 17, fib: 2.2 },
+    { id: 'oil',    name: 'Olive oil',       state: 'As is',        kcal: 884, p: 0,   f: 100, c: 0,  fib: 0 },
+    { id: 'whey',   name: 'Whey protein',    state: 'Powder',       kcal: 380, p: 75,  f: 6,   c: 8,  fib: 1 }
+  ];
+
+  var foodListEl = document.getElementById('foodList');
+  var addedItems = [];
+
+  function fmt(n) {
+    var r = Math.round(n * 10) / 10;
+    return (r % 1 === 0) ? String(r) : String(r.toFixed(1));
+  }
+
+  FOODS.forEach(function (f) {
+    var row = document.createElement('div');
+    row.className = 'food-row';
+    row.innerHTML =
+      '<span class="fname">' + f.name + '<span class="fstate">' + f.state + '</span></span>' +
+      '<span></span>' +
+      '<span class="fmacros">Per 100 g — <b>' + f.kcal + ' kcal</b> · P <b>' + fmt(f.p) + 'g</b> · F <b>' + fmt(f.f) + 'g</b> · C <b>' + fmt(f.c) + 'g</b> · Fibre <b>' + fmt(f.fib) + 'g</b></span>' +
+      '<span class="fadd">' +
+        '<input type="number" min="0" step="5" placeholder="0" aria-label="Grams of ' + f.name + '" data-grams="' + f.id + '">' +
+        '<span class="g-label">g</span>' +
+        '<button class="add-btn" type="button" data-add="' + f.id + '">Add</button>' +
+      '</span>';
+    foodListEl.appendChild(row);
+  });
+
+  var totalKcalEl = document.getElementById('totalKcal');
+  var totalPEl = document.getElementById('totalP');
+  var totalFEl = document.getElementById('totalF');
+  var totalCEl = document.getElementById('totalC');
+  var totalFibEl = document.getElementById('totalFib');
+  var totalsEmptyEl = document.getElementById('totalsEmpty');
+  var totalsListEl = document.getElementById('totalsList');
+
+  function renderTotals() {
+    var t = { kcal: 0, p: 0, f: 0, c: 0, fib: 0 };
+    addedItems.forEach(function (it) {
+      t.kcal += it.kcal; t.p += it.p; t.f += it.f; t.c += it.c; t.fib += it.fib;
+    });
+    totalKcalEl.innerHTML = Math.round(t.kcal) + '<span class="unit">kcal</span>';
+    totalPEl.textContent = fmt(t.p) + ' g';
+    totalFEl.textContent = fmt(t.f) + ' g';
+    totalCEl.textContent = fmt(t.c) + ' g';
+    totalFibEl.textContent = fmt(t.fib) + ' g';
+    totalsEmptyEl.style.display = addedItems.length ? 'none' : 'block';
+    totalsListEl.innerHTML = addedItems.map(function (it, i) {
+      return '<div class="titem"><span>' + it.grams + ' g ' + it.name + '</span><span>' + Math.round(it.kcal) + ' kcal</span></div>';
+    }).join('');
+  }
+
+  foodListEl.addEventListener('click', function (e) {
+    var btn = e.target.closest('[data-add]');
+    if (!btn) return;
+    var id = btn.getAttribute('data-add');
+    var f = FOODS.find(function (x) { return x.id === id; });
+    var input = foodListEl.querySelector('[data-grams="' + id + '"]');
+    var grams = parseFloat(input.value);
+    if (!grams || grams <= 0) { showToast('Enter grams first'); input.focus(); return; }
+    var scale = grams / 100;
+    addedItems.push({
+      name: f.name, grams: grams,
+      kcal: f.kcal * scale, p: f.p * scale, f: f.f * scale, c: f.c * scale, fib: f.fib * scale
+    });
+    input.value = '';
+    renderTotals();
+    showToast(f.name + ' added');
+  });
+
+  document.getElementById('clearTotals').addEventListener('click', function () {
+    addedItems = [];
+    renderTotals();
+  });
+
+  renderTotals();
+
+  // ---------- table of contents ----------
+  var NAV_TREE = [
+    { label: 'Home', kind: 'parent', goto: 'home' },
+    { label: 'Nutrition info', kind: 'parent' },
+    { label: 'Energy balance', kind: 'child', goto: 'reading' },
+    { label: 'Protein', kind: 'child' },
+    { label: 'Carbohydrates & fibre', kind: 'child' },
+    { label: 'Dietary fat', kind: 'child' },
+    { label: 'Micronutrients', kind: 'child' },
+    { label: 'Hydration', kind: 'child' },
+    { label: 'Meal timing', kind: 'child' },
+    { label: 'Liver, alcohol & fructose', kind: 'child' },
+    { label: 'Common myths', kind: 'child' },
+    { label: 'References', kind: 'child' },
+    { label: 'Body composition', kind: 'parent' },
+    { label: 'Latest reading', kind: 'child' },
+    { label: 'Trend', kind: 'child' },
+    { label: 'Diet protocol', kind: 'parent' },
+    { label: 'Phases', kind: 'child' },
+    { label: 'Phase correction finding', kind: 'child' },
+    { label: 'Day targets', kind: 'parent' },
+    { label: 'Session carbs', kind: 'parent' },
+    { label: 'Back + Biceps', kind: 'child' },
+    { label: 'Push day', kind: 'child' },
+    { label: 'Timing', kind: 'parent' },
+    { label: 'Fats', kind: 'parent' },
+    { label: 'Training', kind: 'parent', goto: 'training', badge: 'New' },
+    { label: 'Programme', kind: 'child' },
+    { label: 'History', kind: 'child' },
+    { label: 'Food calculator', kind: 'parent', goto: 'food', badge: 'New' },
+    { label: 'Established findings', kind: 'parent' },
+    { label: 'About & sources', kind: 'parent' }
+  ];
+
+  var tocContainer = document.getElementById('tocContainer');
+
+  function renderToc(filter) {
+    var q = (filter || '').trim().toLowerCase();
+    tocContainer.innerHTML = '';
+    var anyVisible = false;
+    var lastWasChild = false;
+    NAV_TREE.forEach(function (item) {
+      var matches = !q || item.label.toLowerCase().indexOf(q) !== -1;
+      if (q && !matches) return;
+      anyVisible = true;
+      if (item.kind === 'parent' && lastWasChild) {
+        var hr = document.createElement('div');
+        hr.className = 'toc-hairline';
+        tocContainer.appendChild(hr);
+      }
+      var row = document.createElement('button');
+      row.type = 'button';
+      row.className = 'toc-row' + (item.kind === 'child' ? ' child' : ' parent-row');
+      row.innerHTML = (item.kind === 'parent' ? '<span class="pin-dot" aria-hidden="true"></span>' : '') +
+        '<span style="flex:1">' + item.label + '</span>' +
+        (item.badge ? '<span class="badge-new">' + item.badge + '</span>' : '');
+      row.addEventListener('click', function () {
+        if (item.goto) { showScreen(item.goto); switcherBtns.forEach(function (b) { b.setAttribute('aria-pressed', b.getAttribute('data-screen') === item.goto ? 'true' : 'false'); }); }
+        else { showToast(item.label + ' — preview only in this draft'); }
+      });
+      tocContainer.appendChild(row);
+      lastWasChild = (item.kind === 'child');
+    });
+    if (!anyVisible) {
+      var empty = document.createElement('div');
+      empty.className = 'toc-empty';
+      empty.textContent = 'No pages match "' + filter + '"';
+      tocContainer.appendChild(empty);
+    }
+  }
+  renderToc('');
+  document.getElementById('tocSearch').addEventListener('input', function (e) { renderToc(e.target.value); });
+
+})();
+</script>
+
+<div style="padding: 0 1.5rem 3rem; max-width: 100%;">
+<section class="design-notes">
+  <h2>Design notes</h2>
+  <p>
+  Grouping comes entirely from background-tint shifts (<code>--surface</code>/<code>--surface-2</code>, roughly 4–8% lighter than <code>--bg</code>) and spacing — no borders, no drop shadows anywhere except the one deliberately-boxed ToC container the brief calls out as acceptable. Display numerals (hero remaining-kcal, food-calculator total, the three training stats) carry the visual weight instead of card chrome, which is the core bet of this draft: legible at a glance, not fussy to look at.
+  </p>
+  <p>
+  One accent (<code>#ff8a4c</code> dark / <code>#ff7a3d</code>–<code>#b8420f</code> light, split so small text stays ≥4.5:1 while large numerals can use the punchier shade) is used consistently for numerals, active states and interactive affordances, and nowhere else — the intent is that orange always means "this is the number/action that matters."
+  </p>
+  <p>
+  Left out deliberately: no manifest/service-worker wiring (this is a visual draft, not a build target), no real Hevy data for the Training screen (flagged in-page as illustrative), and no attempt to reconcile this screen set with the live app's actual routing — the ToC's non-mapped rows just toast "preview only" rather than pretending to navigate somewhere real.
+  </p>
+  <p>
+  Next step if this direction is picked: wire the citation stack up to the real back-navigation model already built in <code>index.html</code> (exact scroll-offset restore, not anchor-based), and pull real per-100g values for Toni's actual products before this touches the food calculator for real.
+  </p>
+</section>
+</div>
+
+</body>
+</html>
