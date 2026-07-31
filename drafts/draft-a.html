@@ -63,7 +63,6 @@
   :focus-visible{
     outline: 2px solid var(--focus);
     outline-offset: 2px;
-    border-radius: 2px;
   }
 
   /* ============ draft-preview switcher (not part of the design) ============ */
@@ -107,7 +106,7 @@
   .icon-btn{
     background:none; border:none; padding:8px; margin:-8px;
     display:flex; align-items:center; justify-content:center;
-    color: var(--ink-soft); cursor:pointer; border-radius: 8px;
+    color: var(--ink-soft); cursor:pointer; border-radius: 999px;
   }
   .icon-btn:hover{ color: var(--ink); }
   .icon-btn svg{ width:20px; height:20px; }
@@ -204,7 +203,7 @@
     cursor: pointer;
     min-width: 1.4em;
   }
-  .cite:hover, .cite:focus-visible{ background: var(--accent-soft); border-radius: 3px; }
+  .cite:hover, .cite:focus-visible{ background: var(--accent-soft); }
 
   .back-to-reading{
     position: sticky;
@@ -233,7 +232,7 @@
     max-width: var(--measure);
     margin: 8px 0 18px;
     padding: 14px 0 0;
-    border-top: 1px solid var(--rule-strong);
+    border-top: 1px solid var(--rule);
   }
   .ref-card .ref-num{
     display:inline-block; font-family: var(--sans); font-weight:700;
@@ -242,31 +241,57 @@
   .ref-card .ref-meta{
     font-family: var(--sans); font-size: 0.78rem; color: var(--ink-soft); line-height:1.5;
   }
+  /* status/confidence as a dot + word — never a filled pill (§2.3) */
   .ref-card .ref-tier{
-    display:inline-block; margin-top:8px; font-family: var(--sans); font-size: 0.68rem;
+    display:flex; align-items:center; gap:7px; margin-top:8px;
+    font-family: var(--sans); font-size: 0.68rem;
     letter-spacing:0.04em; text-transform:uppercase; color: var(--ink-faint);
+  }
+  .ref-card .ref-tier::before{
+    content:""; width:7px; height:7px; border-radius:50%;
+    background: var(--ink-faint); flex-shrink:0;
   }
 
   /* ============ statistic / number typography ============ */
+  /* Numeral-first: the figure is set 3-5x its label's size, heavy weight,
+     with the label directly beneath in a muted tone. No divider, no tint,
+     no box — scale and colour contrast alone do the separating work. */
   .stat{
-    display:flex; align-items:baseline; gap: 6px; flex-wrap: wrap;
+    display:flex; flex-direction:column; align-items:flex-start; gap:0;
   }
   .stat .num{
     font-family: var(--serif);
-    font-size: 2.6rem;
+    font-size: 2.4rem;
     line-height: 1;
-    font-weight: 400;
+    font-weight: 600;
     letter-spacing: -0.01em;
     font-variant-numeric: oldstyle-nums;
+    color: var(--ink);
   }
   .stat .unit{
+    display:block;
     font-family: var(--sans);
-    font-size: 0.95rem;
-    font-weight: 400;
-    color: var(--ink-soft);
+    font-size: 0.74rem;
+    font-weight: 600;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    color: var(--ink-faint);
+    margin-top: 6px;
   }
-  .stat.small .num{ font-size: 1.7rem; }
+  /* secondary/breakdown stats (macro grid, etc.) stay quiet per §2.9 —
+     number and unit share a baseline, the muted label sits below as its
+     own element (e.g. .tg-label) rather than doubling up captions */
+  .stat.small{ flex-direction:row; align-items:baseline; gap: 3px; }
+  .stat.small .num{ font-size: 1.6rem; }
+  .stat.small .unit{
+    display:inline; margin-top:0; font-weight:400; letter-spacing:0;
+    text-transform:none; font-size: 0.8rem; color: var(--ink-soft);
+  }
   .stat.accent .num{ color: var(--accent); }
+  /* the one dominant figure per screen (§2.9) — Home's target, the
+     calculator's running total — set larger again than a normal stat */
+  .stat.dominant .num{ font-size: 3.6rem; font-weight: 700; }
+  .stat.dominant .unit{ font-size: 0.78rem; margin-top: 8px; }
 
   /* ============ Home screen ============ */
   .home-list{ margin-top: 8px; }
@@ -342,17 +367,15 @@
     font-size: 0.68rem; color: var(--ink-faint); margin-bottom: 10px;
   }
   .totals .totals-energy{
-    display:flex; align-items:baseline; gap:8px; margin-bottom: 18px;
+    margin-bottom: 22px;
   }
-  .totals .totals-energy .num{ font-size: 3.4rem; color: var(--accent); }
   .totals-grid{
-    display:grid; grid-template-columns: repeat(3, 1fr); gap: 18px 10px;
+    display:grid; grid-template-columns: repeat(4, 1fr); gap: 18px 10px;
   }
   .totals-grid .tg-item .num{ font-size: 1.5rem; }
-  .totals-grid .tg-item .unit{ font-size: 0.78rem; }
   .totals-grid .tg-item .tg-label{
     font-family: var(--sans); font-size: 0.68rem; color: var(--ink-faint);
-    text-transform: uppercase; letter-spacing: 0.06em; margin-top: 2px;
+    text-transform: uppercase; letter-spacing: 0.06em; margin-top: 6px;
   }
   .totals-empty{
     font-family: var(--serif); font-style: italic; color: var(--ink-faint); font-size: 0.95rem;
@@ -384,8 +407,8 @@
     font-family: var(--sans); font-size: 0.78rem; color: var(--ink-soft);
     width: 84px; flex-shrink:0;
   }
-  .vol-bar-row .vb-track{ flex:1; height: 6px; background: var(--rule); border-radius: 3px; overflow:hidden; }
-  .vol-bar-row .vb-fill{ height:100%; background: var(--accent); border-radius: 3px; }
+  .vol-bar-row .vb-track{ flex:1; height: 6px; background: var(--rule); overflow:hidden; }
+  .vol-bar-row .vb-fill{ height:100%; background: var(--accent); }
   .vol-bar-row .vb-val{
     font-family: var(--sans); font-size: 0.76rem; color: var(--ink-faint); width: 34px; text-align:right;
   }
@@ -429,8 +452,8 @@
     display:flex; align-items:center; gap:8px;
     background: var(--bg);
     border: 1px solid var(--rule-strong);
-    border-radius: 10px;
-    padding: 9px 12px;
+    border-radius: 999px;
+    padding: 9px 14px;
   }
   .toc-search svg{ width:16px; height:16px; color: var(--ink-faint); flex-shrink:0; }
   .toc-search input{
@@ -443,7 +466,7 @@
   .toc-row{
     display:flex; align-items:center; justify-content:space-between; gap:8px;
     width:100%; text-align:left; background:none; border:none;
-    padding: 11px 8px; border-radius: 8px; cursor:pointer;
+    padding: 11px 8px; cursor:pointer;
     border-bottom: 1px solid var(--rule);
   }
   .toc-row .tr-text{
@@ -488,7 +511,7 @@
   @media (max-width: 360px){
     h1.page-title{ font-size: 1.65rem; }
     .stat .num{ font-size: 2.2rem; }
-    .totals .totals-energy .num{ font-size: 2.8rem; }
+    .stat.dominant .num{ font-size: 3rem; }
   }
 </style>
 </head>
@@ -556,7 +579,7 @@
 
     <div class="stat-block">
       <p class="sb-label">Today at a glance</p>
-      <div class="stat accent">
+      <div class="stat dominant accent">
         <span class="num">2,340</span><span class="unit">kcal target</span>
       </div>
       <p class="sb-note">Phase 2 correction applied — see Diet protocol.</p>
@@ -659,7 +682,7 @@
     <div class="totals" id="totalsBlock">
       <p class="totals-label">Running total</p>
       <div class="totals-energy">
-        <span class="stat"><span class="num" id="totKcal">0</span><span class="unit">kcal</span></span>
+        <span class="stat dominant accent"><span class="num" id="totKcal">0</span><span class="unit">kcal</span></span>
       </div>
       <div id="totalsEmpty" class="totals-empty">Nothing added yet — enter grams above and tap +.</div>
       <div class="totals-grid" id="totalsGrid" style="display:none;">
@@ -694,7 +717,7 @@
 
     <div class="stat-block">
       <p class="sb-label">Estimated 1RM — Barbell Bench Press</p>
-      <div class="stat accent">
+      <div class="stat dominant accent">
         <span class="num">96.5</span><span class="unit">kg</span>
       </div>
       <svg class="spark" width="220" height="52" viewBox="0 0 220 52" aria-hidden="true">

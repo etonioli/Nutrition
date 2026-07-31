@@ -15,21 +15,22 @@
     color-scheme: dark;
     /* ---- Dark theme (default) ---- */
     --bg: #12151a;
-    --surface: #1a1f26;      /* +~4-5% lightness vs bg — tint, no border */
-    --surface-2: #20262e;    /* stronger tint, used for ToC drawer / active rows */
+    /* Grouping tint only — 3-5% off the page colour, never a border/shadow (sandow discipline). */
+    --surface: color-mix(in srgb, var(--bg) 96%, white 4%);   /* ~4% tint — hover/zebra grouping */
+    --surface-2: color-mix(in srgb, var(--bg) 95%, white 5%); /* ~5% tint — drawer / active rows only */
     --surface-hair: rgba(255,255,255,0.06); /* hairline separators only, never a box */
     --text: #edeff2;
     --text-dim: #9aa3ad;
-    --text-faint: #6b7580;
+    --text-faint: #838d97; /* ≥4.5:1 on --bg — verified 5.42:1, see design notes */
     --accent: #ff8a4c;
     --accent-strong: #ffa46e;
     --on-accent: #1a0e05;
     --accent-text: var(--accent); /* safe as text on --bg / --surface in dark mode */
     --danger: #ff6b6b;
     --good: #6bcf9a;
-    --radius-lg: 1.25rem;
-    --radius-md: 0.9rem;
-    --radius-sm: 0.6rem;
+    /* Binary radius rule (§2.7): the ONLY radius in the system. Full pill on actionable
+       controls (buttons, form fields). Everything else is unrounded — 0, no exceptions. */
+    --radius-pill: 999px;
     --space-1: 0.375rem;
     --space-2: 0.625rem;
     --space-3: 1rem;
@@ -45,18 +46,18 @@
     :root {
       color-scheme: light;
       --bg: #f7f5f1;
-      --surface: #efebe4;
-      --surface-2: #e7e2d9;
+      --surface: color-mix(in srgb, var(--bg) 96%, black 4%);
+      --surface-2: color-mix(in srgb, var(--bg) 95%, black 5%);
       --surface-hair: rgba(0,0,0,0.07);
       --text: #1c1a17;
       --text-dim: #5d564c;
-      --text-faint: #857c6f;
+      --text-faint: #6b6459;   /* ≥4.5:1 on --bg — verified 5.37:1, see design notes */
       --accent: #ff7a3d;        /* vivid — reserved for large numerals / accent fills */
       --accent-strong: #e8672c;
       --on-accent: #1a0e05;
       --accent-text: #b8420f;   /* darker, verified ≥4.5:1 on bg/surface — for small text/links/buttons */
       --danger: #c0392b;
-      --good: #1f8a54;
+      --good: #166a3e;          /* darkened from #1f8a54 — that was 4.00:1 on --bg, fails AA; now 6.09:1 */
     }
   }
 
@@ -78,6 +79,11 @@
   }
   button { font-family: inherit; }
   a { color: var(--accent-text); }
+  /* Icon-led rows (§2.8) keep a real text label for assistive tech; only visually hidden. */
+  .sr-only {
+    position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px;
+    overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; border: 0;
+  }
 
   /* ---------- draft preview switcher ---------- */
   .draft-bar {
@@ -147,7 +153,7 @@
     color: var(--text-dim);
     width: 2.25rem;
     height: 2.25rem;
-    border-radius: 999px;
+    border-radius: var(--radius-pill);
     display: inline-flex;
     align-items: center;
     justify-content: center;
@@ -185,17 +191,13 @@
   p.lede { color: var(--text-dim); font-size: 0.9rem; margin: 0 0 var(--space-3); }
 
   /* ---------- HOME ---------- */
+  /* Numeral-first hierarchy (§2.1): one dominant figure (§2.9), no card, no divider —
+     scale/weight contrast alone separates the number from its label beneath it. */
   .hero {
     padding: var(--space-4) 0 var(--space-2);
   }
-  .hero .hero-label {
-    font-size: 0.8125rem;
-    color: var(--text-dim);
-    font-weight: 600;
-    margin: 0 0 0.15rem;
-  }
   .hero .hero-figure {
-    font-size: clamp(3.2rem, 16vw, 4.4rem);
+    font-size: clamp(3.6rem, 19vw, 5.2rem);
     font-weight: 800;
     letter-spacing: -0.03em;
     line-height: 1;
@@ -205,30 +207,49 @@
     gap: 0.4rem;
   }
   .hero .hero-figure .unit {
-    font-size: 1.1rem;
+    font-size: 1.05rem;
     font-weight: 700;
     color: var(--accent-text);
   }
-  .hero .hero-sub {
-    margin-top: var(--space-2);
-    font-size: 0.875rem;
+  .hero .hero-label {
+    font-size: 0.75rem;
     color: var(--text-dim);
-    display: flex;
-    gap: var(--space-4);
+    font-weight: 600;
+    margin: 0.3rem 0 0;
   }
-  .hero .hero-sub b { color: var(--text); font-weight: 700; }
   .hero-bar {
     margin-top: var(--space-3);
-    height: 0.5rem;
-    border-radius: 999px;
+    height: 0.4rem;
+    border-radius: 0;
     background: var(--surface);
     overflow: hidden;
   }
   .hero-bar span {
     display: block;
     height: 100%;
-    border-radius: 999px;
+    border-radius: 0;
     background: var(--accent);
+  }
+  /* Icon-led inline stat row (§2.8): icon *is* the label, generous gutters, no dividers. */
+  .hero .hero-sub {
+    margin-top: var(--space-4);
+    display: flex;
+    gap: var(--space-4);
+    flex-wrap: wrap;
+  }
+  .hero .hero-sub .stat-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    font-size: 0.9375rem;
+    font-weight: 700;
+    color: var(--text);
+  }
+  .hero .hero-sub .stat-chip svg {
+    width: 1.05rem;
+    height: 1.05rem;
+    color: var(--text-dim);
+    flex: none;
   }
 
   .shortcut-list { margin-top: var(--space-2); }
@@ -242,7 +263,7 @@
     color: var(--text);
     text-align: left;
     padding: 0.85rem var(--space-3);
-    border-radius: var(--radius-md);
+    border-radius: 0;
     cursor: pointer;
     transition: background var(--dur) var(--ease);
   }
@@ -284,7 +305,7 @@
     height: 1.3rem;
     padding: 0 0.3rem;
     margin: 0 0.05rem;
-    border-radius: 0.4rem;
+    border-radius: var(--radius-pill);
     border: none;
     background: var(--surface-2);
     color: var(--accent-text);
@@ -302,7 +323,7 @@
     position: fixed;
     left: 0; right: 0; bottom: 0;
     background: var(--surface-2);
-    border-radius: 1.25rem 1.25rem 0 0;
+    border-radius: 0;
     padding: var(--space-4) var(--space-4) calc(var(--space-4) + env(safe-area-inset-bottom, 0px));
     transform: translateY(110%);
     transition: transform 260ms var(--ease);
@@ -312,20 +333,23 @@
   }
   .cite-panel.open { transform: translateY(0); }
   .cite-panel .handle {
-    width: 2.5rem; height: 0.28rem; border-radius: 999px; background: var(--text-faint);
+    width: 2.5rem; height: 0.28rem; border-radius: var(--radius-pill); background: var(--text-faint);
     margin: 0 auto var(--space-3);
   }
+  /* Dot + word (§2.3) — replaces the old filled accent pill for tier/confidence. */
   .cite-panel .ref-tier {
-    display: inline-block;
-    font-size: 0.68rem;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    font-size: 0.75rem;
     font-weight: 700;
     text-transform: uppercase;
     letter-spacing: 0.03em;
-    color: var(--on-accent);
-    background: var(--accent);
-    border-radius: 0.4rem;
-    padding: 0.15rem 0.45rem;
+    color: var(--text-dim);
     margin-bottom: 0.5rem;
+  }
+  .cite-panel .ref-tier .dot {
+    width: 0.5rem; height: 0.5rem; border-radius: var(--radius-pill); background: var(--accent); flex: none;
   }
   .cite-panel h4 { margin: 0 0 0.3rem; font-size: 1rem; }
   .cite-panel .meta { color: var(--text-dim); font-size: 0.85rem; margin: 0 0 0.75rem; }
@@ -334,7 +358,7 @@
     background: var(--accent);
     color: var(--on-accent);
     border: none;
-    border-radius: var(--radius-md);
+    border-radius: var(--radius-pill);
     padding: 0.8rem;
     font-weight: 700;
     font-size: 0.9rem;
@@ -354,30 +378,45 @@
     gap: 0.2rem var(--space-3);
     align-items: center;
     padding: 0.8rem var(--space-3);
-    border-radius: var(--radius-md);
+    border-radius: 0;
     background: transparent;
     transition: background var(--dur) var(--ease);
   }
   .food-row:nth-of-type(odd) { background: var(--surface); }
   .food-row .fname { font-weight: 700; font-size: 0.9375rem; }
+  /* Dot + word (§2.3) — replaces the old filled pill for the ready-state tag. */
   .food-row .fstate {
-    font-size: 0.68rem;
-    font-weight: 700;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    font-size: 0.7rem;
+    font-weight: 600;
     text-transform: uppercase;
     letter-spacing: 0.03em;
-    color: var(--accent-text);
-    background: var(--surface-2);
-    padding: 0.1rem 0.4rem;
-    border-radius: 0.35rem;
-    margin-left: 0.4rem;
+    color: var(--text-dim);
+    margin-left: 0.5rem;
     vertical-align: 1px;
   }
+  .food-row .fstate .dot {
+    width: 0.4rem; height: 0.4rem; border-radius: var(--radius-pill); background: var(--text-faint); flex: none;
+  }
+  /* Icon-led inline stat row (§2.8) — icon is the label, generous gutter, no dividers. */
   .food-row .fmacros {
     grid-column: 1 / -1;
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 0.1rem 0.9rem;
     font-size: 0.8rem;
     color: var(--text-dim);
-    margin-top: 0.1rem;
+    margin-top: 0.35rem;
   }
+  .food-row .fmacros .fstat {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+  }
+  .food-row .fmacros svg { width: 0.95rem; height: 0.95rem; color: var(--text-faint); flex: none; }
   .food-row .fmacros b { color: var(--text); font-weight: 700; }
   .food-row .fadd {
     grid-column: 1 / -1;
@@ -390,9 +429,9 @@
     width: 4.5rem;
     background: var(--surface-2);
     border: none;
-    border-radius: var(--radius-sm);
+    border-radius: var(--radius-pill);
     color: var(--text);
-    padding: 0.5rem 0.6rem;
+    padding: 0.5rem 0.9rem;
     font-size: 0.9rem;
     font-family: inherit;
   }
@@ -421,25 +460,30 @@
     padding: var(--space-4);
     background: linear-gradient(to top, var(--bg) 78%, transparent);
   }
+  /* No card (§1 — pure numbers need no container): the one dominant figure (§2.9)
+     floats directly on the background; the sticky gradient below exists only to
+     keep it legible over scrolled rows, it is not a decorative box. */
   .totals-figure {
-    background: var(--surface-2);
-    border-radius: var(--radius-lg);
-    padding: var(--space-4);
+    padding: 0;
   }
-  .totals-figure .t-label { font-size: 0.78rem; color: var(--text-dim); font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em; }
   .totals-figure .t-figure {
-    font-size: clamp(2.6rem, 13vw, 3.4rem);
+    font-size: clamp(3rem, 15vw, 4rem);
     font-weight: 800;
     letter-spacing: -0.03em;
     line-height: 1;
-    margin: 0.2rem 0 0.6rem;
-    color: var(--accent-text);
+    color: var(--text);
   }
-  .totals-figure .t-figure .unit { font-size: 0.95rem; color: var(--text-dim); font-weight: 700; margin-left: 0.3rem; }
-  .totals-macros { display: flex; gap: var(--space-4); flex-wrap: wrap; }
-  .totals-macros div { font-size: 0.85rem; color: var(--text-dim); }
-  .totals-macros b { display: block; color: var(--text); font-size: 1.05rem; font-weight: 700; }
-  .totals-empty { color: var(--text-faint); font-size: 0.85rem; font-style: italic; }
+  .totals-figure .t-figure .unit { font-size: 1rem; color: var(--accent-text); font-weight: 700; margin-left: 0.35rem; }
+  .totals-figure .t-label {
+    font-size: 0.75rem; color: var(--text-dim); font-weight: 600;
+    text-transform: uppercase; letter-spacing: 0.04em; margin: 0.3rem 0 var(--space-3);
+  }
+  /* Icon-led inline stat row (§2.8). */
+  .totals-macros { display: flex; gap: 0.1rem 1.1rem; flex-wrap: wrap; align-items: center; }
+  .totals-macros .tstat { display: inline-flex; align-items: center; gap: 0.4rem; font-size: 0.85rem; color: var(--text-dim); }
+  .totals-macros svg { width: 1.05rem; height: 1.05rem; color: var(--text-faint); flex: none; }
+  .totals-macros b { color: var(--text); font-size: 1rem; font-weight: 700; }
+  .totals-empty { color: var(--text-faint); font-size: 0.85rem; font-style: italic; margin-top: var(--space-2); }
   .totals-list { margin-top: 0.75rem; font-size: 0.8rem; color: var(--text-dim); }
   .totals-list .titem { display: flex; justify-content: space-between; padding: 0.15rem 0; }
   .totals-list .titem span:last-child { color: var(--text); }
@@ -455,17 +499,10 @@
     font-style: italic;
     margin: 0.1rem 0 var(--space-3);
   }
+  /* Numeral-first (§2.1): figure first, muted label directly beneath, no divider/tint. */
   .stat-block { margin-bottom: var(--space-5); }
-  .stat-block .stat-label {
-    font-size: 0.78rem;
-    color: var(--text-dim);
-    font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: 0.04em;
-    margin-bottom: 0.2rem;
-  }
   .stat-block .stat-figure {
-    font-size: clamp(2.4rem, 11vw, 2.9rem);
+    font-size: clamp(2.6rem, 13vw, 3.3rem);
     font-weight: 800;
     letter-spacing: -0.02em;
     line-height: 1.05;
@@ -473,8 +510,17 @@
     align-items: baseline;
     gap: 0.4rem;
     flex-wrap: wrap;
+    color: var(--text);
   }
   .stat-block .stat-figure .unit { font-size: 1rem; font-weight: 700; color: var(--text-dim); }
+  .stat-block .stat-label {
+    font-size: 0.75rem;
+    color: var(--text-dim);
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    margin: 0.3rem 0 0;
+  }
   .stat-block .stat-delta {
     font-size: 0.85rem;
     font-weight: 700;
@@ -482,7 +528,7 @@
   }
   .stat-delta.up { color: var(--good); }
   .stat-delta.down { color: var(--danger); }
-  .spark-wrap { margin-top: var(--space-2); }
+  .spark-wrap { margin-top: var(--space-3); }
   .spark-wrap svg { width: 100%; height: 4.5rem; display: block; }
 
   .bar-list { margin-top: var(--space-2); }
@@ -490,13 +536,13 @@
   .bar-row .bar-top { display: flex; justify-content: space-between; font-size: 0.85rem; margin-bottom: 0.3rem; }
   .bar-row .bar-top .m-label { font-weight: 600; }
   .bar-row .bar-top .m-value { color: var(--text-dim); }
-  .bar-track { height: 0.55rem; border-radius: 999px; background: var(--surface); overflow: hidden; }
-  .bar-fill { height: 100%; border-radius: 999px; background: var(--accent); transition: width 500ms var(--ease); }
+  .bar-track { height: 0.4rem; border-radius: 0; background: var(--surface); overflow: hidden; }
+  .bar-fill { height: 100%; border-radius: 0; background: var(--accent); transition: width 500ms var(--ease); }
 
   .changelog { margin-top: var(--space-2); }
   .changelog-item {
     padding: 0.7rem var(--space-3);
-    border-radius: var(--radius-md);
+    border-radius: 0;
     background: var(--surface);
     margin-bottom: 0.5rem;
     font-size: 0.85rem;
@@ -525,7 +571,7 @@
 
   .toc-container {
     background: var(--surface);
-    border-radius: var(--radius-lg);
+    border-radius: 0;
     padding: var(--space-2);
   }
   .toc-row {
@@ -538,7 +584,7 @@
     color: var(--text);
     text-align: left;
     padding: 0.7rem 0.65rem;
-    border-radius: var(--radius-sm);
+    border-radius: 0;
     cursor: pointer;
     font-size: 0.9375rem;
     transition: background var(--dur) var(--ease);
@@ -546,11 +592,19 @@
   .toc-row.child { padding-left: 2.1rem; font-size: 0.875rem; color: var(--text-dim); }
   .toc-row:hover, .toc-row:focus-visible { background: var(--surface-2); }
   .toc-row:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
-  .toc-row .pin-dot { width: 0.4rem; height: 0.4rem; border-radius: 999px; background: var(--accent); flex: none; opacity: 0.85; }
+  .toc-row .pin-dot { width: 0.4rem; height: 0.4rem; border-radius: var(--radius-pill); background: var(--accent); flex: none; opacity: 0.85; }
   .toc-row.parent-row { font-weight: 700; }
+  /* Dot + word (§2.3) — replaces the old filled accent pill for the "New" tag. */
   .toc-row .badge-new {
-    font-size: 0.62rem; font-weight: 700; letter-spacing: 0.03em; text-transform: uppercase;
-    background: var(--accent); color: var(--on-accent); border-radius: 0.35rem; padding: 0.08rem 0.35rem;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.32rem;
+    font-size: 0.68rem; font-weight: 700; letter-spacing: 0.03em; text-transform: uppercase;
+    color: var(--accent-text);
+  }
+  .toc-row .badge-new::before {
+    content: "";
+    width: 0.4rem; height: 0.4rem; border-radius: var(--radius-pill); background: var(--accent); flex: none;
   }
   .toc-hairline { height: 1px; background: var(--surface-hair); margin: 0.3rem 0.65rem; }
   .toc-empty { text-align: center; color: var(--text-faint); font-size: 0.85rem; padding: var(--space-4); font-style: italic; }
@@ -571,7 +625,7 @@
     background: var(--surface-2);
     color: var(--text);
     padding: 0.6rem 1rem;
-    border-radius: 999px;
+    border-radius: 0;
     font-size: 0.85rem;
     z-index: 300;
     transition: transform 220ms var(--ease);
@@ -603,13 +657,13 @@
   </header>
   <main class="screen active" id="screen-home">
     <div class="hero">
-      <p class="hero-label">Today at a glance</p>
       <div class="hero-figure">1,840<span class="unit">kcal remaining</span></div>
+      <p class="hero-label">Today at a glance</p>
       <div class="hero-bar"><span style="width: 64%"></span></div>
       <div class="hero-sub">
-        <span><b>96 g</b> protein logged</span>
-        <span><b>3</b> meals</span>
-        <span><b>Training</b> today</span>
+        <span class="stat-chip"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="4.5" cy="12" r="2"/><circle cx="19.5" cy="12" r="2"/><line x1="6.5" y1="12" x2="17.5" y2="12"/><line x1="8" y1="9" x2="8" y2="15"/><line x1="16" y1="9" x2="16" y2="15"/></svg>96 g protein</span>
+        <span class="stat-chip"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="6" y1="3" x2="6" y2="10"/><line x1="4" y1="3" x2="4" y2="8"/><line x1="8" y1="3" x2="8" y2="8"/><line x1="6" y1="10" x2="6" y2="21"/><path d="M17 3v6c0 1.7-1.3 3-3 3v9"/></svg>3 meals</span>
+        <span class="stat-chip"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M13 2 4 14h6l-1 8 9-12h-6z"/></svg>Training today</span>
       </div>
     </div>
 
@@ -683,13 +737,13 @@
 
     <div class="totals-block">
       <div class="totals-figure">
-        <div class="t-label">Running total</div>
         <div class="t-figure" id="totalKcal">0<span class="unit">kcal</span></div>
+        <div class="t-label">Running total</div>
         <div class="totals-macros">
-          <div>Protein<b id="totalP">0 g</b></div>
-          <div>Fat<b id="totalF">0 g</b></div>
-          <div>Carbs<b id="totalC">0 g</b></div>
-          <div>Fibre<b id="totalFib">0 g</b></div>
+          <span class="tstat"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="4.5" cy="12" r="2"/><circle cx="19.5" cy="12" r="2"/><line x1="6.5" y1="12" x2="17.5" y2="12"/><line x1="8" y1="9" x2="8" y2="15"/><line x1="16" y1="9" x2="16" y2="15"/></svg><span class="sr-only">Protein</span><b id="totalP">0 g</b></span>
+          <span class="tstat"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3c3 4.2 6.5 7.9 6.5 11.5a6.5 6.5 0 0 1-13 0C5.5 10.9 9 7.2 12 3z"/></svg><span class="sr-only">Fat</span><b id="totalF">0 g</b></span>
+          <span class="tstat"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="12" y1="21" x2="12" y2="4"/><ellipse cx="9.3" cy="7.5" rx="2" ry="1.1" transform="rotate(-35 9.3 7.5)"/><ellipse cx="14.7" cy="7.5" rx="2" ry="1.1" transform="rotate(35 14.7 7.5)"/><ellipse cx="9.3" cy="11.5" rx="2" ry="1.1" transform="rotate(-35 9.3 11.5)"/><ellipse cx="14.7" cy="11.5" rx="2" ry="1.1" transform="rotate(35 14.7 11.5)"/></svg><span class="sr-only">Carbohydrate</span><b id="totalC">0 g</b></span>
+          <span class="tstat"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 4C10.5 4.5 5 10.5 5 18c0 .6.1 1.2.2 1.8 6.4-.8 12-4.6 13.9-11 .6-1.8.9-3.2.9-4.8z"/><path d="M6 19c1.8-5.8 6-9.6 12-11.6"/></svg><span class="sr-only">Fibre</span><b id="totalFib">0 g</b></span>
         </div>
         <div class="totals-empty" id="totalsEmpty">Nothing added yet — enter grams above and tap Add.</div>
         <div class="totals-list" id="totalsList"></div>
@@ -710,8 +764,8 @@
     <p class="illustrative-tag">Illustrative figures for this layout draft — not a real Hevy pull.</p>
 
     <div class="stat-block">
-      <div class="stat-label">Est. 1RM trend · Bench Press</div>
       <div class="stat-figure">92<span class="unit">kg</span><span class="stat-delta up">▲ +10 kg / 8 wks</span></div>
+      <div class="stat-label">Est. 1RM trend · Bench Press</div>
       <div class="spark-wrap">
         <svg viewBox="0 0 300 60" preserveAspectRatio="none" aria-hidden="true">
           <polyline points="0,48 37,40 75,44 112,32 150,24 187,16 225,20 262,8 300,4" fill="none" stroke="var(--accent)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
@@ -721,8 +775,8 @@
     </div>
 
     <div class="stat-block">
-      <div class="stat-label">Weekly volume load</div>
       <div class="stat-figure">18,420<span class="unit">kg</span><span class="stat-delta up">▲ +6% vs 4-wk avg</span></div>
+      <div class="stat-label">Weekly volume load</div>
     </div>
 
     <div class="stat-block">
@@ -771,7 +825,7 @@
   <div class="scrim" id="scrim"></div>
   <div class="cite-panel" id="citePanel" role="dialog" aria-modal="true" aria-labelledby="citeTitle">
     <div class="handle" aria-hidden="true"></div>
-    <span class="ref-tier" id="citeTier">Tier 2 · Certain</span>
+    <span class="ref-tier"><span class="dot" aria-hidden="true"></span><span id="citeTier">Tier 2 · Certain</span></span>
     <h4 id="citeTitle">—</h4>
     <p class="meta" id="citeMeta">—</p>
     <button class="back-btn" type="button" id="backToReading">Back to reading</button>
@@ -876,13 +930,27 @@
     return (r % 1 === 0) ? String(r) : String(r.toFixed(1));
   }
 
+  // Icon-led inline stat rows (§2.8) — icon replaces the text label, a visually-hidden
+  // span keeps the label available to assistive tech since the value stays dynamic.
+  var ICON_FLAME = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 21c3.6 0 6.5-2.5 6.5-6.2 0-2.9-1.7-4.9-3.2-6.9-1-1.4-1.7-2.7-2-4.4-1.1 2-3.3 4-3.3 7 0 1 .3 1.9.9 2.6-1.2-.2-2.2-1.2-2.6-2.5C7.2 12 6 13.8 6 16c0 3 2.9 5 6 5z"/></svg>';
+  var ICON_PROTEIN = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="4.5" cy="12" r="2"/><circle cx="19.5" cy="12" r="2"/><line x1="6.5" y1="12" x2="17.5" y2="12"/><line x1="8" y1="9" x2="8" y2="15"/><line x1="16" y1="9" x2="16" y2="15"/></svg>';
+  var ICON_FAT = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3c3 4.2 6.5 7.9 6.5 11.5a6.5 6.5 0 0 1-13 0C5.5 10.9 9 7.2 12 3z"/></svg>';
+  var ICON_CARB = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="12" y1="21" x2="12" y2="4"/><ellipse cx="9.3" cy="7.5" rx="2" ry="1.1" transform="rotate(-35 9.3 7.5)"/><ellipse cx="14.7" cy="7.5" rx="2" ry="1.1" transform="rotate(35 14.7 7.5)"/><ellipse cx="9.3" cy="11.5" rx="2" ry="1.1" transform="rotate(-35 9.3 11.5)"/><ellipse cx="14.7" cy="11.5" rx="2" ry="1.1" transform="rotate(35 14.7 11.5)"/></svg>';
+  var ICON_FIBRE = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 4C10.5 4.5 5 10.5 5 18c0 .6.1 1.2.2 1.8 6.4-.8 12-4.6 13.9-11 .6-1.8.9-3.2.9-4.8z"/><path d="M6 19c1.8-5.8 6-9.6 12-11.6"/></svg>';
+
   FOODS.forEach(function (f) {
     var row = document.createElement('div');
     row.className = 'food-row';
     row.innerHTML =
-      '<span class="fname">' + f.name + '<span class="fstate">' + f.state + '</span></span>' +
+      '<span class="fname">' + f.name + '<span class="fstate"><span class="dot" aria-hidden="true"></span>' + f.state + '</span></span>' +
       '<span></span>' +
-      '<span class="fmacros">Per 100 g — <b>' + f.kcal + ' kcal</b> · P <b>' + fmt(f.p) + 'g</b> · F <b>' + fmt(f.f) + 'g</b> · C <b>' + fmt(f.c) + 'g</b> · Fibre <b>' + fmt(f.fib) + 'g</b></span>' +
+      '<span class="fmacros">' +
+        '<span class="fstat">' + ICON_FLAME + '<span class="sr-only">Calories</span><b>' + f.kcal + ' kcal</b></span>' +
+        '<span class="fstat">' + ICON_PROTEIN + '<span class="sr-only">Protein</span><b>' + fmt(f.p) + 'g</b></span>' +
+        '<span class="fstat">' + ICON_FAT + '<span class="sr-only">Fat</span><b>' + fmt(f.f) + 'g</b></span>' +
+        '<span class="fstat">' + ICON_CARB + '<span class="sr-only">Carbohydrate</span><b>' + fmt(f.c) + 'g</b></span>' +
+        '<span class="fstat">' + ICON_FIBRE + '<span class="sr-only">Fibre</span><b>' + fmt(f.fib) + 'g</b></span>' +
+      '</span>' +
       '<span class="fadd">' +
         '<input type="number" min="0" step="5" placeholder="0" aria-label="Grams of ' + f.name + '" data-grams="' + f.id + '">' +
         '<span class="g-label">g</span>' +
@@ -1020,13 +1088,28 @@
 <section class="design-notes">
   <h2>Design notes</h2>
   <p>
-  Grouping comes entirely from background-tint shifts (<code>--surface</code>/<code>--surface-2</code>, roughly 4–8% lighter than <code>--bg</code>) and spacing — no borders, no drop shadows anywhere except the one deliberately-boxed ToC container the brief calls out as acceptable. Display numerals (hero remaining-kcal, food-calculator total, the three training stats) carry the visual weight instead of card chrome, which is the core bet of this draft: legible at a glance, not fussy to look at.
+  <b>Revised against DESIGN-ANALYSIS.md (sandow discipline, not decoration).</b> Grouping comes entirely from background-tint shifts — <code>--surface</code>/<code>--surface-2</code>, now computed via <code>color-mix()</code> at ~4%/~5% off <code>--bg</code>, tightened from the previous draft's stronger 4–8% — plus spacing, never a border or shadow. The food-calculator total's tint box was removed outright: the running total now floats directly on the background exactly like Home's hero figure, since a screen that is pure numbers needs no card at all. The ToC list/search retain a container because they're one of the few things the analysis says legitimately keeps one (a form control and a navigational list host), but that container is now flat, not rounded.
   </p>
   <p>
-  One accent (<code>#ff8a4c</code> dark / <code>#ff7a3d</code>–<code>#b8420f</code> light, split so small text stays ≥4.5:1 while large numerals can use the punchier shade) is used consistently for numerals, active states and interactive affordances, and nowhere else — the intent is that orange always means "this is the number/action that matters."
+  <b>Binary radius rule:</b> one token, <code>--radius-pill: 999px</code>, applied only to actionable controls — icon buttons, the Add/Back CTA buttons, the citation marker, the search field, the gram-amount input. Everything else (rows, panels, the ToC list, the bottom-sheet corners, progress bars, the toast) is unrounded. This removed the three-tier <code>--radius-lg/md/sm</code> scale entirely.
   </p>
   <p>
-  Left out deliberately: no manifest/service-worker wiring (this is a visual draft, not a build target), no real Hevy data for the Training screen (flagged in-page as illustrative), and no attempt to reconcile this screen set with the live app's actual routing — the ToC's non-mapped rows just toast "preview only" rather than pretending to navigate somewhere real.
+  <b>Numeral-first, pushed further:</b> the Home hero figure, the calculator total and both training stats now put the label <i>beneath</i> the number (was above in the previous draft) in a muted 0.75rem tone, with no divider between them — scale and weight alone do the separating. Hero figure grew to <code>clamp(3.6rem, 19vw, 5.2rem)</code>; the calculator total to <code>clamp(3rem, 15vw, 4rem)</code>.
+  </p>
+  <p>
+  <b>Dot + word replaces every filled pill:</b> the food-state tag, the ToC "New" tag, and the citation panel's tier/confidence tag were all filled accent or surface pills before — all three are now a small filled dot plus plain text, nothing else.
+  </p>
+  <p>
+  <b>Icon-led inline stat rows</b> were added wherever a repeated label/value pair existed: Home's protein/meals/training line, the calculator's protein/fat/carb/fibre totals, and every food row's per-100g macro line. Icons are decorative (<code>aria-hidden</code>); a visually-hidden <code>.sr-only</code> label sits next to each so screen readers still get "Protein 11 g," not just an icon.
+  </p>
+  <p>
+  <b>Not applicable / already compliant, left untouched:</b> no radial glow, vignette or luminous halo was present in the previous draft to begin with (the only gradient in the file is a top-fade behind the sticky calculator total, which exists purely so scrolled rows don't collide with the readout — not a decorative glow, so it stayed). No circular gauge or ring existed either — the kcal-remaining and volume-load indicators were always linear bars, so §3's "ring trap" warning didn't require a change here, only a radius fix (see below). The Training sparkline already sat directly on the background with zero gridlines and no legend (single series), so §2.4/§2.5 needed no edit; it has no daily cadence (it's an 8-week trend), so "axis reduced to day initials" doesn't apply to this particular chart.
+  </p>
+  <p>
+  <b>Judgment call worth flagging:</b> the binary radius rule was read strictly — "everything else flat" — so the linear progress bars (hero kcal bar, training volume bars) and the toast snackbar lost their pill ends and are now plain flat rectangles. This is a more literal reading than most mobile UI conventions (snackbars/progress tracks are almost always rounded); if that reads as too severe in practice, reintroducing a small fixed radius on non-actionable indicator-only elements (bars, toast) — while keeping it off every row/panel/card — would be a one-line, low-risk exception to revisit.
+  </p>
+  <p>
+  Still left out deliberately, unchanged from before: no manifest/service-worker wiring (this is a visual draft, not a build target), no real Hevy data for the Training screen (flagged in-page as illustrative), no attempt to reconcile this screen set with the live app's actual routing (ToC's non-mapped rows just toast "preview only"), and generic reference food values not yet sourced from Toni's actual labels.
   </p>
   <p>
   Next step if this direction is picked: wire the citation stack up to the real back-navigation model already built in <code>index.html</code> (exact scroll-offset restore, not anchor-based), and pull real per-100g values for Toni's actual products before this touches the food calculator for real.
