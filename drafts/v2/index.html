@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<meta name="theme-color" content="#101215" />
+<title>Five dark drafts — pick one</title>
+<!--
+  Round 2 design drafts, 2026-07-31. The first three drafts were rejected as
+  looking unchanged, because that revision refined details instead of rebuilding.
+  These five are locked to deliberately different base colours, accents, type
+  scales AND navigation models so they cannot converge. Dark by default, per
+  Toni's instruction. Reference: strangehelix's app UI (sandow / asklepios /
+  turing series), which is the one named reference that is actually dark and
+  container-free.
+  Previews only -- not in the service-worker precache; the live app is untouched.
+-->
+<style>
+  :root{
+    --bg:#101215; --ink:#E9ECEF; --soft:#98A0A8; --rule:rgba(233,236,239,.14);
+    --accent:#F4762E;
+  }
+  *{ box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+  html,body{ margin:0; }
+  body{
+    background:var(--bg); color:var(--ink);
+    font-family:system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
+    line-height:1.6;
+    padding:calc(1.8rem + env(safe-area-inset-top)) 1.25rem calc(2.5rem + env(safe-area-inset-bottom));
+    max-width:40rem; margin:0 auto;
+  }
+  .kicker{ font-size:.68rem; letter-spacing:.12em; text-transform:uppercase; color:var(--soft); margin:0 0 .5rem; }
+  h1{ font-size:1.7rem; line-height:1.15; margin:0 0 .6rem; font-weight:750; letter-spacing:-.01em; }
+  .dek{ color:var(--soft); margin:0 0 1.9rem; font-size:.96rem; }
+  a.draft{
+    display:block; text-decoration:none; color:inherit;
+    padding:1.15rem 0; border-bottom:1px solid var(--rule);
+  }
+  a.draft:first-of-type{ border-top:1px solid var(--rule); }
+  a.draft:active{ opacity:.55; }
+  a.draft:focus-visible{ outline:2px solid var(--accent); outline-offset:3px; }
+  .row{ display:flex; align-items:baseline; gap:.6rem; margin:0 0 .25rem; }
+  .num{
+    font-size:1.9rem; font-weight:800; line-height:1; color:var(--accent);
+    font-variant-numeric:tabular-nums; min-width:1.4em;
+  }
+  .name{ font-size:1.12rem; font-weight:700; margin:0; }
+  .swatch{ display:inline-block; width:.7rem; height:.7rem; border-radius:50%; margin-left:.1rem; }
+  .desc{ color:var(--soft); font-size:.9rem; margin:.15rem 0 0; }
+  .meta{ color:var(--soft); font-size:.74rem; text-transform:uppercase; letter-spacing:.07em; margin:.45rem 0 0; }
+  .go{ color:var(--accent); font-size:.82rem; font-weight:650; margin-top:.5rem; display:block; }
+  .note{ color:var(--soft); font-size:.84rem; margin-top:2rem; }
+  .note strong{ color:var(--ink); }
+</style>
+</head>
+<body>
+  <p class="kicker">Design review · round 2 · dark</p>
+  <h1>Five drafts — pick the closest</h1>
+  <p class="dek">Each is a genuinely different design, not a restyle: different base colour, accent, type scale <em>and</em> navigation model. All five show the same five screens — Home, a reading page with citations, the food table &amp; calculator, training stats, and the table of contents. Use the small switcher at the top of each draft to move between screens.</p>
+
+  <a class="draft" href="draft-1.html">
+    <span class="row"><span class="num">1</span><span class="name">Athletic<span class="swatch" style="background:#F4762E"></span></span></span>
+    <p class="desc">Near-black with a burnt-orange accent and very large numerals. Floating bottom tab bar. The strangehelix / sandow language applied properly.</p>
+    <p class="meta">Bottom pill nav · numeral-first</p>
+    <span class="go">Open draft 1 →</span>
+  </a>
+
+  <a class="draft" href="draft-2.html">
+    <span class="row"><span class="num">2</span><span class="name">Instrument<span class="swatch" style="background:#4FD1E0"></span></span></span>
+    <p class="desc">Blue-black and cyan, every number in monospace with aligned decimals. Reads like a lab report. Should be the best of the five at the food table.</p>
+    <p class="meta">Slim top bar · tabular data</p>
+    <span class="go">Open draft 2 →</span>
+  </a>
+
+  <a class="draft" href="draft-3.html">
+    <span class="row"><span class="num">3</span><span class="name">Bare<span class="swatch" style="background:#C8B18A"></span></span></span>
+    <p class="desc">Pure black, almost no colour, the largest type of the five, and <strong>no navigation chrome at all</strong> — just a corner menu. The literal extreme of “only background and text”.</p>
+    <p class="meta">No bars · content only</p>
+    <span class="go">Open draft 3 →</span>
+  </a>
+
+  <a class="draft" href="draft-4.html">
+    <span class="row"><span class="num">4</span><span class="name">Night reading<span class="swatch" style="background:#9A7BFF"></span></span></span>
+    <p class="desc">Warm charcoal and violet, serif prose, chapter-style pages, citations set like footnotes. A book read at night rather than an app.</p>
+    <p class="meta">Sticky header · serif prose</p>
+    <span class="go">Open draft 4 →</span>
+  </a>
+
+  <a class="draft" href="draft-5.html">
+    <span class="row"><span class="num">5</span><span class="name">Index rail<span class="swatch" style="background:#7DDE7A"></span></span></span>
+    <p class="desc">Graphite and signal green, compact and dense, with a <strong>permanent index rail down the left edge</strong> so every section is always one tap away. Built for finding things fast.</p>
+    <p class="meta">Always-visible rail · dense</p>
+    <span class="go">Open draft 5 →</span>
+  </a>
+
+  <p class="note"><strong>What I need back:</strong> which number is closest, and what specifically to change. All five obey the same rule — body text sits directly on the background, containers only for buttons, the search field and the table of contents. Food and training numbers are illustrative placeholders, not yet sourced from BLS or product labels.</p>
+</body>
+</html>

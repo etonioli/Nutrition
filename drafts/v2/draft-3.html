@@ -1,0 +1,720 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Draft 3 — Radical minimal (dark)</title>
+<style>
+
+  /* ============================================================
+     DRAFT 3 — "Radical minimal": true black, near-monochrome,
+     no chrome, no containers. See report for rationale.
+     ============================================================ */
+
+  :root{
+    --bg:            #000000;
+    --text:          #E8E6E3;  /* off-white, ~16.9:1 on #000 */
+    --muted:         #8B8983;  /* ~6.0:1 on #000 */
+    --muted-dim:     #6B6964;  /* decorative only, not text-critical */
+    --accent:        #C8B18A;  /* ~10.1:1 on #000 */
+    --hairline:      rgba(232,230,227,0.14);
+    --hairline-soft:  rgba(232,230,227,0.08);
+    --focus:         #C8B18A;
+
+    --serif: Georgia, "Iowan Old Style", "Palatino Linotype", Palatino, "Book Antiqua", serif;
+    --sans:  system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    --mono:  ui-monospace, "SFMono-Regular", Consolas, monospace;
+
+    --gap: 2rem; /* minimum vertical rhythm between blocks */
+    font-size: 100%;
+  }
+
+  *{ box-sizing: border-box; }
+  html,body{ margin:0; padding:0; }
+  body{
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--sans);
+    -webkit-font-smoothing: antialiased;
+    overflow-x: hidden;
+  }
+  h1,h2,h3,p,ul,ol,dl,figure{ margin:0; }
+  button{ font-family: inherit; color: inherit; background: none; border: 0; cursor: pointer; }
+  input{ font-family: inherit; color: inherit; background: none; }
+  a{ color: var(--accent); }
+
+  :focus-visible{
+    outline: 2px solid var(--focus);
+    outline-offset: 3px;
+  }
+
+  /* ---------- preview harness (NOT part of the app design) ---------- */
+  .preview-bar{
+    position: sticky; top:0; z-index: 500;
+    display:flex; flex-wrap:wrap; gap:.25rem 1rem;
+    align-items:center;
+    background:#111; color:#ddd;
+    font-family: var(--sans);
+    font-size: .72rem;
+    letter-spacing:.02em;
+    padding:.5rem .75rem;
+    border-bottom: 1px solid #333;
+  }
+  .preview-bar strong{ color:#fff; font-size:.72rem; text-transform:uppercase; letter-spacing:.08em; margin-right:.25rem; }
+  .preview-bar button{
+    padding:.3rem .6rem;
+    border:1px solid #444;
+    color:#ccc;
+    font-size:.72rem;
+  }
+  .preview-bar button[aria-current="true"]{
+    background:#fff; color:#000; border-color:#fff; font-weight:600;
+  }
+
+  .stage{
+    max-width: 412px;
+    margin: 0 auto;
+    background: var(--bg);
+    min-height: 100vh;
+    position: relative;
+    border-left: 1px solid #1a1a1a;
+    border-right: 1px solid #1a1a1a;
+  }
+
+  .screen{ display:none; position:relative; min-height: 100vh; padding-bottom: 4rem; }
+  .screen.active{ display:block; }
+
+  /* ---------- the ONE persistent affordance: corner menu ---------- */
+  .menu-affordance{
+    position: fixed;
+    top: .9rem; right: 1rem;
+    z-index: 60;
+    font-family: var(--sans);
+    font-size: .7rem;
+    letter-spacing: .12em;
+    text-transform: uppercase;
+    color: var(--muted);
+    padding: .4rem .2rem;
+  }
+  .menu-affordance:hover, .menu-affordance:focus-visible{ color: var(--text); }
+
+  /* ---------- generic screen padding ---------- */
+  .screen-pad{ padding: 4.5rem 1.5rem 3rem; }
+
+  /* ================= HOME ================= */
+  .home-figure{
+    margin-top: .5rem;
+    line-height: 1;
+  }
+  .home-figure .num{
+    font-family: var(--sans);
+    font-weight: 700;
+    font-size: clamp(4rem, 22vw, 6rem);
+    letter-spacing: -0.02em;
+    font-variant-numeric: tabular-nums;
+    display:block;
+  }
+  .home-figure .unit{
+    display:block;
+    margin-top:.6rem;
+    color: var(--muted);
+    font-size: .95rem;
+  }
+  .home-alt{
+    margin-top: var(--gap);
+    color: var(--muted);
+    font-size: .95rem;
+  }
+  .home-alt strong{ color: var(--text); font-weight:600; }
+
+  .home-links{
+    margin-top: calc(var(--gap) * 1.6);
+    display:flex; flex-direction:column; gap: 1.1rem;
+  }
+  .home-links button{
+    text-align:left;
+    font-size: 1rem;
+    color: var(--accent);
+    padding: 0;
+    border-bottom: 1px solid transparent;
+  }
+  .home-links button:hover{ border-bottom-color: var(--accent); }
+  .home-links .arrow{ color: var(--muted); margin-left:.35rem; }
+
+  /* ================= READING ================= */
+  .read-back{
+    display:flex; align-items:center; gap:.4rem;
+    font-size: .8rem; color: var(--muted);
+    margin-bottom: 2.2rem;
+  }
+  .read-back:hover{ color: var(--text); }
+
+  .evidence-line{
+    display:flex; align-items:center; gap:.5rem;
+    font-size:.78rem; color: var(--muted);
+    margin-bottom: 1.4rem;
+  }
+  .dot{
+    width:7px; height:7px; border-radius:50%;
+    background: var(--accent);
+    flex: none;
+    display:inline-block;
+  }
+
+  .read-title{
+    font-family: var(--serif);
+    font-weight: 400;
+    font-size: clamp(1.9rem, 8vw, 2.6rem);
+    line-height: 1.15;
+    margin-bottom: .6rem;
+  }
+  .read-summary{
+    font-family: var(--serif);
+    font-style: italic;
+    color: var(--muted);
+    font-size: 1rem;
+    line-height: 1.6;
+    margin-bottom: calc(var(--gap) * 1.4);
+  }
+
+  .read-body p{
+    font-family: var(--serif);
+    font-size: 1.0625rem;
+    line-height: 1.75;
+    margin-bottom: var(--gap);
+  }
+  .read-body h3{
+    font-family: var(--sans);
+    font-weight: 600;
+    font-size: 1.05rem;
+    letter-spacing: .01em;
+    margin: calc(var(--gap) * 0.4) 0 .9rem;
+    color: var(--text);
+  }
+  .cite{
+    display:inline-block;
+    font-family: var(--sans);
+    font-size: .68rem;
+    color: var(--accent);
+    vertical-align: super;
+    line-height: 1;
+    padding: .1rem .15rem;
+    margin-left: .05rem;
+  }
+  .cite:hover, .cite:focus-visible{ text-decoration: underline; }
+
+  .refs-return{
+    margin-top: calc(var(--gap) * 1.2);
+    font-size: .85rem;
+    color: var(--accent);
+  }
+
+  /* references sub-view */
+  .refs-view{ display:none; }
+  .refs-view.active{ display:block; }
+  .read-view.hidden{ display:none; }
+
+  .ref-row{
+    padding: 1.1rem 0;
+    border-top: 1px solid var(--hairline);
+    font-size: .92rem;
+    line-height: 1.55;
+  }
+  .ref-row:last-child{ border-bottom: 1px solid var(--hairline); }
+  .ref-num{ color: var(--muted); font-size:.8rem; margin-right:.4rem; }
+  .ref-meta{
+    display:flex; align-items:center; gap:.4rem;
+    margin-top:.35rem;
+    font-size:.76rem; color: var(--muted);
+  }
+  .ref-title{ color: var(--text); }
+  .ref-src{ color: var(--muted); }
+
+  /* ================= CALCULATOR ================= */
+  .calc-total{
+    padding: .5rem 0 var(--gap);
+    border-bottom: 1px solid var(--hairline);
+    margin-bottom: .5rem;
+  }
+  .calc-total .num{
+    font-family: var(--sans);
+    font-weight:700;
+    font-size: clamp(3.2rem, 18vw, 4.6rem);
+    font-variant-numeric: tabular-nums;
+    line-height:1;
+    display:block;
+  }
+  .calc-total .unit{ color: var(--muted); font-size:.85rem; margin-top:.5rem; display:block; }
+  .calc-sub{
+    margin-top: 1rem;
+    display:flex; flex-wrap:wrap; gap: 0 1.3rem;
+    font-size: .82rem; color: var(--muted);
+    font-variant-numeric: tabular-nums;
+  }
+  .calc-sub strong{ color: var(--text); font-weight:600; }
+
+  .food-row{
+    padding: 1.1rem 0;
+    border-top: 1px solid var(--hairline);
+  }
+  .food-row:last-child{ border-bottom: 1px solid var(--hairline); margin-bottom: 1.5rem; }
+  .food-name-row{
+    display:flex; align-items:baseline; justify-content:space-between; gap:.5rem;
+  }
+  .food-name{ font-size: 1rem; }
+  .food-state{
+    font-size: .68rem; text-transform: uppercase; letter-spacing:.08em;
+    color: var(--muted);
+    white-space: nowrap;
+  }
+  .food-per100{
+    margin-top: .3rem;
+    font-size: .76rem; color: var(--muted);
+    font-variant-numeric: tabular-nums;
+  }
+  .food-input-row{
+    margin-top: .7rem;
+    display:flex; align-items:center; gap:.6rem;
+  }
+  .food-input-row label{ font-size: .8rem; color: var(--muted); }
+  .food-input{
+    width: 5.5rem;
+    font-size: 1rem;
+    font-variant-numeric: tabular-nums;
+    border: none;
+    border-bottom: 1px solid var(--hairline);
+    padding: .35rem .1rem;
+    background: transparent;
+    color: var(--text);
+  }
+  .food-input:focus{ border-bottom-color: var(--accent); }
+  .food-computed{
+    font-size: .82rem; color: var(--text);
+    font-variant-numeric: tabular-nums;
+    margin-left: auto;
+  }
+  .table-scroll{ overflow-x:auto; }
+
+  /* ================= TRAINING ================= */
+  .train-block{
+    padding: 1.4rem 0;
+    border-top: 1px solid var(--hairline);
+  }
+  .train-block:first-of-type{ border-top:none; padding-top:0; }
+  .train-label{
+    font-size: .76rem; text-transform: uppercase; letter-spacing:.09em;
+    color: var(--muted);
+    margin-bottom:.6rem;
+  }
+  .train-num{
+    font-family: var(--sans);
+    font-weight:700;
+    font-size: clamp(2.2rem, 12vw, 3rem);
+    font-variant-numeric: tabular-nums;
+    line-height:1;
+  }
+  .train-num small{
+    font-weight:400; font-size:.9rem; color: var(--muted); margin-left:.4rem;
+  }
+  .rows-plain{ margin-top:.8rem; }
+  .row-plain{
+    display:flex; justify-content:space-between; align-items:baseline;
+    padding: .55rem 0;
+    border-top: 1px solid var(--hairline-soft);
+    font-size: .92rem;
+  }
+  .row-plain:first-child{ border-top:none; }
+  .row-plain .v{ font-variant-numeric: tabular-nums; color: var(--text); }
+  .row-plain .k{ color: var(--muted); }
+
+  .spark{ margin-top: 1rem; }
+  .spark svg{ display:block; width:100%; height:44px; }
+
+  .changelog{
+    margin-top: .8rem;
+    font-size: .85rem;
+    color: var(--muted);
+  }
+  .changelog strong{ color: var(--text); font-weight:600; }
+  .changelog .date{ color: var(--muted); }
+
+  .note-inline{
+    margin-top: 1rem;
+    font-size: .78rem;
+    color: var(--muted-dim);
+    line-height:1.5;
+  }
+
+  /* ================= TOC OVERLAY / SCREEN ================= */
+  .toc-search-wrap{ margin-bottom: 1.6rem; }
+  .toc-search{
+    width:100%;
+    font-size: 1rem;
+    padding: .7rem 1rem;
+    background: transparent;
+    border: 1px solid var(--hairline);
+    border-radius: 999px; /* the one exception: search field only */
+    color: var(--text);
+  }
+  .toc-search::placeholder{ color: var(--muted); }
+  .toc-search:focus{ border-color: var(--accent); }
+
+  .toc-list{ margin-top: .5rem; }
+  .toc-item{
+    display:block;
+    width:100%;
+    text-align:left;
+    padding: .95rem 0;
+    border-top: 1px solid var(--hairline);
+    font-size: 1rem;
+  }
+  .toc-item:last-child{ border-bottom: 1px solid var(--hairline); }
+  .toc-item .sub{ display:block; font-size:.76rem; color: var(--muted); margin-top:.2rem; }
+  .toc-item[hidden]{ display:none; }
+  .toc-close{
+    font-size: .78rem; letter-spacing:.1em; text-transform:uppercase;
+    color: var(--muted);
+    margin-bottom: 2rem;
+    display:inline-block;
+  }
+  .toc-close:hover{ color: var(--text); }
+
+  .toc-empty{ color: var(--muted-dim); font-size:.85rem; margin-top:1.5rem; display:none; }
+
+  @media (prefers-reduced-motion: no-preference){
+    .screen{ transition: opacity .12s ease; }
+  }
+  @media (prefers-reduced-motion: reduce){
+    *{ transition:none !important; animation:none !important; }
+  }
+
+</style>
+</head>
+<body>
+
+<div class="preview-bar" role="group" aria-label="Draft preview screen switcher (not part of the app)">
+  <strong>Preview&nbsp;·&nbsp;draft 3</strong>
+  <button type="button" data-preview="home" aria-current="true">Home</button>
+  <button type="button" data-preview="reading">Reading</button>
+  <button type="button" data-preview="calculator">Calculator</button>
+  <button type="button" data-preview="training">Training</button>
+  <button type="button" data-preview="toc">ToC</button>
+</div>
+
+<div class="stage">
+
+  <!-- corner menu affordance: present on every real app screen -->
+  <button type="button" class="menu-affordance" id="menuBtn">Menu</button>
+
+  <!-- ================= HOME ================= -->
+  <section class="screen active" data-screen="home" id="screen-home" aria-label="Home">
+    <div class="screen-pad">
+      <div class="home-figure">
+        <span class="num">1,900</span>
+        <span class="unit">kcal — today's target (training day)</span>
+      </div>
+      <p class="home-alt">Rest day: <strong>1,550</strong> kcal.</p>
+
+      <div class="home-links">
+        <button type="button" data-goto-reading>Continue reading — Energy balance <span class="arrow">→</span></button>
+        <button type="button" data-goto-calc>Today's foods — Calculator <span class="arrow">→</span></button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= READING ================= -->
+  <section class="screen" data-screen="reading" id="screen-reading" aria-label="Reading page">
+    <div class="screen-pad">
+
+      <div class="read-view" id="readingText">
+        <button type="button" class="read-back" data-goto-home>← Home</button>
+
+        <div class="evidence-line"><span class="dot" aria-hidden="true"></span> Six sources cited below, Tier 2–5, mostly Certain</div>
+
+        <h1 class="read-title">Energy balance</h1>
+        <p class="read-summary">How the body gains and loses fat, what a calorie deficit actually does, and why weight loss slows down over time.</p>
+
+        <div class="read-body">
+          <p>Body weight change is governed by the balance between energy intake and energy expenditure <button type="button" class="cite" data-ref="1">[1]</button>. When expenditure exceeds intake, the body increases its oxidation of stored fat for fuel <button type="button" class="cite" data-ref="1">[1]</button>. When body weight changes because of an energy imbalance, roughly 60 to 80% of the resulting change in body mass is typically body fat <button type="button" class="cite" data-ref="2">[2]</button> — the remainder is other tissue and body water.</p>
+
+          <h3>Where does the fat actually go?</h3>
+          <p>When fat is metabolised for energy, most of its mass leaves the body as exhaled carbon dioxide, with the remainder excreted as water <button type="button" class="cite" data-ref="3">[3]</button>. Fat is not "burned off" as heat and it is not excreted — it is exhaled.</p>
+
+          <h3>Why loss slows down</h3>
+          <p>Weight loss produces changes in resting and non-resting energy expenditure that are independent of changes in fat-free mass — this is called adaptive thermogenesis <button type="button" class="cite" data-ref="4">[4]</button>. It is a real effect that can slow further loss and favour regain, but it is a temporary metabolic adaptation, not permanent or irreversible metabolic damage <button type="button" class="cite" data-ref="5">[5]</button>.</p>
+
+          <h3>Not all calories cost the same to process</h3>
+          <p>The thermic effect of food — the energy spent digesting and processing what you eat — is highest for protein at about 20 to 30% of ingested energy, moderate for carbohydrate at about 5 to 10%, and lowest for fat at about 0 to 3% <button type="button" class="cite" data-ref="6">[6]</button>.</p>
+        </div>
+      </div>
+
+      <div class="read-view refs-view" id="readingRefs">
+        <button type="button" class="read-back" data-back-to-reading>← Back to reading</button>
+        <h1 class="read-title" style="font-size:1.5rem;">References</h1>
+        <div class="ref-list" style="margin-top:1.4rem;">
+
+          <div class="ref-row"><span class="ref-num">[1]</span><span class="ref-title">Body Weight Regulation</span> — Endotext (NCBI Bookshelf, NIH), 2018.<div class="ref-meta"><span class="dot" aria-hidden="true"></span><span>Tier 2 · Certain</span></div></div>
+
+          <div class="ref-row"><span class="ref-num">[2]</span><span class="ref-title">Energy Balance and Obesity</span> — Hill JO, Wyatt HR, Peters JC, Circulation, 2012.<div class="ref-meta"><span class="dot" aria-hidden="true"></span><span>Tier 2 · Likely</span></div></div>
+
+          <div class="ref-row"><span class="ref-num">[3]</span><span class="ref-title">Mixed Student Ideas about Mechanisms of Human Weight Loss</span> — Sripathi KN, et al., CBE Life Sciences Education, 2019.<div class="ref-meta"><span class="dot" aria-hidden="true"></span><span>Tier 5 · Certain</span></div></div>
+
+          <div class="ref-row"><span class="ref-num">[4]</span><span class="ref-title">Changes in Energy Expenditure with Weight Gain and Weight Loss in Humans</span> — Müller MJ, Enderle J, Bosy-Westphal A, Current Obesity Reports, 2016.<div class="ref-meta"><span class="dot" aria-hidden="true"></span><span>Tier 2 · Likely</span></div></div>
+
+          <div class="ref-row"><span class="ref-num">[5]</span><span class="ref-title">Adaptive thermogenesis with weight loss in humans</span> — Müller MJ, Bosy-Westphal A, Obesity (Silver Spring), 2013.<div class="ref-meta"><span class="dot" aria-hidden="true"></span><span>Tier 2 · Certain</span></div></div>
+
+          <div class="ref-row"><span class="ref-num">[6]</span><span class="ref-title">Diet induced thermogenesis, older and newer data with emphasis on obesity and diabetes mellitus</span> — Tzeravini E, et al., Metabolism Open, 2024.<div class="ref-meta"><span class="dot" aria-hidden="true"></span><span>Tier 2 · Certain</span></div></div>
+
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ================= CALCULATOR ================= -->
+  <section class="screen" data-screen="calculator" id="screen-calculator" aria-label="Food calculator">
+    <div class="screen-pad">
+      <div class="calc-total">
+        <span class="num" id="calcKcal">0</span>
+        <span class="unit">kcal running total</span>
+        <div class="calc-sub">
+          <span>Protein <strong id="calcP">0</strong> g</span>
+          <span>Fat <strong id="calcF">0</strong> g</span>
+          <span>Carbs <strong id="calcC">0</strong> g</span>
+          <span>Fibre <strong id="calcFib">0</strong> g</span>
+        </div>
+      </div>
+
+      <div class="table-scroll" id="foodRows"><!-- rows injected by JS --></div>
+
+      <p class="note-inline">Per-100 g figures below are generic reference values for demonstrating the calculator, not the label-sourced macros required before this becomes real content (see project backlog).</p>
+    </div>
+  </section>
+
+  <!-- ================= TRAINING ================= -->
+  <section class="screen" data-screen="training" id="screen-training" aria-label="Training">
+    <div class="screen-pad">
+
+      <div class="train-block">
+        <div class="train-label">Estimated 1RM trend — Lat pulldown</div>
+        <div class="train-num">37.5<small>kg, projected</small></div>
+        <div class="spark" aria-hidden="true">
+          <svg viewBox="0 0 300 44" preserveAspectRatio="none">
+            <polyline points="0,36 75,30 150,24 225,16 300,8" fill="none" stroke="#C8B18A" stroke-width="1.5" />
+          </svg>
+        </div>
+        <div class="rows-plain">
+          <div class="row-plain"><span class="k">27 Jul</span><span class="v">30.0 kg × 21 sets (actual)</span></div>
+          <div class="row-plain"><span class="k">3 Aug (illustrative)</span><span class="v">32.5 kg</span></div>
+          <div class="row-plain"><span class="k">10 Aug (illustrative)</span><span class="v">35.0 kg</span></div>
+          <div class="row-plain"><span class="k">17 Aug (illustrative)</span><span class="v">37.5 kg</span></div>
+        </div>
+        <p class="note-inline">Only 27 Jul is a real logged session — training restarted that day. The rest of the trend is illustrative, for this design draft only.</p>
+      </div>
+
+      <div class="train-block">
+        <div class="train-label">Weekly volume load</div>
+        <div class="train-num">3,988<small>kg, week of 27 Jul (actual)</small></div>
+        <div class="rows-plain">
+          <div class="row-plain"><span class="k">Week of 27 Jul</span><span class="v">3,988 kg</span></div>
+          <div class="row-plain"><span class="k">Week of 3 Aug (illustrative)</span><span class="v">4,650 kg</span></div>
+          <div class="row-plain"><span class="k">Week of 10 Aug (illustrative)</span><span class="v">5,100 kg</span></div>
+          <div class="row-plain"><span class="k">Week of 17 Aug (illustrative)</span><span class="v">5,400 kg</span></div>
+        </div>
+      </div>
+
+      <div class="train-block">
+        <div class="train-label">Sets per muscle group — last 4 weeks</div>
+        <div class="rows-plain">
+          <div class="row-plain"><span class="k">Back</span><span class="v">18</span></div>
+          <div class="row-plain"><span class="k">Biceps</span><span class="v">12</span></div>
+          <div class="row-plain"><span class="k">Chest</span><span class="v">15</span></div>
+          <div class="row-plain"><span class="k">Triceps</span><span class="v">12</span></div>
+          <div class="row-plain"><span class="k">Legs</span><span class="v">18</span></div>
+          <div class="row-plain"><span class="k">Shoulders</span><span class="v">9</span></div>
+        </div>
+      </div>
+
+      <div class="train-block">
+        <div class="train-label">Routine changelog</div>
+        <div class="changelog"><strong>Added:</strong> Incline DB Press · <strong>Removed:</strong> Leg Press — <span class="date">2026-08-03</span></div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ================= TOC ================= -->
+  <section class="screen" data-screen="toc" id="screen-toc" aria-label="Table of contents">
+    <div class="screen-pad">
+      <button type="button" class="toc-close" id="tocCloseBtn">← Close</button>
+
+      <div class="toc-search-wrap">
+        <label for="tocSearch" style="position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);">Search pages</label>
+        <input type="search" id="tocSearch" class="toc-search" placeholder="Search…" autocomplete="off">
+      </div>
+
+      <div class="toc-list" id="tocList">
+        <button type="button" class="toc-item" data-goto-home>Home</button>
+        <button type="button" class="toc-item" data-goto-reading>Energy balance<span class="sub">Reading</span></button>
+        <button type="button" class="toc-item" data-goto-calc>Calculator<span class="sub">Food + macros</span></button>
+        <button type="button" class="toc-item" data-goto-training>Training<span class="sub">1RM · volume · sets</span></button>
+        <button type="button" class="toc-item" data-search-only>Protein</button>
+        <button type="button" class="toc-item" data-search-only>Carbohydrates &amp; fibre</button>
+        <button type="button" class="toc-item" data-search-only>Dietary fat</button>
+        <button type="button" class="toc-item" data-search-only>Micronutrients</button>
+        <button type="button" class="toc-item" data-search-only>Hydration</button>
+        <button type="button" class="toc-item" data-search-only>Meal timing</button>
+        <button type="button" class="toc-item" data-search-only>Established findings</button>
+        <button type="button" class="toc-item" data-search-only>About &amp; sources</button>
+      </div>
+      <p class="toc-empty" id="tocEmpty">No matches.</p>
+    </div>
+  </section>
+
+</div>
+
+<script>
+(function(){
+  "use strict";
+
+  var SCREENS = ["home","reading","calculator","training","toc"];
+  var lastNonTocScreen = "home";
+
+  function showScreen(name){
+    SCREENS.forEach(function(s){
+      var el = document.getElementById("screen-" + s);
+      if(!el) return;
+      el.classList.toggle("active", s === name);
+    });
+    if(name !== "toc") lastNonTocScreen = name;
+    // preview bar sync
+    document.querySelectorAll(".preview-bar button[data-preview]").forEach(function(b){
+      b.setAttribute("aria-current", b.getAttribute("data-preview") === name ? "true" : "false");
+    });
+    // menu affordance hidden on ToC itself (it IS the overlay)
+    var menuBtn = document.getElementById("menuBtn");
+    menuBtn.style.display = (name === "toc") ? "none" : "block";
+    window.scrollTo(0,0);
+  }
+
+  // preview harness buttons
+  document.querySelectorAll(".preview-bar button[data-preview]").forEach(function(b){
+    b.addEventListener("click", function(){ showScreen(b.getAttribute("data-preview")); });
+  });
+
+  // corner menu affordance -> opens ToC overlay screen
+  document.getElementById("menuBtn").addEventListener("click", function(){ showScreen("toc"); });
+  document.getElementById("tocCloseBtn").addEventListener("click", function(){ showScreen(lastNonTocScreen); });
+
+  // in-app navigation links
+  document.querySelectorAll("[data-goto-home]").forEach(function(b){ b.addEventListener("click", function(){ showScreen("home"); }); });
+  document.querySelectorAll("[data-goto-reading]").forEach(function(b){ b.addEventListener("click", function(){ showScreen("reading"); }); });
+  document.querySelectorAll("[data-goto-calc]").forEach(function(b){ b.addEventListener("click", function(){ showScreen("calculator"); }); });
+  document.querySelectorAll("[data-goto-training]").forEach(function(b){ b.addEventListener("click", function(){ showScreen("training"); }); });
+
+  // ---- reading <-> references sub-view, with exact scroll restore ----
+  var readingScrollBackup = 0;
+  var textView = document.getElementById("readingText");
+  var refsView = document.getElementById("readingRefs");
+
+  document.querySelectorAll(".cite").forEach(function(btn){
+    btn.addEventListener("click", function(){
+      readingScrollBackup = window.scrollY || document.documentElement.scrollTop || 0;
+      textView.classList.add("hidden");
+      refsView.classList.add("active");
+      window.scrollTo(0,0);
+    });
+  });
+  document.querySelectorAll("[data-back-to-reading]").forEach(function(btn){
+    btn.addEventListener("click", function(){
+      refsView.classList.remove("active");
+      textView.classList.remove("hidden");
+      window.scrollTo(0, readingScrollBackup);
+    });
+  });
+
+  // ---- ToC search ----
+  var tocSearch = document.getElementById("tocSearch");
+  var tocItems = Array.prototype.slice.call(document.querySelectorAll(".toc-item"));
+  var tocEmpty = document.getElementById("tocEmpty");
+  tocSearch.addEventListener("input", function(){
+    var q = tocSearch.value.trim().toLowerCase();
+    var visible = 0;
+    tocItems.forEach(function(item){
+      var match = item.textContent.toLowerCase().indexOf(q) !== -1;
+      item.hidden = !match;
+      if(match) visible++;
+    });
+    tocEmpty.style.display = (q && visible === 0) ? "block" : "none";
+  });
+
+  // ---- food calculator ----
+  // Generic reference macro values per 100 g, for demo purposes only.
+  var FOODS = [
+    { name:"Skyr natur",        state:"as sold", kcal:63,  p:11,  f:0.2, c:4,  fib:0   },
+    { name:"Vollkornbrot",      state:"as sold", kcal:215, p:8,   f:3,   c:38, fib:7   },
+    { name:"Pasta",             state:"dry",     kcal:371, p:13,  f:1.5, c:75, fib:3   },
+    { name:"Rice",              state:"dry",     kcal:365, p:7,   f:0.7, c:80, fib:1.3 },
+    { name:"Potatoes",          state:"raw",     kcal:77,  p:2,   f:0.1, c:17, fib:2.2 },
+    { name:"Olive oil",         state:"as sold", kcal:884, p:0,   f:100, c:0,  fib:0   },
+    { name:"Whey isolate",      state:"dry",     kcal:380, p:75,  f:5,   c:8,  fib:1   }
+  ];
+
+  var foodRowsEl = document.getElementById("foodRows");
+  var html = "";
+  FOODS.forEach(function(f, i){
+    html += ''
+      + '<div class="food-row" data-idx="' + i + '">'
+      + '  <div class="food-name-row"><span class="food-name">' + f.name + '</span><span class="food-state">' + f.state + '</span></div>'
+      + '  <div class="food-per100">Per 100 g — ' + f.kcal + ' kcal · P ' + f.p + ' g · F ' + f.f + ' g · C ' + f.c + ' g · Fibre ' + f.fib + ' g</div>'
+      + '  <div class="food-input-row">'
+      + '    <label for="grams-' + i + '">grams</label>'
+      + '    <input type="number" min="0" step="1" inputmode="decimal" id="grams-' + i + '" class="food-input" value="0">'
+      + '    <span class="food-computed" id="computed-' + i + '">0 kcal</span>'
+      + '  </div>'
+      + '</div>';
+  });
+  foodRowsEl.innerHTML = html;
+
+  var kcalEl = document.getElementById("calcKcal");
+  var pEl = document.getElementById("calcP");
+  var fEl = document.getElementById("calcF");
+  var cEl = document.getElementById("calcC");
+  var fibEl = document.getElementById("calcFib");
+
+  function fmt(n){
+    return (Math.round(n * 10) / 10).toLocaleString("en-US", { maximumFractionDigits: 1 });
+  }
+
+  function recompute(){
+    var totalKcal = 0, totalP = 0, totalF = 0, totalC = 0, totalFib = 0;
+    FOODS.forEach(function(f, i){
+      var input = document.getElementById("grams-" + i);
+      var g = parseFloat(input.value) || 0;
+      var factor = g / 100;
+      var kcal = f.kcal * factor;
+      var p = f.p * factor;
+      var ff = f.f * factor;
+      var c = f.c * factor;
+      var fib = f.fib * factor;
+      document.getElementById("computed-" + i).textContent = fmt(kcal) + " kcal";
+      totalKcal += kcal; totalP += p; totalF += ff; totalC += c; totalFib += fib;
+    });
+    kcalEl.textContent = fmt(totalKcal).toString().replace(/\.0$/, "");
+    pEl.textContent = fmt(totalP);
+    fEl.textContent = fmt(totalF);
+    cEl.textContent = fmt(totalC);
+    fibEl.textContent = fmt(totalFib);
+  }
+
+  foodRowsEl.addEventListener("input", function(e){
+    if(e.target && e.target.classList.contains("food-input")) recompute();
+  });
+
+  recompute();
+  showScreen("home");
+})();
+</script>
+
+</body>
+</html>
