@@ -1,0 +1,859 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Nutrition wrapper — draft 4 (material &amp; texture)</title>
+<style>
+  :root{
+    /* ---- warmed-toward-orange dark foundation: brown-black, not neutral black ---- */
+    --bg: #17110C;
+    --bg-deep: #0E0A07;          /* recessed / debossed floor tone */
+    --bg-tint: #241A12;          /* raised panel tone — ~1 step up from bg */
+    --bg-tint-2: #2C2019;        /* raised panel, slightly hotter (hero plates) */
+    --text: #F5EFE8;             /* warm off-white, ~16.4:1 on --bg */
+    --text-secondary: #B7ADA0;   /* warm grey, ~8.5:1 on --bg */
+    --text-muted: #8F857A;       /* warm grey, ~5.2:1 on --bg */
+    --hairline: rgba(255,244,232,.08);
+    --hairline-hi: rgba(255,244,232,.14);
+    --accent: #F4762E;           /* burnt orange, ~6.7:1 on --bg */
+    --accent-deep: #8B3A19;      /* shadow-side of accent, for gradients/duotone */
+    --accent-ink: #17110C;       /* text sitting on accent fill */
+    --bar-neutral: #6B5B4C;      /* warm neutral for non-interactive chart marks */
+    --radius-lg: 22px;
+    --radius-md: 14px;
+    --radius-sm: 9px;
+    --radius-pill: 999px;
+    --sans: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+
+    /* emboss/deboss shadow recipes, reused everywhere a surface needs to feel physical */
+    --emboss: inset 0 1px 0 rgba(255,244,232,.09), inset 0 -1px 0 rgba(0,0,0,.55), 0 8px 18px -6px rgba(0,0,0,.6);
+    --deboss: inset 0 2px 4px rgba(0,0,0,.55), inset 0 -1px 0 rgba(255,244,232,.05);
+  }
+
+  *{ box-sizing:border-box; }
+  html,body{ margin:0; padding:0; height:100%; background:var(--bg-deep); color:var(--text); overflow:hidden; }
+  body{
+    font-family: var(--sans);
+    -webkit-font-smoothing: antialiased;
+    overflow-x:hidden;
+  }
+  button, input{ font-family:inherit; }
+
+  ::selection{ background:var(--accent); color:var(--accent-ink); }
+  a{ color:var(--accent); }
+
+  button:focus-visible, input:focus-visible, [tabindex]:focus-visible{
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+  }
+
+  /* ============ app frame ============ */
+  .phone{
+    max-width:412px;
+    margin:0 auto;
+    height:100vh;
+    background:
+      radial-gradient(140px 100px at 12% -4%, rgba(244,118,46,.10), transparent 62%),
+      var(--bg);
+    position:relative;
+    display:flex; flex-direction:column;
+    overflow:hidden;
+    isolation:isolate; /* keep blend-mode layers contained to the phone */
+  }
+
+  /* generated grain: one small SVG feTurbulence tile, tiled by CSS — not filtered live per-frame.
+     ~2KB tile rasterised once by the engine, then repeated as an ordinary background image. */
+  .phone::before{
+    content:"";
+    position:absolute; inset:0; z-index:5;
+    pointer-events:none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='128' height='128'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch' result='t'/%3E%3CfeColorMatrix in='t' type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+    background-size: 128px 128px;
+    mix-blend-mode: overlay;
+    opacity:.07;
+  }
+  /* vignette + paper-like edge — darkens the frame's border, lightens dead centre */
+  .phone::after{
+    content:"";
+    position:absolute; inset:0; z-index:6;
+    pointer-events:none;
+    box-shadow: inset 0 0 70px 10px rgba(0,0,0,.55), inset 0 0 0 1px rgba(255,244,232,.06);
+    background: radial-gradient(120% 90% at 50% 38%, transparent 55%, rgba(0,0,0,.28) 100%);
+  }
+  /* the reading screen dials the grain + vignette down — prose needs a calmer surface */
+  .phone.calm-surface::before{ opacity:.025; }
+  .phone.calm-surface::after{ box-shadow: inset 0 0 40px 6px rgba(0,0,0,.4), inset 0 0 0 1px rgba(255,244,232,.05); }
+
+  .screen{ display:none; flex-direction:column; flex:1; min-height:0; position:relative; z-index:1; }
+  .screen.is-active{ display:flex; }
+
+  .screen-scroll{
+    flex:1; min-height:0; overflow-y:auto; overflow-x:hidden;
+    padding: 1rem 1.1rem calc(104px + env(safe-area-inset-bottom));
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior:contain;
+  }
+
+  .page-header{
+    display:flex; align-items:center; justify-content:space-between;
+    padding: .95rem 1.1rem .3rem;
+  }
+  .page-header h1{
+    font-size:.98rem; font-weight:700; margin:0; letter-spacing:.01em;
+    text-shadow: 0 1px 0 rgba(0,0,0,.5);
+  }
+  .icon-btn{
+    background:var(--bg-tint); border:1px solid var(--hairline);
+    color:var(--text-muted);
+    width:2.2rem; height:2.2rem; display:flex; align-items:center; justify-content:center;
+    border-radius:var(--radius-pill); cursor:pointer;
+    box-shadow: var(--emboss);
+  }
+  .icon-btn:active{ box-shadow: var(--deboss); }
+  .icon-btn:hover{ color:var(--text); }
+  .icon-btn svg{ width:1.1rem; height:1.1rem; }
+
+  /* ============ generic "plate" — the material surface every card is cut from ============ */
+  .plate{
+    position:relative;
+    background: linear-gradient(165deg, var(--bg-tint-2) 0%, var(--bg-tint) 60%, var(--bg) 130%);
+    border-radius: var(--radius-lg);
+    border: 1px solid rgba(0,0,0,.5);
+    box-shadow: var(--emboss);
+    padding: 1.15rem 1.2rem;
+    overflow:hidden;
+  }
+  .plate + .plate{ margin-top:.85rem; }
+
+  /* ============ numeral-first hero, now set into a textured field ============ */
+  .hero{ padding: .2rem 0 .1rem; margin-bottom:.2rem; }
+  .hero.plate{ padding:1.3rem 1.25rem 1.2rem; }
+  .hero-field{
+    position:absolute; inset:0; z-index:0;
+    /* halftone dot mesh — pure CSS, no images */
+    background-image:
+      radial-gradient(circle, var(--accent) 1.3px, transparent 1.6px);
+    background-size: 11px 11px;
+    -webkit-mask-image: radial-gradient(circle at 82% 18%, rgba(0,0,0,.85), transparent 62%);
+            mask-image: radial-gradient(circle at 82% 18%, rgba(0,0,0,.85), transparent 62%);
+    opacity:.4;
+  }
+  .hero-mesh{
+    position:absolute; inset:0; z-index:0;
+    background:
+      radial-gradient(140px 120px at 88% -10%, rgba(244,118,46,.4), transparent 60%),
+      radial-gradient(160px 140px at -10% 110%, rgba(139,58,25,.35), transparent 65%);
+    filter: blur(1px);
+  }
+  .hero > *{ position:relative; z-index:1; }
+  .hero .figure{
+    font-size: clamp(3.2rem, 17vw, 4.7rem);
+    font-weight:800;
+    line-height:1;
+    letter-spacing:-0.02em;
+    color:var(--text);
+    font-variant-numeric: tabular-nums;
+    text-shadow: 0 2px 0 rgba(0,0,0,.45), 0 0 28px rgba(244,118,46,.14);
+  }
+  .hero .figure .unit{ font-size:0.32em; font-weight:700; color:var(--text-secondary); margin-left:.25rem; }
+  .hero .label{
+    margin-top:.5rem;
+    font-size:.72rem; text-transform:uppercase; letter-spacing:.09em;
+    color:var(--text-muted); font-weight:600;
+  }
+
+  /* ============ tactile rows — the old flat hairline list, now stamped tiles ============ */
+  .hr-list{ margin-top:.75rem; display:flex; flex-direction:column; gap:.55rem; }
+  .hr-row{
+    display:flex; align-items:center; justify-content:space-between; gap:.75rem;
+    padding: .85rem 1rem;
+    border-radius: var(--radius-md);
+    background: linear-gradient(165deg, var(--bg-tint-2), var(--bg-tint));
+    border:1px solid rgba(0,0,0,.5);
+    box-shadow: var(--emboss);
+    width:100%; text-align:left; color:var(--text); cursor:pointer;
+  }
+  .hr-row:active{ box-shadow: var(--deboss); }
+  .hr-row .main{ display:flex; flex-direction:column; gap:.15rem; min-width:0; }
+  .hr-row .title{ font-size:.94rem; font-weight:600; color:var(--text); }
+  .hr-row .sub{ font-size:.78rem; font-style:italic; color:var(--text-muted); }
+  .hr-row .chev{ color:var(--accent); flex:0 0 auto; }
+  .hr-row .chev svg{ width:1rem; height:1rem; }
+  .hr-row.static{ cursor:default; }
+  .hr-row.static:active{ box-shadow: var(--emboss); }
+
+  /* icon-led inline stat row, recast as an inset dial strip */
+  .stat-inline{
+    display:flex; align-items:center; gap:1.1rem; flex-wrap:wrap;
+    padding: .8rem 1rem; margin-top:.7rem;
+    border-radius: var(--radius-md);
+    background: var(--bg-deep);
+    box-shadow: var(--deboss);
+    font-size:.86rem; color:var(--text-secondary);
+  }
+  .stat-inline .item{ display:flex; align-items:center; gap:.4rem; }
+  .stat-inline svg{ width:1rem; height:1rem; color:var(--accent); flex:0 0 auto; }
+  .stat-inline b{ color:var(--text); font-weight:700; font-variant-numeric: tabular-nums; }
+
+  .section-label{
+    font-size:.72rem; text-transform:uppercase; letter-spacing:.09em;
+    color:var(--text-muted); font-weight:700; margin: 1.5rem .1rem .5rem;
+    display:flex; align-items:center; gap:.5rem;
+  }
+  .section-label::after{ content:""; flex:1; height:1px; background:var(--hairline); }
+
+  .status{ display:inline-flex; align-items:center; gap:.45rem; font-size:.82rem; color:var(--text-secondary); }
+  .status .dot{ width:7px; height:7px; border-radius:50%; background:var(--text-muted); flex:0 0 auto; box-shadow:0 0 0 3px rgba(0,0,0,.3); }
+  .status.tier .dot{ background:var(--accent); }
+  .status-row{ display:flex; flex-wrap:wrap; gap:.9rem 1.4rem; padding: .3rem 0 1rem; }
+
+  /* ============ actions ============ */
+  .btn{
+    display:inline-flex; align-items:center; justify-content:center; gap:.4rem;
+    background: linear-gradient(180deg, #FF8A44, var(--accent) 55%, var(--accent-deep));
+    color:var(--accent-ink);
+    border:none; border-radius:var(--radius-pill);
+    font-weight:700; font-size:.86rem; padding:.75rem 1.3rem;
+    cursor:pointer;
+    box-shadow: inset 0 1px 0 rgba(255,255,255,.35), inset 0 -2px 3px rgba(0,0,0,.25), 0 6px 14px -4px rgba(244,118,46,.5);
+  }
+  .btn:active{ box-shadow: inset 0 2px 4px rgba(0,0,0,.35); }
+  .btn.ghost{ background:transparent; color:var(--accent); border:1px solid var(--accent); box-shadow:none; }
+
+  /* citation marker — a small embossed stud */
+  .cite{
+    display:inline-flex; align-items:center; justify-content:center;
+    min-width:1.4rem; height:1.4rem; padding:0 .35rem;
+    border-radius:var(--radius-pill);
+    background: linear-gradient(165deg, var(--bg-tint-2), var(--bg-tint));
+    border:1px solid rgba(0,0,0,.5); color:var(--accent);
+    font-size:.68rem; font-weight:700; font-variant-numeric: tabular-nums;
+    cursor:pointer; margin:0 .1rem; vertical-align:2px;
+    box-shadow: var(--emboss);
+  }
+  .cite:hover, .cite:focus-visible{ background:var(--accent); color:var(--accent-ink); }
+  .cite:active{ box-shadow: var(--deboss); }
+
+  /* ============ reading page — calmer surface, texture kept low so prose stays legible ============ */
+  .dek{ color:var(--text-secondary); font-size:.9rem; line-height:1.5; margin:.2rem 0 .9rem; }
+  .prose{
+    background: var(--bg-tint);
+    border-radius: var(--radius-lg);
+    padding: 1.1rem 1.15rem 1.3rem;
+    box-shadow: inset 0 1px 0 rgba(255,244,232,.05), 0 6px 16px -8px rgba(0,0,0,.55);
+    border:1px solid rgba(0,0,0,.45);
+  }
+  .prose h2{
+    font-size:.86rem; font-weight:700; color:var(--accent); margin: 1.4rem 0 .5rem;
+  }
+  .prose h2:first-child{ margin-top:0; }
+  .prose p{
+    font-size:.96rem; line-height:1.7; color:var(--text-secondary); margin:0 0 .2rem;
+  }
+
+  /* citation overlay */
+  .overlay{
+    position:absolute; inset:0; z-index:40;
+    background: rgba(14,10,7,.92);
+    display:flex; flex-direction:column; justify-content:flex-end;
+  }
+  .overlay[hidden]{ display:none; }
+  .sheet{
+    background: linear-gradient(180deg, var(--bg-tint-2), var(--bg-tint));
+    padding:1.3rem 1.15rem calc(1.6rem + env(safe-area-inset-bottom));
+    border-top:1px solid var(--hairline-hi);
+    border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+    box-shadow: inset 0 1px 0 rgba(255,244,232,.08), 0 -14px 30px -14px rgba(0,0,0,.6);
+  }
+  .sheet .ref-num{ color:var(--accent); font-weight:800; font-size:1.4rem; }
+  .sheet .ref-title{ font-size:.98rem; font-weight:700; margin:.4rem 0 .2rem; }
+  .sheet .ref-meta{ font-size:.82rem; color:var(--text-muted); margin-bottom:.7rem; }
+  .sheet .status-row{ padding-top:0; padding-bottom:1rem; }
+  .sheet .btn{ width:100%; }
+
+  /* ============ food page ============ */
+  .table-scroll{
+    overflow-x:auto; margin-top:.5rem; -webkit-overflow-scrolling:touch;
+    border-radius: var(--radius-md);
+    background: var(--bg-deep);
+    box-shadow: var(--deboss);
+    padding:.2rem;
+  }
+  table.foods{ border-collapse:collapse; width:100%; min-width:640px; font-size:.82rem; }
+  table.foods th{
+    text-align:left; font-weight:600; color:var(--text-muted);
+    font-size:.68rem; text-transform:uppercase; letter-spacing:.05em;
+    padding:.6rem .6rem .55rem .5rem; border-bottom:1px solid var(--hairline);
+    white-space:nowrap;
+  }
+  table.foods td{
+    padding:.7rem .6rem .7rem .5rem; border-bottom:1px solid var(--hairline);
+    color:var(--text-secondary); white-space:nowrap; vertical-align:middle;
+  }
+  table.foods tr:last-child td{ border-bottom:none; }
+  table.foods td.name{ color:var(--text); font-weight:600; }
+  table.foods td.state{ font-style:italic; color:var(--text-muted); font-size:.76rem; }
+  table.foods input{
+    width:4.3rem; background:var(--bg-deep); border:1px solid rgba(0,0,0,.5);
+    color:var(--text); border-radius:var(--radius-pill);
+    padding:.42rem .7rem; font-size:.84rem; text-align:right;
+    font-variant-numeric: tabular-nums;
+    box-shadow: var(--deboss);
+  }
+  table.foods input:focus-visible{ outline:2px solid var(--accent); outline-offset:1px; }
+  .food-note{ font-size:.78rem; color:var(--text-muted); margin-top:.9rem; line-height:1.5; }
+
+  .totals-row{ display:flex; gap:.9rem; flex-wrap:wrap; padding: .2rem 0 0; position:relative; z-index:1; }
+  .totals-row .t{
+    display:flex; flex-direction:column; gap:.25rem; flex:1 1 auto; min-width:4.4rem;
+    background: var(--bg-deep); border-radius: var(--radius-sm); padding:.55rem .7rem;
+    box-shadow: var(--deboss);
+  }
+  .totals-row .t .v{ font-size:1.05rem; font-weight:700; color:var(--text); font-variant-numeric: tabular-nums; }
+  .totals-row .t .l{ font-size:.66rem; text-transform:uppercase; letter-spacing:.06em; color:var(--text-muted); }
+
+  /* ============ training page — charts styled to feel printed, not plotted ============ */
+  .chart-wrap{
+    margin: .6rem 0 .3rem; padding:.9rem .9rem .5rem;
+    background: var(--bg-deep); border-radius: var(--radius-md);
+    box-shadow: var(--deboss);
+  }
+  .chart-caption{ font-size:.76rem; color:var(--text-muted); margin-top:.6rem; line-height:1.5; }
+  .legend{ display:flex; gap:1rem; margin-top:.5rem; flex-wrap:wrap; }
+  .legend .item{ display:flex; align-items:center; gap:.4rem; font-size:.76rem; color:var(--text-muted); }
+  .legend .dot{ width:7px; height:7px; border-radius:50%; }
+
+  .changelog-row{
+    padding:.85rem .95rem; margin-bottom:.55rem;
+    border-radius: var(--radius-md);
+    background: linear-gradient(165deg, var(--bg-tint-2), var(--bg-tint));
+    border:1px solid rgba(0,0,0,.5);
+    box-shadow: var(--emboss);
+  }
+  .changelog-row .tag{ font-size:.68rem; text-transform:uppercase; letter-spacing:.06em; font-weight:700; }
+  .changelog-row .tag.removed{ color:var(--text-muted); }
+  .changelog-row .tag.kept{ color:var(--accent); }
+  .changelog-row .ex{ font-size:.9rem; font-weight:600; color:var(--text); margin:.25rem 0 .15rem; }
+  .changelog-row .reason{ font-size:.82rem; color:var(--text-secondary); line-height:1.5; }
+
+  /* ============ ToC ============ */
+  .toc-box{
+    background: linear-gradient(165deg, var(--bg-tint-2), var(--bg-tint));
+    border-radius:var(--radius-lg);
+    padding:1.05rem 1.05rem 1.2rem;
+    margin-top:.5rem;
+    box-shadow: var(--emboss);
+    border:1px solid rgba(0,0,0,.5);
+  }
+  .toc-search{
+    display:flex; align-items:center; gap:.5rem;
+    background:var(--bg-deep); border:1px solid rgba(0,0,0,.5);
+    border-radius:var(--radius-pill); padding:.65rem 1rem; margin-bottom:.5rem;
+    box-shadow: var(--deboss);
+  }
+  .toc-search svg{ width:1rem; height:1rem; color:var(--text-muted); flex:0 0 auto; }
+  .toc-search input{
+    flex:1; background:none; border:none; color:var(--text); font-size:.9rem;
+  }
+  .toc-search input::placeholder{ color:var(--text-muted); }
+  .toc-row{
+    display:flex; align-items:center; justify-content:space-between;
+    padding:.75rem .5rem; border-bottom:1px solid var(--hairline);
+    border-radius: var(--radius-sm);
+  }
+  .toc-row:last-child{ border-bottom:none; }
+  .toc-row.child{ padding-left:1.3rem; }
+  .toc-row .t{ font-size:.9rem; color:var(--text); }
+  .toc-row.child .t{ color:var(--text-secondary); font-size:.86rem; }
+  .toc-row .badge{ font-size:.68rem; color:var(--text-muted); }
+  .toc-empty{ font-size:.84rem; color:var(--text-muted); padding:1rem .1rem; display:none; }
+
+  /* ============ floating bottom nav — the only navigation, given real physical weight ============ */
+  .tabbar{
+    position:fixed; left:0; right:0; bottom:16px;
+    margin:0 auto; width:calc(100% - 28px); max-width:384px;
+    background:
+      linear-gradient(180deg, rgba(44,32,25,.96), rgba(20,14,10,.97));
+    -webkit-backdrop-filter: blur(14px); backdrop-filter: blur(14px);
+    border-radius: 26px;
+    display:flex; align-items:stretch; justify-content:space-between;
+    padding:.4rem; z-index:30;
+    border: 1px solid rgba(0,0,0,.6);
+    box-shadow:
+      inset 0 1px 0 rgba(255,244,232,.12),
+      inset 0 -1px 0 rgba(0,0,0,.5),
+      0 14px 30px -10px rgba(0,0,0,.7);
+  }
+  .tab{
+    position:relative;
+    flex:1; display:flex; flex-direction:column; align-items:center; gap:.22rem;
+    background:none; border:none; color:var(--text-muted);
+    padding:.55rem .2rem .5rem; border-radius: 20px; cursor:pointer;
+  }
+  .tab + .tab::before{
+    content:""; position:absolute; left:0; top:14%; bottom:14%; width:1px;
+    background: var(--hairline);
+  }
+  .tab svg{ width:1.2rem; height:1.2rem; position:relative; z-index:1; }
+  .tab .tl{ font-size:.62rem; font-weight:600; letter-spacing:.02em; position:relative; z-index:1; }
+  .tab[aria-current="page"]{
+    color:var(--accent-ink);
+  }
+  .tab[aria-current="page"]::after{
+    content:"";
+    position:absolute; inset:.05rem .15rem;
+    border-radius:16px;
+    background: linear-gradient(180deg, #FF8A44, var(--accent) 60%, var(--accent-deep));
+    box-shadow: inset 0 1px 0 rgba(255,255,255,.35), 0 0 16px 1px rgba(244,118,46,.55);
+    z-index:0;
+  }
+  .tab:active{ transform: translateY(1px); }
+
+  @media (prefers-reduced-motion: reduce){
+    *{ scroll-behavior:auto !important; transition:none !important; animation:none !important; }
+  }
+</style>
+</head>
+<body>
+
+  <main class="phone" id="phoneFrame">
+
+    <!-- ========================= 1. HOME ========================= -->
+    <section class="screen is-active" id="screen-home" aria-label="Home">
+      <div class="page-header">
+        <h1>Today</h1>
+        <button class="icon-btn" aria-label="Settings" title="Settings">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+        </button>
+      </div>
+
+      <div class="screen-scroll">
+        <div class="hero plate">
+          <div class="hero-mesh" aria-hidden="true"></div>
+          <div class="hero-field" aria-hidden="true"></div>
+          <div class="figure">1,900<span class="unit">kcal</span></div>
+          <div class="label">Calorie target · training day</div>
+          <div class="stat-inline" role="group" aria-label="Today's macro targets">
+            <span class="item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M12 2c-2 4-6 6.5-6 11a6 6 0 0 0 12 0c0-4.5-4-7-6-11z"/></svg><b>180</b>&nbsp;g protein</span>
+            <span class="item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v10M7 12h10"/></svg><b>50</b>&nbsp;g fat</span>
+            <span class="item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M4 12h16M4 6h16M4 18h10"/></svg><b>180</b>&nbsp;g carb</span>
+          </div>
+        </div>
+
+        <div class="section-label">Pinned</div>
+        <nav class="hr-list" aria-label="Pinned shortcuts">
+          <button class="hr-row" data-goto="reading">
+            <span class="main"><span class="title">Protein</span><span class="sub">Nutrition info</span></span>
+            <span class="chev"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg></span>
+          </button>
+          <button class="hr-row" data-goto="food">
+            <span class="main"><span class="title">Food calculator</span></span>
+            <span class="chev"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg></span>
+          </button>
+          <button class="hr-row" data-goto="training">
+            <span class="main"><span class="title">Training</span><span class="sub">Est. 1RM · volume · sets</span></span>
+            <span class="chev"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg></span>
+          </button>
+          <button class="hr-row" data-goto="reading">
+            <span class="main"><span class="title">Body composition</span><span class="sub">Latest seca scan</span></span>
+            <span class="chev"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg></span>
+          </button>
+        </nav>
+      </div>
+    </section>
+
+    <!-- ========================= 2. READING ========================= -->
+    <section class="screen" id="screen-reading" aria-label="Reading — Protein" style="position:relative;">
+      <div class="page-header">
+        <h1>Protein</h1>
+        <button class="icon-btn" data-goto="home" aria-label="Go to Home">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M3 11l9-8 9 8"/><path d="M5 10v10h14V10"/></svg>
+        </button>
+      </div>
+      <div class="screen-scroll" id="readingScroll">
+        <p class="dek">How much protein the evidence supports, why the number goes up in a deficit, and how to spread it across the day.</p>
+
+        <div class="status-row">
+          <span class="status tier"><span class="dot"></span>Tier 1–2 evidence</span>
+          <span class="status"><span class="dot"></span>Certain</span>
+        </div>
+
+        <div class="prose">
+          <h2>Baseline requirements</h2>
+          <p>EFSA has set the Population Reference Intake for protein at 0.83 g per kg of body weight per day for adults <button class="cite" data-ref="7">7</button>. The US Recommended Dietary Allowance is 0.8 g per kg of body weight per day <button class="cite" data-ref="8">8</button>. Both figures describe the amount needed to avoid deficiency in a general adult population — not the amount that optimises training adaptations.</p>
+
+          <h2>If you train</h2>
+          <p>For most exercising individuals, a daily protein intake of 1.4 to 2.0 g per kg of body weight is sufficient to build and maintain muscle mass <button class="cite" data-ref="9">9</button>.</p>
+
+          <h2>If you train while in a calorie deficit</h2>
+          <p>During a calorie deficit, resistance-trained individuals may need higher protein intakes of about 2.3 to 3.1 g per kg per day to maximise retention of lean body mass <button class="cite" data-ref="9">9</button>. A systematic review and meta-analysis found that protein intakes above the RDA are associated with greater retention of lean body mass than consuming the RDA, with larger effects under energy restriction combined with resistance training <button class="cite" data-ref="10">10</button>.</p>
+
+          <h2>Distribution across the day</h2>
+          <p>For maximising muscle protein synthesis, the ISSN position stand recommends ingesting roughly 20 to 40 g of high-quality protein — about 0.25 to 0.40 g per kg of body mass — every three to four hours <button class="cite" data-ref="11">11</button>.</p>
+        </div>
+      </div>
+
+      <div class="overlay" id="citeOverlay" hidden>
+        <div class="sheet">
+          <div class="ref-num" id="citeNum">7</div>
+          <div class="ref-title" id="citeTitle"></div>
+          <div class="ref-meta" id="citeMeta"></div>
+          <div class="status-row">
+            <span class="status tier" id="citeTier"><span class="dot"></span></span>
+            <span class="status" id="citeConf"><span class="dot"></span></span>
+          </div>
+          <button class="btn" id="backToReading">Back to reading</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- ========================= 3. FOOD ========================= -->
+    <section class="screen" id="screen-food" aria-label="Food calculator">
+      <div class="page-header">
+        <h1>Food calculator</h1>
+        <button class="icon-btn" data-goto="home" aria-label="Go to Home">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M3 11l9-8 9 8"/><path d="M5 10v10h14V10"/></svg>
+        </button>
+      </div>
+      <div class="screen-scroll">
+        <div class="hero plate">
+          <div class="hero-mesh" aria-hidden="true"></div>
+          <div class="hero-field" aria-hidden="true"></div>
+          <div class="figure" id="totalKcal">0<span class="unit">kcal</span></div>
+          <div class="label">Running total — this entry</div>
+          <div class="totals-row">
+            <div class="t"><span class="v" id="totalProtein">0.0 g</span><span class="l">Protein</span></div>
+            <div class="t"><span class="v" id="totalFat">0.0 g</span><span class="l">Fat</span></div>
+            <div class="t"><span class="v" id="totalCarb">0.0 g</span><span class="l">Carb</span></div>
+            <div class="t"><span class="v" id="totalFibre">0.0 g</span><span class="l">Fibre</span></div>
+          </div>
+        </div>
+
+        <div class="section-label">Enter grams per food</div>
+        <div class="table-scroll">
+          <table class="foods" id="foodTable">
+            <thead>
+              <tr>
+                <th>Food</th><th>State</th><th>kcal/100g</th><th>Protein</th><th>Fat</th><th>Carb</th><th>Fibre</th><th>Grams</th>
+              </tr>
+            </thead>
+            <tbody>
+              <!-- rows injected by JS from FOODS array to guarantee the calculator and the table never drift apart -->
+            </tbody>
+          </table>
+        </div>
+        <p class="food-note">Per-100 g values above are generic reference figures for the food as described in the State column — not yet matched against Toni's actual product labels (Skyr brand, whey brand). Label-sourced macros are a tracked backlog item for the real knowledge base; this calculator uses representative figures so the design can be reviewed with realistic numbers.</p>
+      </div>
+    </section>
+
+    <!-- ========================= 4. TRAINING ========================= -->
+    <section class="screen" id="screen-training" aria-label="Training">
+      <div class="page-header">
+        <h1>Training</h1>
+        <button class="icon-btn" data-goto="home" aria-label="Go to Home">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M3 11l9-8 9 8"/><path d="M5 10v10h14V10"/></svg>
+        </button>
+      </div>
+      <div class="screen-scroll">
+        <div class="hero plate">
+          <div class="hero-mesh" aria-hidden="true"></div>
+          <div class="hero-field" aria-hidden="true"></div>
+          <div class="figure">3,988<span class="unit">kg</span></div>
+          <div class="label">Session volume load · 27 Jul — confirmed</div>
+        </div>
+
+        <!-- shared halftone fill pattern for "printed" chart marks, defined once -->
+        <svg width="0" height="0" style="position:absolute" aria-hidden="true">
+          <defs>
+            <pattern id="halftoneFill" width="5" height="5" patternUnits="userSpaceOnUse">
+              <rect width="5" height="5" fill="var(--accent)"/>
+              <circle cx="2.5" cy="2.5" r="1.35" fill="var(--accent-deep)" opacity=".55"/>
+            </pattern>
+            <pattern id="halftoneNeutral" width="5" height="5" patternUnits="userSpaceOnUse">
+              <rect width="5" height="5" fill="var(--bar-neutral)"/>
+              <circle cx="2.5" cy="2.5" r="1.2" fill="var(--bg-deep)" opacity=".5"/>
+            </pattern>
+          </defs>
+        </svg>
+
+        <div class="section-label">Estimated 1RM — Lat Pulldown</div>
+        <div class="chart-wrap">
+          <svg viewBox="0 0 380 90" width="100%" height="90" aria-hidden="true">
+            <line x1="0" y1="70" x2="380" y2="70" stroke="var(--hairline-hi)" stroke-width="1"/>
+            <circle cx="40" cy="55" r="3.2" fill="url(#halftoneNeutral)"/>
+            <circle cx="120" cy="55" r="3.2" fill="url(#halftoneNeutral)" opacity="0.5"/>
+            <circle cx="200" cy="55" r="3.2" fill="url(#halftoneNeutral)" opacity="0.5"/>
+            <path d="M40 55 Q80 58 120 55" fill="none" stroke="var(--bar-neutral)" stroke-width="1.4" stroke-dasharray="1 5" stroke-linecap="round" opacity="0.4"/>
+            <path d="M120 55 Q160 58 200 55" fill="none" stroke="var(--bar-neutral)" stroke-width="1.4" stroke-dasharray="1 5" stroke-linecap="round" opacity="0.4"/>
+            <path d="M200 55 Q270 60 340 30" fill="none" stroke="var(--accent)" stroke-width="2.4" stroke-linecap="round"/>
+            <circle cx="340" cy="30" r="5" fill="url(#halftoneFill)"/>
+            <text x="340" y="19" fill="var(--text)" font-size="11" text-anchor="end" font-weight="700">30 kg</text>
+            <text x="40" y="84" fill="var(--text-muted)" font-size="9">12 Jun</text>
+            <text x="200" y="84" fill="var(--text-muted)" font-size="9">gap — bodyweight only</text>
+            <text x="340" y="84" fill="var(--text-muted)" font-size="9" text-anchor="end">27 Jul</text>
+          </svg>
+        </div>
+        <p class="chart-caption">Only one loaded session is confirmed since the restart (27 Jul, 30 kg). Between the two seca scans he trained twice, bodyweight-only — the flat span above is real, not a rendering gap. The line will populate as further Hevy pulls are logged.</p>
+
+        <div class="section-label">Weekly volume load</div>
+        <div class="chart-wrap">
+          <svg viewBox="0 0 380 90" width="100%" height="90" aria-hidden="true">
+            <line x1="0" y1="78" x2="380" y2="78" stroke="var(--hairline-hi)" stroke-width="1"/>
+            <rect x="20" y="74" width="26" height="4" rx="2" fill="url(#halftoneNeutral)" opacity="0.4"/>
+            <rect x="90" y="74" width="26" height="4" rx="2" fill="url(#halftoneNeutral)" opacity="0.4"/>
+            <rect x="160" y="74" width="26" height="4" rx="2" fill="url(#halftoneNeutral)" opacity="0.4"/>
+            <rect x="230" y="20" width="26" height="58" rx="4" fill="url(#halftoneFill)"/>
+            <text x="243" y="15" fill="var(--text)" font-size="11" text-anchor="middle" font-weight="700">3,988</text>
+            <text x="33" y="90" fill="var(--text-muted)" font-size="9" text-anchor="middle">wk 1</text>
+            <text x="103" y="90" fill="var(--text-muted)" font-size="9" text-anchor="middle">wk 2</text>
+            <text x="173" y="90" fill="var(--text-muted)" font-size="9" text-anchor="middle">wk 3</text>
+            <text x="243" y="90" fill="var(--text-muted)" font-size="9" text-anchor="middle">wk 4</text>
+          </svg>
+        </div>
+        <p class="chart-caption">Weeks 1–3 show no logged external-load session (kg) — not zero effort, just nothing to sum. Week 4 is the 27 Jul session.</p>
+
+        <div class="section-label">Sets per muscle group — 27 Jul session</div>
+        <div class="hr-list" role="list" aria-label="Working sets by muscle group">
+          <div class="hr-row static" role="listitem">
+            <span class="main"><span class="title">Back</span><span class="sub">Lat pulldown · seated cable row · dumbbell row</span></span>
+            <span class="chev" style="color:var(--text); font-weight:700; font-variant-numeric:tabular-nums;">9 sets</span>
+          </div>
+          <div class="hr-row static" role="listitem">
+            <span class="main"><span class="title">Rear delts</span><span class="sub">Face pull</span></span>
+            <span class="chev" style="color:var(--text); font-weight:700; font-variant-numeric:tabular-nums;">3 sets</span>
+          </div>
+          <div class="hr-row static" role="listitem">
+            <span class="main"><span class="title">Biceps</span><span class="sub">Bicep curl · hammer curl</span></span>
+            <span class="chev" style="color:var(--text); font-weight:700; font-variant-numeric:tabular-nums;">6 sets</span>
+          </div>
+        </div>
+        <p class="chart-caption">18 working sets split evenly (3 sets/exercise) across the 6 main lifts logged 27 Jul, +3 warm-up sets = 21 total — matches the session log exactly. The muscle-group split is a reasonable even-split inference, not yet confirmed against per-set Hevy data.</p>
+
+        <div class="section-label">Routine changelog — WorkOut folder "3-Day Split — Gym"</div>
+        <div>
+          <div class="changelog-row">
+            <div class="tag removed">Removed</div>
+            <div class="ex">Leg Extension</div>
+            <div class="reason">Redundant against Leg Press and Bulgarian Split Squat.</div>
+          </div>
+          <div class="changelog-row">
+            <div class="tag removed">Removed</div>
+            <div class="ex">Rear Delt Reverse Fly</div>
+            <div class="reason">Face Pull on WorkOut #1 already covers rear delts.</div>
+          </div>
+          <div class="changelog-row">
+            <div class="tag removed">Removed</div>
+            <div class="ex">Standing Calf Raise</div>
+            <div class="reason">Lowest priority cut.</div>
+          </div>
+          <div class="changelog-row">
+            <div class="tag removed">Removed</div>
+            <div class="ex">Chest Press Machine</div>
+            <div class="reason">Third consecutive flat/incline press. Chest volume trimmed 12 → 9 sets to match Back's 9.</div>
+          </div>
+          <div class="changelog-row" style="margin-bottom:0;">
+            <div class="tag kept">Kept — deliberately</div>
+            <div class="ex">Seated Leg Curl</div>
+            <div class="reason">RDL trains the hamstring as a hip extensor; the curl trains it as a knee flexor. Not redundant.</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ========================= 5. TABLE OF CONTENTS ========================= -->
+    <section class="screen" id="screen-toc" aria-label="Table of contents">
+      <div class="page-header">
+        <h1>Contents</h1>
+        <button class="icon-btn" data-goto="home" aria-label="Go to Home">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M3 11l9-8 9 8"/><path d="M5 10v10h14V10"/></svg>
+        </button>
+      </div>
+      <div class="screen-scroll">
+        <div class="toc-box">
+          <div class="toc-search">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.35-4.35"/></svg>
+            <input type="search" id="tocSearch" aria-label="Search table of contents" placeholder="Search pages…">
+          </div>
+          <div id="tocList">
+            <div class="toc-row" data-goto="home"><span class="t">Home</span></div>
+            <div class="toc-row" data-text="nutrition info"><span class="t">Nutrition info</span><span class="badge">section</span></div>
+            <div class="toc-row child" data-goto="reading"><span class="t">Energy balance</span></div>
+            <div class="toc-row child" data-goto="reading"><span class="t">Protein</span></div>
+            <div class="toc-row child" data-text="carbohydrates fibre"><span class="t">Carbohydrates &amp; fibre</span></div>
+            <div class="toc-row child" data-text="dietary fat"><span class="t">Dietary fat</span></div>
+            <div class="toc-row child" data-text="micronutrients"><span class="t">Micronutrients</span></div>
+            <div class="toc-row child" data-text="meal timing"><span class="t">Meal timing</span></div>
+            <div class="toc-row" data-goto="food"><span class="t">Food calculator</span></div>
+            <div class="toc-row" data-goto="training"><span class="t">Training</span></div>
+            <div class="toc-row" data-text="about sources"><span class="t">About &amp; sources</span></div>
+          </div>
+          <p class="toc-empty" id="tocEmpty">No pages match.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ floating bottom nav — always visible, only navigation in the app ============ -->
+    <nav class="tabbar" aria-label="Primary">
+      <button class="tab" data-goto="home" aria-current="page">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M3 11l9-8 9 8"/><path d="M5 10v10h14V10"/></svg>
+        <span class="tl">Home</span>
+      </button>
+      <button class="tab" data-goto="reading">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M4 5.5C4 4.7 4.7 4 5.5 4H11v16H5.5A1.5 1.5 0 0 1 4 18.5z"/><path d="M20 5.5c0-.8-.7-1.5-1.5-1.5H13v16h5.5a1.5 1.5 0 0 0 1.5-1.5z"/></svg>
+        <span class="tl">Read</span>
+      </button>
+      <button class="tab" data-goto="food">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M6 3v7a2 2 0 0 0 2 2h0a2 2 0 0 0 2-2V3"/><path d="M8 12v9"/><path d="M17 3c-1.7 0-3 2-3 5s1.3 5 3 5"/><path d="M17 3v16"/></svg>
+        <span class="tl">Food</span>
+      </button>
+      <button class="tab" data-goto="training">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M4 12h2M18 12h2M6 8v8M18 8v8M8 12h8"/></svg>
+        <span class="tl">Train</span>
+      </button>
+      <button class="tab" data-goto="toc">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M4 6h16M4 12h16M4 18h10"/></svg>
+        <span class="tl">ToC</span>
+      </button>
+    </nav>
+
+  </main>
+
+<script>
+(function(){
+  "use strict";
+
+  var phoneFrame = document.getElementById("phoneFrame");
+
+  /* ---------- screen switching, driven by the floating bottom nav ---------- */
+  var screens = ["home","reading","food","training","toc"];
+  var sections = {};
+  screens.forEach(function(id){ sections[id] = document.getElementById("screen-" + id); });
+
+  function showScreen(id){
+    screens.forEach(function(s){
+      sections[s].classList.toggle("is-active", s === id);
+    });
+    document.querySelectorAll(".tab[data-goto]").forEach(function(b){
+      if (b.getAttribute("data-goto") === id) b.setAttribute("aria-current","page");
+      else b.removeAttribute("aria-current");
+    });
+    // reading gets the calmer, lower-texture surface treatment
+    phoneFrame.classList.toggle("calm-surface", id === "reading");
+    window.scrollTo(0,0);
+  }
+
+  document.querySelectorAll("[data-goto]").forEach(function(el){
+    el.addEventListener("click", function(){ showScreen(el.getAttribute("data-goto")); });
+  });
+
+  /* ---------- citation round-trip ---------- */
+  var REFS = {
+    "7":  { title:"EFSA sets population reference intakes for protein", meta:"European Food Safety Authority · 2012", tier:"Tier 2 — guideline / position stand", conf:"Certain" },
+    "8":  { title:"Recommended Dietary Allowances: 10th Edition", meta:"National Research Council (US) · 1989 · National Academies Press", tier:"Tier 2 — guideline / position stand", conf:"Certain" },
+    "9":  { title:"International Society of Sports Nutrition Position Stand: protein and exercise", meta:"Jäger R, et al. (ISSN) · 2017 · JISSN", tier:"Tier 2 — guideline / position stand", conf:"Certain" },
+    "10": { title:"Protein Intake Greater than the RDA Differentially Influences Whole-Body Lean Mass Responses — a Systematic Review and Meta-analysis", meta:"Hudson JL, Wang Y, Bergia RE III, Campbell WW · 2019 · Advances in Nutrition", tier:"Tier 1 — systematic review / meta-analysis", conf:"Likely" },
+    "11": { title:"ISSN Position Stand: nutrient timing", meta:"Kerksick CM, et al. (ISSN) · 2017 · JISSN", tier:"Tier 2 — guideline / position stand", conf:"Certain" }
+  };
+
+  var readingScroll = document.getElementById("readingScroll");
+  var overlay = document.getElementById("citeOverlay");
+  var savedScrollTop = 0;
+
+  document.querySelectorAll(".cite").forEach(function(btn){
+    btn.addEventListener("click", function(){
+      var ref = REFS[btn.getAttribute("data-ref")];
+      if (!ref) return;
+      savedScrollTop = readingScroll.scrollTop;
+      document.getElementById("citeNum").textContent = "[" + btn.getAttribute("data-ref") + "]";
+      document.getElementById("citeTitle").textContent = ref.title;
+      document.getElementById("citeMeta").textContent = ref.meta;
+      document.getElementById("citeTier").innerHTML = '<span class="dot"></span>' + ref.tier;
+      document.getElementById("citeConf").innerHTML = '<span class="dot"></span>' + ref.conf;
+      overlay.hidden = false;
+    });
+  });
+
+  document.getElementById("backToReading").addEventListener("click", function(){
+    overlay.hidden = true;
+    // restore the EXACT recorded offset, not a re-anchored scroll — an anchor
+    // reposition can silently land on the wrong spot after layout settles.
+    readingScroll.scrollTop = savedScrollTop;
+  });
+
+  /* ---------- food calculator ---------- */
+  var FOODS = [
+    { name:"Skyr natur",     state:"as prepared, ready-to-eat", kcal:63,  protein:11,  fat:0.2, carb:4,  fibre:0   },
+    { name:"Vollkornbrot",   state:"as sold, baked loaf",       kcal:215, protein:7.5, fat:1.5, carb:40, fibre:6.5 },
+    { name:"Pasta",          state:"dry, uncooked",             kcal:360, protein:13,  fat:1.5, carb:71, fibre:3   },
+    { name:"Rice",           state:"dry, uncooked",              kcal:360, protein:7,   fat:0.6, carb:80, fibre:1.3 },
+    { name:"Potatoes",       state:"raw, unpeeled",             kcal:77,  protein:2,   fat:0.1, carb:17, fibre:2.2 },
+    { name:"Olive oil",      state:"as sold, liquid",           kcal:884, protein:0,   fat:100, carb:0,  fibre:0   },
+    { name:"Whey isolate",   state:"powder, as sold (dry scoop)",kcal:380, protein:80,  fat:3,   carb:4,  fibre:0   }
+  ];
+
+  var tbody = document.querySelector("#foodTable tbody");
+  FOODS.forEach(function(f, i){
+    var tr = document.createElement("tr");
+    tr.innerHTML =
+      '<td class="name">' + f.name + '</td>' +
+      '<td class="state">' + f.state + '</td>' +
+      '<td>' + f.kcal + '</td>' +
+      '<td>' + f.protein + ' g</td>' +
+      '<td>' + f.fat + ' g</td>' +
+      '<td>' + f.carb + ' g</td>' +
+      '<td>' + f.fibre + ' g</td>' +
+      '<td><input type="number" inputmode="decimal" min="0" step="1" value="0" aria-label="Grams of ' + f.name + '" data-idx="' + i + '"></td>';
+    tbody.appendChild(tr);
+  });
+
+  var totalKcalEl = document.getElementById("totalKcal");
+  var totalProteinEl = document.getElementById("totalProtein");
+  var totalFatEl = document.getElementById("totalFat");
+  var totalCarbEl = document.getElementById("totalCarb");
+  var totalFibreEl = document.getElementById("totalFibre");
+
+  function recompute(){
+    var inputs = document.querySelectorAll("#foodTable input");
+    var kcal=0, protein=0, fat=0, carb=0, fibre=0;
+    inputs.forEach(function(inp){
+      var f = FOODS[Number(inp.getAttribute("data-idx"))];
+      var g = parseFloat(inp.value) || 0;
+      var mult = g / 100;
+      kcal += f.kcal * mult;
+      protein += f.protein * mult;
+      fat += f.fat * mult;
+      carb += f.carb * mult;
+      fibre += f.fibre * mult;
+    });
+    totalKcalEl.innerHTML = Math.round(kcal) + '<span class="unit">kcal</span>';
+    totalProteinEl.textContent = protein.toFixed(1) + " g";
+    totalFatEl.textContent = fat.toFixed(1) + " g";
+    totalCarbEl.textContent = carb.toFixed(1) + " g";
+    totalFibreEl.textContent = fibre.toFixed(1) + " g";
+  }
+
+  tbody.addEventListener("input", recompute);
+  recompute();
+
+  /* ---------- ToC search ---------- */
+  var tocSearch = document.getElementById("tocSearch");
+  var tocRows = Array.prototype.slice.call(document.querySelectorAll(".toc-row"));
+  var tocEmpty = document.getElementById("tocEmpty");
+
+  tocSearch.addEventListener("input", function(){
+    var q = tocSearch.value.trim().toLowerCase();
+    var visible = 0;
+    tocRows.forEach(function(row){
+      var haystack = (row.textContent + " " + (row.getAttribute("data-text") || "")).toLowerCase();
+      var match = q === "" || haystack.indexOf(q) !== -1;
+      row.style.display = match ? "" : "none";
+      if (match) visible++;
+    });
+    tocEmpty.style.display = visible === 0 ? "block" : "none";
+  });
+
+})();
+</script>
+</body>
+</html>

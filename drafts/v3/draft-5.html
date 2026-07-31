@@ -1,0 +1,1079 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Nutrition wrapper — draft 5 (kinetic)</title>
+<style>
+  :root{
+    --bg: #0F1012;
+    --bg-tint: #17181B;
+    --bg-tint2: #1D2023;
+    --text: #F5F6F7;          /* 17.6:1 on bg */
+    --text-secondary: #A6ACB5;/* 8.3:1 on bg */
+    --text-muted: #808690;    /* 5.2:1 on bg */
+    --hairline: #232427;
+    --accent: #F4762E;        /* burnt orange — 6.78:1 on bg */
+    --accent-ink: #0F1012;
+    --accent2: #C8FF4D;       /* electric lime — 16.2:1 on bg, computed WCAG relative-luminance */
+    --accent2-ink: #0F1012;
+    --bar-neutral: #4B4F56;
+    --radius-pill: 999px;
+    --sans: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    --ease-snap: cubic-bezier(.32,.94,.4,1);
+    --dur-fast: 180ms;
+    --dur-med: 300ms;
+  }
+
+  *{ box-sizing:border-box; }
+  html,body{ margin:0; padding:0; height:100%; background:var(--bg); color:var(--text); overflow:hidden; }
+  body{
+    font-family: var(--sans);
+    -webkit-font-smoothing: antialiased;
+    overflow-x:hidden;
+  }
+  button, input{ font-family:inherit; }
+
+  ::selection{ background:var(--accent); color:var(--accent-ink); }
+  a{ color:var(--accent); }
+
+  .sr-only{
+    position:absolute; width:1px; height:1px; padding:0; margin:-1px;
+    overflow:hidden; clip:rect(0,0,0,0); white-space:nowrap; border:0;
+  }
+
+  button:focus-visible, input:focus-visible, [tabindex]:focus-visible{
+    outline: 2px solid var(--accent2);
+    outline-offset: 2px;
+  }
+
+  /* ============ app frame ============ */
+  .phone{
+    max-width:412px;
+    margin:0 auto;
+    height:100vh;
+    background:var(--bg);
+    position:relative;
+    display:flex; flex-direction:column;
+    overflow:hidden;
+  }
+
+  .screen{ display:none; flex-direction:column; flex:1; min-height:0; }
+  .screen.is-active{ display:flex; }
+
+  .screen-scroll{
+    flex:1; min-height:0; overflow-y:auto; overflow-x:hidden;
+    padding: 1.1rem 1.15rem calc(100px + env(safe-area-inset-bottom));
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior:contain;
+  }
+
+  .page-header{
+    display:flex; align-items:center; justify-content:space-between;
+    padding: .9rem 1.15rem .2rem;
+  }
+  .page-header h1{
+    font-size:.98rem; font-weight:700; margin:0; letter-spacing:.01em;
+  }
+  .icon-btn{
+    background:none; border:none; color:var(--text-muted);
+    width:2.2rem; height:2.2rem; display:flex; align-items:center; justify-content:center;
+    border-radius:var(--radius-pill); cursor:pointer;
+    transition: color var(--dur-fast) var(--ease-snap), transform var(--dur-fast) var(--ease-snap), background var(--dur-fast);
+  }
+  .icon-btn:hover{ color:var(--text); background:var(--bg-tint); }
+  .icon-btn:active{ transform:scale(.88); }
+  .icon-btn svg{ width:1.15rem; height:1.15rem; }
+
+  /* ============ stagger-in entrance system ============ */
+  .stagger-item{ opacity:1; transform:none; }
+  .screen.anim-in .stagger-item{
+    animation: riseIn .46s var(--ease-snap) both;
+    animation-delay: calc(min(var(--i, 0), 9) * 48ms);
+  }
+  @keyframes riseIn{
+    from{ opacity:0; transform:translateY(12px); }
+    to{ opacity:1; transform:translateY(0); }
+  }
+
+  /* ============ numeral-first hero with living glow ============ */
+  .hero{ padding: .7rem 0 .35rem; position:relative; }
+  .hero-glow{
+    position:absolute; left:34%; top:46%; width:210px; height:210px;
+    transform:translate(-50%,-50%);
+    background: radial-gradient(circle, rgba(244,118,46,.5) 0%, rgba(200,255,77,.22) 45%, transparent 72%);
+    filter: blur(26px);
+    opacity:.3; pointer-events:none; z-index:0;
+    animation: heroGlowPulse 3.2s ease-in-out infinite;
+  }
+  @keyframes heroGlowPulse{
+    0%,100%{ opacity:.24; transform:translate(-50%,-50%) scale(1); }
+    50%{ opacity:.42; transform:translate(-50%,-50%) scale(1.09); }
+  }
+  .hero .figure{
+    position:relative; z-index:1;
+    font-size: clamp(3.4rem, 18vw, 5rem);
+    font-weight:800;
+    line-height:1;
+    letter-spacing:-0.02em;
+    color:var(--text);
+    font-variant-numeric: tabular-nums;
+  }
+  .hero .figure .unit{ font-size:0.34em; font-weight:700; color:var(--text-secondary); margin-left:.25rem; }
+  .hero .label{
+    position:relative; z-index:1;
+    margin-top:.5rem;
+    font-size:.72rem; text-transform:uppercase; letter-spacing:.08em;
+    color:var(--text-muted); font-weight:600;
+  }
+
+  /* ============ macro split — derived, animated fill + shimmer ============ */
+  .split-wrap{ margin-top:1rem; display:flex; flex-direction:column; gap:.55rem; }
+  .split-row{ display:flex; align-items:center; gap:.65rem; }
+  .split-row .sr-label{ width:4.6rem; flex:0 0 auto; font-size:.72rem; color:var(--text-muted); font-weight:600; }
+  .split-row .sr-track{
+    position:relative; flex:1; height:8px; border-radius:var(--radius-pill);
+    background:var(--bg-tint); overflow:hidden;
+  }
+  .split-row .sr-fill{
+    position:absolute; inset:0 auto 0 0; width:0%; border-radius:var(--radius-pill);
+    background: linear-gradient(90deg, var(--accent), var(--accent2));
+    transition: width 1.05s var(--ease-snap);
+  }
+  .split-row .sr-fill::after{
+    content:""; position:absolute; inset:0; width:46%;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,.55), transparent);
+    transform: translateX(-120%);
+    mix-blend-mode: overlay;
+  }
+  .screen.anim-in .split-row .sr-fill::after{ animation: shimmerSweep 1.1s ease-out .35s 1; }
+  @keyframes shimmerSweep{ from{ transform:translateX(-120%); } to{ transform:translateX(260%); } }
+  .split-row .sr-pct{ width:2.6rem; flex:0 0 auto; text-align:right; font-size:.78rem; font-weight:700; color:var(--text); font-variant-numeric:tabular-nums; }
+
+  /* ============ hairline rows ============ */
+  .hr-list{ margin-top:.6rem; }
+  .hr-row{
+    display:flex; align-items:center; justify-content:space-between; gap:.75rem;
+    padding: .85rem 0;
+    border-bottom:1px solid var(--hairline);
+    background:none; border-left:none; border-right:none; border-top:none;
+    width:100%; text-align:left; color:var(--text); cursor:pointer;
+    transition: background var(--dur-fast), transform var(--dur-fast) var(--ease-snap), padding-left var(--dur-fast);
+  }
+  .hr-row:last-child{ border-bottom:1px solid var(--hairline); }
+  button.hr-row:hover{ background:var(--bg-tint); padding-left:.4rem; }
+  button.hr-row:active{ transform:scale(.985); }
+  .hr-row .main{ display:flex; flex-direction:column; gap:.15rem; min-width:0; }
+  .hr-row .title{ font-size:.94rem; font-weight:600; color:var(--text); }
+  .hr-row .sub{ font-size:.78rem; font-style:italic; color:var(--text-muted); }
+  .hr-row .chev{ color:var(--text-muted); flex:0 0 auto; transition: transform var(--dur-fast) var(--ease-snap), color var(--dur-fast); }
+  .hr-row .chev svg{ width:1rem; height:1rem; }
+  button.hr-row:hover .chev{ color:var(--accent2); transform:translateX(3px); }
+
+  .stat-inline{
+    display:flex; align-items:center; gap:1.1rem; flex-wrap:wrap;
+    padding: .9rem 0; border-bottom:1px solid var(--hairline);
+    font-size:.86rem; color:var(--text-secondary);
+  }
+  .stat-inline .item{ display:flex; align-items:center; gap:.4rem; }
+  .stat-inline svg{ width:1rem; height:1rem; color:var(--text-muted); flex:0 0 auto; }
+  .stat-inline b{ color:var(--text); font-weight:700; font-variant-numeric: tabular-nums; }
+
+  .section-label{
+    font-size:.72rem; text-transform:uppercase; letter-spacing:.08em;
+    color:var(--text-muted); font-weight:700; margin: 1.5rem 0 .3rem;
+  }
+
+  .status{ display:inline-flex; align-items:center; gap:.45rem; font-size:.82rem; color:var(--text-secondary); }
+  .status .dot{ width:7px; height:7px; border-radius:50%; background:var(--text-muted); flex:0 0 auto; }
+  .status.tier .dot{ background:var(--accent2); box-shadow:0 0 6px rgba(200,255,77,.55); }
+  .status-row{ display:flex; flex-wrap:wrap; gap:.9rem 1.4rem; padding: .3rem 0 1rem; }
+
+  /* ============ actions ============ */
+  .btn{
+    display:inline-flex; align-items:center; justify-content:center; gap:.4rem;
+    background:var(--accent); color:var(--accent-ink);
+    border:none; border-radius:var(--radius-pill);
+    font-weight:700; font-size:.86rem; padding:.7rem 1.3rem;
+    cursor:pointer;
+    transition: transform var(--dur-fast) var(--ease-snap), box-shadow var(--dur-fast), filter var(--dur-fast);
+  }
+  .btn:hover{ filter:brightness(1.08); }
+  .btn:active{ transform:scale(.96); }
+  .btn.ghost{ background:transparent; color:var(--accent); border:1px solid var(--accent); }
+
+  .cite{
+    position:relative; display:inline-flex; align-items:center; justify-content:center;
+    min-width:1.35rem; height:1.35rem; padding:0 .35rem;
+    border-radius:var(--radius-pill);
+    background:transparent; border:1.5px solid var(--accent); color:var(--accent);
+    font-size:.68rem; font-weight:700; font-variant-numeric: tabular-nums;
+    cursor:pointer; margin:0 .1rem; vertical-align:2px;
+    transition: background var(--dur-fast), color var(--dur-fast), transform var(--dur-fast) var(--ease-snap);
+  }
+  .cite:hover, .cite:focus-visible{ background:var(--accent); color:var(--accent-ink); }
+  .cite:active{ transform:scale(.85); }
+
+  /* ============ reading page — deliberately calm ============ */
+  .dek{ color:var(--text-secondary); font-size:.9rem; line-height:1.5; margin:.2rem 0 .9rem; }
+  .prose h2{
+    font-size:.86rem; font-weight:700; color:var(--text); margin: 1.5rem 0 .5rem;
+  }
+  .prose p{
+    font-size:.94rem; line-height:1.65; color:var(--text-secondary); margin:0 0 .2rem;
+  }
+
+  .overlay{
+    position:absolute; inset:0; z-index:40;
+    background: rgba(15,16,18,.94);
+    display:flex; flex-direction:column; justify-content:flex-end;
+  }
+  .overlay[hidden]{ display:none; }
+  .overlay:not([hidden]) .sheet{ animation: sheetUp var(--dur-med) var(--ease-snap) both; }
+  @keyframes sheetUp{ from{ opacity:0; transform:translateY(18px); } to{ opacity:1; transform:translateY(0); } }
+  .sheet{
+    background:var(--bg-tint);
+    padding:1.3rem 1.15rem calc(1.6rem + env(safe-area-inset-bottom));
+    border-top:1px solid var(--hairline);
+  }
+  .sheet .ref-num{ color:var(--accent); font-weight:800; font-size:1.4rem; }
+  .sheet .ref-title{ font-size:.98rem; font-weight:700; margin:.4rem 0 .2rem; }
+  .sheet .ref-meta{ font-size:.82rem; color:var(--text-muted); margin-bottom:.7rem; }
+  .sheet .status-row{ padding-top:0; padding-bottom:1rem; }
+  .sheet .btn{ width:100%; }
+
+  /* ============ food page ============ */
+  .table-scroll{ overflow-x:auto; margin-top:.4rem; -webkit-overflow-scrolling:touch; }
+  table.foods{ border-collapse:collapse; width:100%; min-width:640px; font-size:.82rem; }
+  table.foods th{
+    text-align:left; font-weight:600; color:var(--text-muted);
+    font-size:.68rem; text-transform:uppercase; letter-spacing:.05em;
+    padding:.5rem .6rem .5rem 0; border-bottom:1px solid var(--hairline);
+    white-space:nowrap;
+  }
+  table.foods td{
+    padding:.7rem .6rem .7rem 0; border-bottom:1px solid var(--hairline);
+    color:var(--text-secondary); white-space:nowrap; vertical-align:middle;
+    transition: background var(--dur-med);
+  }
+  table.foods tr.just-added td{ animation: rowFlash 900ms ease-out; }
+  @keyframes rowFlash{
+    0%{ background:rgba(200,255,77,.24); }
+    100%{ background:transparent; }
+  }
+  table.foods td.name{ color:var(--text); font-weight:600; }
+  table.foods td.state{ font-style:italic; color:var(--text-muted); font-size:.76rem; }
+  table.foods input{
+    width:4.2rem; background:var(--bg-tint); border:1px solid var(--hairline);
+    color:var(--text); border-radius:var(--radius-pill);
+    padding:.4rem .7rem; font-size:.84rem; text-align:right;
+    font-variant-numeric: tabular-nums;
+    transition: border-color var(--dur-fast), box-shadow var(--dur-fast);
+  }
+  table.foods input:focus-visible{ outline:2px solid var(--accent2); outline-offset:1px; }
+  table.foods input:not(:placeholder-shown){ border-color: rgba(244,118,46,.4); }
+  .food-note{ font-size:.78rem; color:var(--text-muted); margin-top:.8rem; line-height:1.5; }
+
+  .totals-row{ display:flex; gap:1.3rem; flex-wrap:wrap; padding: .2rem 0 .2rem; position:relative; z-index:1; }
+  .totals-row .t{ display:flex; flex-direction:column; gap:.15rem; }
+  .totals-row .t .v{ font-size:1.05rem; font-weight:700; color:var(--text); font-variant-numeric: tabular-nums; display:inline-block; }
+  .totals-row .t .v.pop{ animation: popPulse 420ms var(--ease-snap); }
+  @keyframes popPulse{ 0%{ transform:scale(1); } 35%{ transform:scale(1.14); color:var(--accent2); } 100%{ transform:scale(1); } }
+  .totals-row .t .l{ font-size:.68rem; text-transform:uppercase; letter-spacing:.06em; color:var(--text-muted); }
+  #totalKcal.pop{ animation: popPulse 420ms var(--ease-snap); }
+
+  .toast{
+    position:absolute; left:50%; bottom:118px; transform:translate(-50%, 8px);
+    background:var(--accent2); color:var(--accent2-ink); font-weight:700; font-size:.78rem;
+    padding:.5rem 1rem; border-radius:var(--radius-pill);
+    box-shadow:0 8px 24px rgba(0,0,0,.4);
+    opacity:0; pointer-events:none; z-index:20;
+    transition: opacity var(--dur-fast) ease, transform var(--dur-fast) var(--ease-snap);
+  }
+  .toast.show{ opacity:1; transform:translate(-50%, 0); }
+
+  /* ============ training page ============ */
+  .chart-wrap{ margin: .6rem 0 .3rem; }
+  .chart-caption{ font-size:.76rem; color:var(--text-muted); margin-top:.4rem; line-height:1.5; }
+  .legend{ display:flex; gap:1rem; margin-top:.5rem; flex-wrap:wrap; }
+  .legend .item{ display:flex; align-items:center; gap:.4rem; font-size:.76rem; color:var(--text-muted); }
+  .legend .dot{ width:7px; height:7px; border-radius:50%; }
+
+  .draw-path{ transition: stroke-dashoffset 1.1s var(--ease-snap); }
+  .draw-dot{ transform-box: fill-box; transform-origin:center; transition: opacity .4s ease, transform .4s var(--ease-snap); }
+  .grow-bar{ transform-box: fill-box; transform-origin:bottom; transition: transform 1s var(--ease-snap); }
+
+  .changelog-row{ padding:.75rem 0; border-bottom:1px solid var(--hairline); }
+  .changelog-row .tag{ font-size:.68rem; text-transform:uppercase; letter-spacing:.06em; font-weight:700; }
+  .changelog-row .tag.removed{ color:var(--text-muted); }
+  .changelog-row .tag.kept{ color:var(--accent2); }
+  .changelog-row .ex{ font-size:.9rem; font-weight:600; color:var(--text); margin:.2rem 0 .15rem; }
+  .changelog-row .reason{ font-size:.82rem; color:var(--text-secondary); line-height:1.5; }
+
+  /* ============ ToC ============ */
+  .toc-box{
+    background:var(--bg-tint);
+    border-radius:14px;
+    padding:1rem 1.05rem 1.2rem;
+    margin-top:.5rem;
+  }
+  .toc-search{
+    display:flex; align-items:center; gap:.5rem;
+    background:var(--bg); border:1px solid var(--hairline);
+    border-radius:var(--radius-pill); padding:.6rem 1rem; margin-bottom:.4rem;
+    transition: border-color var(--dur-fast), box-shadow var(--dur-fast);
+  }
+  .toc-search:focus-within{ border-color:var(--accent2); box-shadow:0 0 0 3px rgba(200,255,77,.15); }
+  .toc-search svg{ width:1rem; height:1rem; color:var(--text-muted); flex:0 0 auto; }
+  .toc-search input{
+    flex:1; background:none; border:none; color:var(--text); font-size:.9rem;
+  }
+  .toc-search input::placeholder{ color:var(--text-muted); }
+  .toc-row{
+    display:flex; align-items:center; justify-content:space-between;
+    padding:.75rem .1rem; border-bottom:1px solid var(--hairline);
+    transition: background var(--dur-fast), padding-left var(--dur-fast);
+  }
+  .toc-row:last-child{ border-bottom:none; }
+  .toc-row.child{ padding-left:1rem; }
+  .toc-row .t{ font-size:.9rem; color:var(--text); }
+  .toc-row.child .t{ color:var(--text-secondary); font-size:.86rem; }
+  .toc-row .badge{ font-size:.68rem; color:var(--text-muted); }
+  .toc-empty{ font-size:.84rem; color:var(--text-muted); padding:1rem .1rem; display:none; }
+
+  /* ============ floating bottom nav — the featured moment ============ */
+  .tabbar{
+    position:fixed; left:0; right:0; bottom:14px;
+    margin:0 auto; width:calc(100% - 32px); max-width:380px;
+    background: rgba(23,24,27,.92);
+    -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px);
+    border-radius:var(--radius-pill);
+    display:flex; align-items:stretch; justify-content:space-between;
+    padding:.35rem; z-index:30;
+    box-shadow: 0 0 0 1px var(--hairline), 0 12px 30px rgba(0,0,0,.4);
+  }
+  .nav-indicator{
+    position:absolute; top:.35rem; bottom:.35rem; left:.35rem;
+    width: calc(20% - .35rem);
+    border-radius:var(--radius-pill);
+    background: linear-gradient(135deg, rgba(244,118,46,.22), rgba(200,255,77,.14));
+    box-shadow: inset 0 0 0 1px rgba(244,118,46,.4), 0 0 16px 1px rgba(200,255,77,.22);
+    transition: transform var(--dur-med) var(--ease-snap);
+    pointer-events:none; z-index:0;
+    will-change: transform;
+  }
+  .tab{
+    position:relative; z-index:1;
+    flex:1; display:flex; flex-direction:column; align-items:center; gap:.2rem;
+    background:none; border:none; color:var(--text-muted);
+    padding:.5rem .2rem .45rem; border-radius:var(--radius-pill); cursor:pointer;
+    overflow:hidden;
+    transition: color var(--dur-fast) var(--ease-snap), transform var(--dur-fast) var(--ease-snap);
+  }
+  .tab svg{ width:1.2rem; height:1.2rem; transition: transform var(--dur-fast) var(--ease-snap); }
+  .tab .tl{ font-size:.62rem; font-weight:600; letter-spacing:.02em; }
+  .tab[aria-current="page"]{ color:var(--accent2); }
+  .tab[aria-current="page"] svg{ color:var(--accent); transform:translateY(-1px); }
+  .tab:active svg{ transform:scale(.82); }
+  .tab .ripple{
+    position:absolute; width:10px; height:10px; border-radius:50%;
+    background:rgba(200,255,77,.45);
+    left:var(--rx, 50%); top:var(--ry, 50%);
+    transform:translate(-50%,-50%) scale(0);
+    animation: rippleOut 520ms ease-out forwards;
+    pointer-events:none;
+  }
+  @keyframes rippleOut{
+    from{ transform:translate(-50%,-50%) scale(0); opacity:.5; }
+    to{ transform:translate(-50%,-50%) scale(7); opacity:0; }
+  }
+
+  @media (prefers-reduced-motion: reduce){
+    *, *::before, *::after{
+      animation:none !important;
+      transition:none !important;
+      scroll-behavior:auto !important;
+    }
+  }
+
+  @media (prefers-color-scheme: light){
+    :root:not([data-force-dark]){
+      --bg:#0F1012; --bg-tint:#17181B; --bg-tint2:#1D2023;
+      --text:#F5F6F7; --text-secondary:#A6ACB5; --text-muted:#808690;
+      /* dark stays the forced default by design — see draft-1 rationale, unchanged here */
+    }
+  }
+</style>
+</head>
+<body>
+
+  <main class="phone">
+
+    <!-- ========================= 1. HOME ========================= -->
+    <section class="screen is-active" id="screen-home" aria-label="Home">
+      <div class="page-header">
+        <h1>Today</h1>
+        <button class="icon-btn" aria-label="Settings" title="Settings">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+        </button>
+      </div>
+
+      <div class="screen-scroll">
+        <div class="hero stagger-item" style="--i:0;">
+          <div class="hero-glow" aria-hidden="true"></div>
+          <div class="figure" id="heroFigure">
+            <span class="num" id="heroKcalNum" aria-hidden="true" data-final="1900">1900</span><span class="unit">kcal</span>
+            <span class="sr-only">1,900 kcal</span>
+          </div>
+          <div class="label">Calorie target · training day</div>
+        </div>
+
+        <div class="stat-inline stagger-item" style="--i:1;" role="group" aria-label="Today's macro targets">
+          <span class="item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M12 2c-2 4-6 6.5-6 11a6 6 0 0 0 12 0c0-4.5-4-7-6-11z"/></svg><b>180</b>&nbsp;g protein</span>
+          <span class="item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v10M7 12h10"/></svg><b>50</b>&nbsp;g fat</span>
+          <span class="item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M4 12h16M4 6h16M4 18h10"/></svg><b>180</b>&nbsp;g carb</span>
+        </div>
+
+        <div class="split-wrap stagger-item" style="--i:2;" aria-label="Share of today's target calories by macro, derived from the targets above">
+          <div class="split-row">
+            <span class="sr-label">Protein</span>
+            <span class="sr-track"><span class="sr-fill" data-pct="38"></span></span>
+            <span class="sr-pct">38%</span>
+          </div>
+          <div class="split-row">
+            <span class="sr-label">Carb</span>
+            <span class="sr-track"><span class="sr-fill" data-pct="38"></span></span>
+            <span class="sr-pct">38%</span>
+          </div>
+          <div class="split-row">
+            <span class="sr-label">Fat</span>
+            <span class="sr-track"><span class="sr-fill" data-pct="24"></span></span>
+            <span class="sr-pct">24%</span>
+          </div>
+        </div>
+        <p class="chart-caption stagger-item" style="--i:3;">Share of the 1,900 kcal target contributed by each macro (protein 180 g × 4, carb 180 g × 4, fat 50 g × 9) — derived from the targets above, not a tracked-intake reading.</p>
+
+        <div class="section-label stagger-item" style="--i:4;">Pinned</div>
+        <nav class="hr-list" aria-label="Pinned shortcuts">
+          <button class="hr-row stagger-item" style="--i:5;" data-goto="reading">
+            <span class="main"><span class="title">Protein</span><span class="sub">Nutrition info</span></span>
+            <span class="chev"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg></span>
+          </button>
+          <button class="hr-row stagger-item" style="--i:6;" data-goto="food">
+            <span class="main"><span class="title">Food calculator</span></span>
+            <span class="chev"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg></span>
+          </button>
+          <button class="hr-row stagger-item" style="--i:7;" data-goto="training">
+            <span class="main"><span class="title">Training</span><span class="sub">Est. 1RM · volume · sets</span></span>
+            <span class="chev"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg></span>
+          </button>
+          <button class="hr-row stagger-item" style="--i:8;" data-goto="reading">
+            <span class="main"><span class="title">Body composition</span><span class="sub">Latest seca scan</span></span>
+            <span class="chev"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg></span>
+          </button>
+        </nav>
+      </div>
+    </section>
+
+    <!-- ========================= 2. READING (calm — one-shot entrance only) ========================= -->
+    <section class="screen" id="screen-reading" aria-label="Reading — Protein" style="position:relative;">
+      <div class="page-header">
+        <h1>Protein</h1>
+        <button class="icon-btn" data-goto="home" aria-label="Go to Home">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M3 11l9-8 9 8"/><path d="M5 10v10h14V10"/></svg>
+        </button>
+      </div>
+      <div class="screen-scroll" id="readingScroll">
+        <p class="dek stagger-item" style="--i:0;">How much protein the evidence supports, why the number goes up in a deficit, and how to spread it across the day.</p>
+
+        <div class="status-row stagger-item" style="--i:1;">
+          <span class="status tier"><span class="dot"></span>Tier 1–2 evidence</span>
+          <span class="status"><span class="dot"></span>Certain</span>
+        </div>
+
+        <div class="prose">
+          <h2 class="stagger-item" style="--i:2;">Baseline requirements</h2>
+          <p class="stagger-item" style="--i:2;">EFSA has set the Population Reference Intake for protein at 0.83 g per kg of body weight per day for adults <button class="cite" data-ref="7">7</button>. The US Recommended Dietary Allowance is 0.8 g per kg of body weight per day <button class="cite" data-ref="8">8</button>. Both figures describe the amount needed to avoid deficiency in a general adult population — not the amount that optimises training adaptations.</p>
+
+          <h2 class="stagger-item" style="--i:3;">If you train</h2>
+          <p class="stagger-item" style="--i:3;">For most exercising individuals, a daily protein intake of 1.4 to 2.0 g per kg of body weight is sufficient to build and maintain muscle mass <button class="cite" data-ref="9">9</button>.</p>
+
+          <h2 class="stagger-item" style="--i:4;">If you train while in a calorie deficit</h2>
+          <p class="stagger-item" style="--i:4;">During a calorie deficit, resistance-trained individuals may need higher protein intakes of about 2.3 to 3.1 g per kg per day to maximise retention of lean body mass <button class="cite" data-ref="9">9</button>. A systematic review and meta-analysis found that protein intakes above the RDA are associated with greater retention of lean body mass than consuming the RDA, with larger effects under energy restriction combined with resistance training <button class="cite" data-ref="10">10</button>.</p>
+
+          <h2 class="stagger-item" style="--i:5;">Distribution across the day</h2>
+          <p class="stagger-item" style="--i:5;">For maximising muscle protein synthesis, the ISSN position stand recommends ingesting roughly 20 to 40 g of high-quality protein — about 0.25 to 0.40 g per kg of body mass — every three to four hours <button class="cite" data-ref="11">11</button>.</p>
+        </div>
+      </div>
+
+      <div class="overlay" id="citeOverlay" hidden>
+        <div class="sheet">
+          <div class="ref-num" id="citeNum">7</div>
+          <div class="ref-title" id="citeTitle"></div>
+          <div class="ref-meta" id="citeMeta"></div>
+          <div class="status-row">
+            <span class="status tier" id="citeTier"><span class="dot"></span></span>
+            <span class="status" id="citeConf"><span class="dot"></span></span>
+          </div>
+          <button class="btn" id="backToReading">Back to reading</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- ========================= 3. FOOD ========================= -->
+    <section class="screen" id="screen-food" aria-label="Food calculator" style="position:relative;">
+      <div class="page-header">
+        <h1>Food calculator</h1>
+        <button class="icon-btn" data-goto="home" aria-label="Go to Home">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M3 11l9-8 9 8"/><path d="M5 10v10h14V10"/></svg>
+        </button>
+      </div>
+      <div class="screen-scroll">
+        <div class="hero stagger-item" style="--i:0;">
+          <div class="figure" id="totalKcal"><span class="num" id="totalKcalNum">0</span><span class="unit">kcal</span></div>
+          <div class="label">Running total — this entry</div>
+        </div>
+
+        <div class="totals-row stagger-item" style="--i:1;">
+          <div class="t"><span class="v" id="totalProtein">0.0 g</span><span class="l">Protein</span></div>
+          <div class="t"><span class="v" id="totalFat">0.0 g</span><span class="l">Fat</span></div>
+          <div class="t"><span class="v" id="totalCarb">0.0 g</span><span class="l">Carb</span></div>
+          <div class="t"><span class="v" id="totalFibre">0.0 g</span><span class="l">Fibre</span></div>
+        </div>
+
+        <div class="section-label stagger-item" style="--i:2;">Enter grams per food</div>
+        <div class="table-scroll stagger-item" style="--i:3;">
+          <table class="foods" id="foodTable">
+            <thead>
+              <tr>
+                <th>Food</th><th>State</th><th>kcal/100g</th><th>Protein</th><th>Fat</th><th>Carb</th><th>Fibre</th><th>Grams</th>
+              </tr>
+            </thead>
+            <tbody>
+              <!-- rows injected by JS from FOODS array to guarantee the calculator and the table never drift apart -->
+            </tbody>
+          </table>
+        </div>
+        <p class="food-note stagger-item" style="--i:4;">Per-100 g values above are generic reference figures for the food as described in the State column — not yet matched against Toni's actual product labels (Skyr brand, whey brand). Label-sourced macros are a tracked backlog item for the real knowledge base; this calculator uses representative figures so the design can be reviewed with realistic numbers.</p>
+      </div>
+      <div class="toast" id="foodToast" role="status" aria-live="polite">Added</div>
+    </section>
+
+    <!-- ========================= 4. TRAINING ========================= -->
+    <section class="screen" id="screen-training" aria-label="Training">
+      <div class="page-header">
+        <h1>Training</h1>
+        <button class="icon-btn" data-goto="home" aria-label="Go to Home">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M3 11l9-8 9 8"/><path d="M5 10v10h14V10"/></svg>
+        </button>
+      </div>
+      <div class="screen-scroll">
+        <div class="hero stagger-item" style="--i:0;">
+          <div class="hero-glow" aria-hidden="true"></div>
+          <div class="figure"><span class="num" id="trainVolNum" aria-hidden="true" data-final="3988">3988</span><span class="unit">kg</span>
+            <span class="sr-only">3,988 kg</span>
+          </div>
+          <div class="label">Session volume load · 27 Jul — confirmed</div>
+        </div>
+
+        <div class="section-label stagger-item" style="--i:1;">Estimated 1RM — Lat Pulldown</div>
+        <div class="chart-wrap stagger-item" style="--i:2;">
+          <svg viewBox="0 0 380 90" width="100%" height="90" aria-hidden="true">
+            <line x1="0" y1="70" x2="380" y2="70" stroke="var(--hairline)" stroke-width="1"/>
+            <circle class="draw-dot" cx="40" cy="55" r="3" fill="var(--bar-neutral)"/>
+            <circle class="draw-dot" cx="120" cy="55" r="3" fill="var(--bar-neutral)" opacity="0.35"/>
+            <circle class="draw-dot" cx="200" cy="55" r="3" fill="var(--bar-neutral)" opacity="0.35"/>
+            <line x1="40" y1="55" x2="120" y2="55" stroke="var(--bar-neutral)" stroke-width="1" stroke-dasharray="2 4" opacity="0.35"/>
+            <line x1="120" y1="55" x2="200" y2="55" stroke="var(--bar-neutral)" stroke-width="1" stroke-dasharray="2 4" opacity="0.35"/>
+            <line class="draw-path chart-1rm" x1="200" y1="55" x2="340" y2="30" stroke="var(--accent)" stroke-width="2"/>
+            <circle class="draw-dot" cx="340" cy="30" r="4" fill="var(--accent2)"/>
+            <text x="340" y="20" fill="var(--text)" font-size="11" text-anchor="end" font-weight="700">30 kg</text>
+            <text x="40" y="84" fill="var(--text-muted)" font-size="9">12 Jun</text>
+            <text x="200" y="84" fill="var(--text-muted)" font-size="9">gap — bodyweight only</text>
+            <text x="340" y="84" fill="var(--text-muted)" font-size="9" text-anchor="end">27 Jul</text>
+          </svg>
+        </div>
+        <p class="chart-caption stagger-item" style="--i:3;">Only one loaded session is confirmed since the restart (27 Jul, 30 kg). Between the two seca scans he trained twice, bodyweight-only — the flat span above is real, not a rendering gap. The line will populate as further Hevy pulls are logged.</p>
+
+        <div class="section-label stagger-item" style="--i:4;">Weekly volume load</div>
+        <div class="chart-wrap stagger-item" style="--i:5;">
+          <svg viewBox="0 0 380 90" width="100%" height="90" aria-hidden="true">
+            <line x1="0" y1="78" x2="380" y2="78" stroke="var(--hairline)" stroke-width="1"/>
+            <rect x="20" y="74" width="26" height="4" fill="var(--bar-neutral)" opacity="0.25"/>
+            <rect x="90" y="74" width="26" height="4" fill="var(--bar-neutral)" opacity="0.25"/>
+            <rect x="160" y="74" width="26" height="4" fill="var(--bar-neutral)" opacity="0.25"/>
+            <rect class="grow-bar" x="230" y="20" width="26" height="58" fill="var(--accent)"/>
+            <text x="243" y="15" fill="var(--text)" font-size="11" text-anchor="middle" font-weight="700">3,988</text>
+            <text x="33" y="90" fill="var(--text-muted)" font-size="9" text-anchor="middle">wk 1</text>
+            <text x="103" y="90" fill="var(--text-muted)" font-size="9" text-anchor="middle">wk 2</text>
+            <text x="173" y="90" fill="var(--text-muted)" font-size="9" text-anchor="middle">wk 3</text>
+            <text x="243" y="90" fill="var(--text-muted)" font-size="9" text-anchor="middle">wk 4</text>
+          </svg>
+        </div>
+        <p class="chart-caption stagger-item" style="--i:6;">Weeks 1–3 show no logged external-load session (kg) — not zero effort, just nothing to sum. Week 4 is the 27 Jul session.</p>
+
+        <div class="section-label stagger-item" style="--i:7;">Sets per muscle group — 27 Jul session</div>
+        <div class="hr-list" role="list" aria-label="Working sets by muscle group">
+          <div class="hr-row stagger-item" style="--i:8; cursor:default;" role="listitem">
+            <span class="main"><span class="title">Back</span><span class="sub">Lat pulldown · seated cable row · dumbbell row</span></span>
+            <span class="chev" style="color:var(--text); font-weight:700; font-variant-numeric:tabular-nums;">9 sets</span>
+          </div>
+          <div class="hr-row stagger-item" style="--i:9; cursor:default;" role="listitem">
+            <span class="main"><span class="title">Rear delts</span><span class="sub">Face pull</span></span>
+            <span class="chev" style="color:var(--text); font-weight:700; font-variant-numeric:tabular-nums;">3 sets</span>
+          </div>
+          <div class="hr-row stagger-item" style="--i:9; cursor:default;" role="listitem">
+            <span class="main"><span class="title">Biceps</span><span class="sub">Bicep curl · hammer curl</span></span>
+            <span class="chev" style="color:var(--text); font-weight:700; font-variant-numeric:tabular-nums;">6 sets</span>
+          </div>
+        </div>
+        <p class="chart-caption">18 working sets split evenly (3 sets/exercise) across the 6 main lifts logged 27 Jul, +3 warm-up sets = 21 total — matches the session log exactly. The muscle-group split is a reasonable even-split inference, not yet confirmed against per-set Hevy data.</p>
+
+        <div class="section-label">Routine changelog — WorkOut folder "3-Day Split — Gym"</div>
+        <div>
+          <div class="changelog-row">
+            <div class="tag removed">Removed</div>
+            <div class="ex">Leg Extension</div>
+            <div class="reason">Redundant against Leg Press and Bulgarian Split Squat.</div>
+          </div>
+          <div class="changelog-row">
+            <div class="tag removed">Removed</div>
+            <div class="ex">Rear Delt Reverse Fly</div>
+            <div class="reason">Face Pull on WorkOut #1 already covers rear delts.</div>
+          </div>
+          <div class="changelog-row">
+            <div class="tag removed">Removed</div>
+            <div class="ex">Standing Calf Raise</div>
+            <div class="reason">Lowest priority cut.</div>
+          </div>
+          <div class="changelog-row">
+            <div class="tag removed">Removed</div>
+            <div class="ex">Chest Press Machine</div>
+            <div class="reason">Third consecutive flat/incline press. Chest volume trimmed 12 → 9 sets to match Back's 9.</div>
+          </div>
+          <div class="changelog-row" style="border-bottom:none;">
+            <div class="tag kept">Kept — deliberately</div>
+            <div class="ex">Seated Leg Curl</div>
+            <div class="reason">RDL trains the hamstring as a hip extensor; the curl trains it as a knee flexor. Not redundant.</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ========================= 5. TABLE OF CONTENTS ========================= -->
+    <section class="screen" id="screen-toc" aria-label="Table of contents">
+      <div class="page-header">
+        <h1>Contents</h1>
+        <button class="icon-btn" data-goto="home" aria-label="Go to Home">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M3 11l9-8 9 8"/><path d="M5 10v10h14V10"/></svg>
+        </button>
+      </div>
+      <div class="screen-scroll">
+        <div class="toc-box stagger-item" style="--i:0;">
+          <div class="toc-search">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.35-4.35"/></svg>
+            <input type="search" id="tocSearch" aria-label="Search table of contents" placeholder="Search pages…">
+          </div>
+          <div id="tocList">
+            <div class="toc-row stagger-item" style="--i:1;" data-goto="home"><span class="t">Home</span></div>
+            <div class="toc-row stagger-item" style="--i:2;" data-text="nutrition info"><span class="t">Nutrition info</span><span class="badge">section</span></div>
+            <div class="toc-row child stagger-item" style="--i:3;" data-goto="reading"><span class="t">Energy balance</span></div>
+            <div class="toc-row child stagger-item" style="--i:3;" data-goto="reading"><span class="t">Protein</span></div>
+            <div class="toc-row child stagger-item" style="--i:4;" data-text="carbohydrates fibre"><span class="t">Carbohydrates &amp; fibre</span></div>
+            <div class="toc-row child stagger-item" style="--i:4;" data-text="dietary fat"><span class="t">Dietary fat</span></div>
+            <div class="toc-row child stagger-item" style="--i:5;" data-text="micronutrients"><span class="t">Micronutrients</span></div>
+            <div class="toc-row child stagger-item" style="--i:5;" data-text="meal timing"><span class="t">Meal timing</span></div>
+            <div class="toc-row stagger-item" style="--i:6;" data-goto="food"><span class="t">Food calculator</span></div>
+            <div class="toc-row stagger-item" style="--i:7;" data-goto="training"><span class="t">Training</span></div>
+            <div class="toc-row stagger-item" style="--i:8;" data-text="about sources"><span class="t">About &amp; sources</span></div>
+          </div>
+          <p class="toc-empty" id="tocEmpty">No pages match.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ floating pill nav — the only navigation, and the highlight ============ -->
+    <nav class="tabbar" aria-label="Primary" id="tabbar">
+      <div class="nav-indicator" id="navIndicator" aria-hidden="true"></div>
+      <button class="tab" data-goto="home" aria-current="page">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M3 11l9-8 9 8"/><path d="M5 10v10h14V10"/></svg>
+        <span class="tl">Home</span>
+      </button>
+      <button class="tab" data-goto="reading">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M4 5.5C4 4.7 4.7 4 5.5 4H11v16H5.5A1.5 1.5 0 0 1 4 18.5z"/><path d="M20 5.5c0-.8-.7-1.5-1.5-1.5H13v16h5.5a1.5 1.5 0 0 0 1.5-1.5z"/></svg>
+        <span class="tl">Read</span>
+      </button>
+      <button class="tab" data-goto="food">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M6 3v7a2 2 0 0 0 2 2h0a2 2 0 0 0 2-2V3"/><path d="M8 12v9"/><path d="M17 3c-1.7 0-3 2-3 5s1.3 5 3 5"/><path d="M17 3v16"/></svg>
+        <span class="tl">Food</span>
+      </button>
+      <button class="tab" data-goto="training">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M4 12h2M18 12h2M6 8v8M18 8v8M8 12h8"/></svg>
+        <span class="tl">Train</span>
+      </button>
+      <button class="tab" data-goto="toc">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M4 6h16M4 12h16M4 18h10"/></svg>
+        <span class="tl">ToC</span>
+      </button>
+    </nav>
+
+  </main>
+
+<script>
+(function(){
+  "use strict";
+
+  function prefersReducedMotion(){
+    return window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  }
+
+  /* ---------- screen switching, driven by the bottom nav only ---------- */
+  var screens = ["home","reading","food","training","toc"];
+  var sections = {};
+  screens.forEach(function(id){ sections[id] = document.getElementById("screen-" + id); });
+
+  function retriggerStagger(sectionEl){
+    sectionEl.classList.remove("anim-in");
+    // force reflow so re-adding the class restarts the CSS animation
+    void sectionEl.offsetWidth;
+    sectionEl.classList.add("anim-in");
+  }
+
+  function showScreen(id){
+    screens.forEach(function(s){
+      var active = s === id;
+      sections[s].classList.toggle("is-active", active);
+    });
+    document.querySelectorAll(".tab[data-goto]").forEach(function(b){
+      if (b.getAttribute("data-goto") === id) b.setAttribute("aria-current","page");
+      else b.removeAttribute("aria-current");
+    });
+    moveIndicator(id);
+    var active = sections[id];
+    if (active) {
+      active.querySelector(".screen-scroll") && (active.querySelector(".screen-scroll").scrollTop = 0);
+      if (!prefersReducedMotion()) retriggerStagger(active);
+      else active.classList.add("anim-in");
+    }
+    if (id === "home") { countUpFromZero(document.getElementById("heroKcalNum"), 1900, 0, ""); }
+    if (id === "training") { countUpFromZero(document.getElementById("trainVolNum"), 3988, 0, ""); playTrainingCharts(); }
+  }
+
+  document.querySelectorAll(".tab[data-goto], .hr-row[data-goto], .icon-btn[data-goto], .toc-row[data-goto]").forEach(function(el){
+    el.addEventListener("click", function(){ showScreen(el.getAttribute("data-goto")); });
+  });
+
+  /* ---------- bottom nav sliding indicator + press ripple ---------- */
+  var tabbar = document.getElementById("tabbar");
+  var indicator = document.getElementById("navIndicator");
+  var tabs = Array.prototype.slice.call(document.querySelectorAll(".tab"));
+
+  function moveIndicator(id){
+    var target = tabs.find(function(t){ return t.getAttribute("data-goto") === id; });
+    if (!target || !indicator) return;
+    var barRect = tabbar.getBoundingClientRect();
+    var tRect = target.getBoundingClientRect();
+    var x = tRect.left - barRect.left - 5.6; // align with tabbar padding
+    indicator.style.transform = "translateX(" + Math.max(0, x) + "px)";
+  }
+
+  tabs.forEach(function(tab){
+    tab.addEventListener("pointerdown", function(ev){
+      if (prefersReducedMotion()) return;
+      var rect = tab.getBoundingClientRect();
+      var rx = (ev.clientX != null ? ev.clientX - rect.left : rect.width / 2);
+      var ry = (ev.clientY != null ? ev.clientY - rect.top : rect.height / 2);
+      var rip = document.createElement("span");
+      rip.className = "ripple";
+      rip.style.setProperty("--rx", rx + "px");
+      rip.style.setProperty("--ry", ry + "px");
+      tab.appendChild(rip);
+      setTimeout(function(){ rip.remove(); }, 560);
+    });
+  });
+
+  window.addEventListener("resize", function(){
+    var current = screens.find(function(s){ return sections[s].classList.contains("is-active"); }) || "home";
+    moveIndicator(current);
+  });
+
+  /* ---------- generic count-up helpers ---------- */
+  function formatNum(v, decimals){
+    return Number(v).toLocaleString("en-US", { minimumFractionDigits: decimals, maximumFractionDigits: decimals });
+  }
+
+  function countUpFromZero(el, to, decimals, suffix){
+    if (!el) return;
+    if (prefersReducedMotion()){
+      el.textContent = formatNum(to, decimals) + (suffix || "");
+      el._last = to;
+      return;
+    }
+    var duration = 900;
+    var start = null;
+    var done = false;
+    function finish(){
+      if (done) return;
+      done = true;
+      el.textContent = formatNum(to, decimals) + (suffix || "");
+      el._last = to;
+    }
+    function step(ts){
+      if (done) return;
+      if (!start) start = ts;
+      var p = Math.min((ts - start) / duration, 1);
+      var eased = 1 - Math.pow(1 - p, 3);
+      var val = to * eased;
+      el.textContent = formatNum(val, decimals) + (suffix || "");
+      if (p < 1) requestAnimationFrame(step);
+      else finish();
+    }
+    requestAnimationFrame(step);
+    // Safety net: if requestAnimationFrame never advances (throttled/backgrounded/
+    // non-compositing surface), force the correct final value rather than leaving
+    // the element stuck on its static HTML fallback text forever.
+    setTimeout(finish, duration + 150);
+  }
+
+  function animateTo(el, to, decimals, suffix){
+    if (!el) return;
+    var from = (el._last != null) ? el._last : 0;
+    if (prefersReducedMotion()){
+      el.textContent = formatNum(to, decimals) + (suffix || "");
+      el._last = to;
+      return;
+    }
+    var duration = 380;
+    var start = null;
+    var done = false;
+    function finish(){
+      if (done) return;
+      done = true;
+      el.textContent = formatNum(to, decimals) + (suffix || "");
+      el._last = to;
+    }
+    function step(ts){
+      if (done) return;
+      if (!start) start = ts;
+      var p = Math.min((ts - start) / duration, 1);
+      var eased = 1 - Math.pow(1 - p, 3);
+      var val = from + (to - from) * eased;
+      el.textContent = formatNum(val, decimals) + (suffix || "");
+      if (p < 1) requestAnimationFrame(step);
+      else finish();
+    }
+    requestAnimationFrame(step);
+    // Same rAF-starvation safety net as countUpFromZero above.
+    setTimeout(finish, duration + 150);
+  }
+
+  /* ---------- home macro-split bars: fill + shimmer on first entry ---------- */
+  document.querySelectorAll(".sr-fill").forEach(function(fill){
+    var pct = Number(fill.getAttribute("data-pct")) || 0;
+    // set on next frame so the CSS transition actually animates from 0
+    requestAnimationFrame(function(){
+      requestAnimationFrame(function(){ fill.style.width = pct + "%"; });
+    });
+  });
+
+  /* ---------- citation round-trip ---------- */
+  var REFS = {
+    "7":  { title:"EFSA sets population reference intakes for protein", meta:"European Food Safety Authority · 2012", tier:"Tier 2 — guideline / position stand", conf:"Certain" },
+    "8":  { title:"Recommended Dietary Allowances: 10th Edition", meta:"National Research Council (US) · 1989 · National Academies Press", tier:"Tier 2 — guideline / position stand", conf:"Certain" },
+    "9":  { title:"International Society of Sports Nutrition Position Stand: protein and exercise", meta:"Jäger R, et al. (ISSN) · 2017 · JISSN", tier:"Tier 2 — guideline / position stand", conf:"Certain" },
+    "10": { title:"Protein Intake Greater than the RDA Differentially Influences Whole-Body Lean Mass Responses — a Systematic Review and Meta-analysis", meta:"Hudson JL, Wang Y, Bergia RE III, Campbell WW · 2019 · Advances in Nutrition", tier:"Tier 1 — systematic review / meta-analysis", conf:"Likely" },
+    "11": { title:"ISSN Position Stand: nutrient timing", meta:"Kerksick CM, et al. (ISSN) · 2017 · JISSN", tier:"Tier 2 — guideline / position stand", conf:"Certain" }
+  };
+
+  var readingScroll = document.getElementById("readingScroll");
+  var overlay = document.getElementById("citeOverlay");
+  var savedScrollTop = 0;
+
+  document.querySelectorAll(".cite").forEach(function(btn){
+    btn.addEventListener("click", function(){
+      var ref = REFS[btn.getAttribute("data-ref")];
+      if (!ref) return;
+      savedScrollTop = readingScroll.scrollTop;
+      document.getElementById("citeNum").textContent = "[" + btn.getAttribute("data-ref") + "]";
+      document.getElementById("citeTitle").textContent = ref.title;
+      document.getElementById("citeMeta").textContent = ref.meta;
+      document.getElementById("citeTier").innerHTML = '<span class="dot"></span>' + ref.tier;
+      document.getElementById("citeConf").innerHTML = '<span class="dot"></span>' + ref.conf;
+      overlay.hidden = false;
+    });
+  });
+
+  document.getElementById("backToReading").addEventListener("click", function(){
+    overlay.hidden = true;
+    // restore the EXACT recorded offset, not a re-anchored scroll — an anchor
+    // reposition can silently land on the wrong spot after layout settles.
+    readingScroll.scrollTop = savedScrollTop;
+  });
+
+  /* ---------- food calculator ---------- */
+  var FOODS = [
+    { name:"Skyr natur",     state:"as prepared, ready-to-eat", kcal:63,  protein:11,  fat:0.2, carb:4,  fibre:0   },
+    { name:"Vollkornbrot",   state:"as sold, baked loaf",       kcal:215, protein:7.5, fat:1.5, carb:40, fibre:6.5 },
+    { name:"Pasta",          state:"dry, uncooked",             kcal:360, protein:13,  fat:1.5, carb:71, fibre:3   },
+    { name:"Rice",           state:"dry, uncooked",              kcal:360, protein:7,   fat:0.6, carb:80, fibre:1.3 },
+    { name:"Potatoes",       state:"raw, unpeeled",             kcal:77,  protein:2,   fat:0.1, carb:17, fibre:2.2 },
+    { name:"Olive oil",      state:"as sold, liquid",           kcal:884, protein:0,   fat:100, carb:0,  fibre:0   },
+    { name:"Whey isolate",   state:"powder, as sold (dry scoop)",kcal:380, protein:80,  fat:3,   carb:4,  fibre:0   }
+  ];
+
+  var tbody = document.querySelector("#foodTable tbody");
+  FOODS.forEach(function(f, i){
+    var tr = document.createElement("tr");
+    tr.innerHTML =
+      '<td class="name">' + f.name + '</td>' +
+      '<td class="state">' + f.state + '</td>' +
+      '<td>' + f.kcal + '</td>' +
+      '<td>' + f.protein + ' g</td>' +
+      '<td>' + f.fat + ' g</td>' +
+      '<td>' + f.carb + ' g</td>' +
+      '<td>' + f.fibre + ' g</td>' +
+      '<td><input type="number" inputmode="decimal" min="0" step="1" value="0" aria-label="Grams of ' + f.name + '" data-idx="' + i + '"></td>';
+    tbody.appendChild(tr);
+  });
+
+  var totalKcalNumEl = document.getElementById("totalKcalNum");
+  var totalKcalWrap = document.getElementById("totalKcal");
+  var totalProteinEl = document.getElementById("totalProtein");
+  var totalFatEl = document.getElementById("totalFat");
+  var totalCarbEl = document.getElementById("totalCarb");
+  var totalFibreEl = document.getElementById("totalFibre");
+  var foodToast = document.getElementById("foodToast");
+  var toastTimer = null;
+
+  function pop(el){
+    if (prefersReducedMotion() || !el) return;
+    el.classList.remove("pop");
+    void el.offsetWidth;
+    el.classList.add("pop");
+  }
+
+  function flashRow(tr){
+    if (prefersReducedMotion() || !tr) return;
+    tr.classList.remove("just-added");
+    void tr.offsetWidth;
+    tr.classList.add("just-added");
+  }
+
+  function showToast(){
+    if (!foodToast) return;
+    foodToast.classList.add("show");
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(function(){ foodToast.classList.remove("show"); }, 900);
+  }
+
+  var prevGrams = FOODS.map(function(){ return 0; });
+
+  function recompute(changedIdx){
+    var inputs = document.querySelectorAll("#foodTable input");
+    var kcal=0, protein=0, fat=0, carb=0, fibre=0;
+    inputs.forEach(function(inp){
+      var idx = Number(inp.getAttribute("data-idx"));
+      var f = FOODS[idx];
+      var g = parseFloat(inp.value) || 0;
+      var mult = g / 100;
+      kcal += f.kcal * mult;
+      protein += f.protein * mult;
+      fat += f.fat * mult;
+      carb += f.carb * mult;
+      fibre += f.fibre * mult;
+    });
+    animateTo(totalKcalNumEl, Math.round(kcal), 0, "");
+    totalProteinEl.textContent = protein.toFixed(1) + " g";
+    totalFatEl.textContent = fat.toFixed(1) + " g";
+    totalCarbEl.textContent = carb.toFixed(1) + " g";
+    totalFibreEl.textContent = fibre.toFixed(1) + " g";
+
+    if (changedIdx != null) {
+      pop(totalKcalWrap);
+      [totalProteinEl, totalFatEl, totalCarbEl, totalFibreEl].forEach(pop);
+      var tr = tbody.querySelectorAll("tr")[changedIdx];
+      var newG = parseFloat(document.querySelector('input[data-idx="' + changedIdx + '"]').value) || 0;
+      if (newG > prevGrams[changedIdx]) { flashRow(tr); showToast(); }
+      prevGrams[changedIdx] = newG;
+    }
+  }
+
+  tbody.addEventListener("input", function(ev){
+    var idx = Number(ev.target.getAttribute("data-idx"));
+    recompute(isNaN(idx) ? null : idx);
+  });
+  recompute();
+
+  /* ---------- training charts: draw-in + growing bar ---------- */
+  var drawPaths = Array.prototype.slice.call(document.querySelectorAll(".draw-path"));
+  drawPaths.forEach(function(p){
+    var len = p.getTotalLength ? p.getTotalLength() : 200;
+    p._len = len;
+    p.style.strokeDasharray = len;
+    p.style.strokeDashoffset = len;
+  });
+  var drawDots = Array.prototype.slice.call(document.querySelectorAll(".draw-dot"));
+  drawDots.forEach(function(d){ d.style.opacity = 0; d.style.transform = "scale(.3)"; });
+  var growBars = Array.prototype.slice.call(document.querySelectorAll(".grow-bar"));
+  growBars.forEach(function(b){ b.style.transform = "scaleY(0)"; });
+
+  var trainingPlayed = false;
+  function playTrainingCharts(){
+    if (prefersReducedMotion()){
+      drawPaths.forEach(function(p){ p.style.strokeDashoffset = 0; });
+      drawDots.forEach(function(d){ d.style.opacity = ""; d.style.transform = "none"; });
+      growBars.forEach(function(b){ b.style.transform = "scaleY(1)"; });
+      return;
+    }
+    // reset then trigger, so it re-plays every visit to the screen
+    drawPaths.forEach(function(p){ p.style.transition = "none"; p.style.strokeDashoffset = p._len; });
+    drawDots.forEach(function(d){ d.style.transition = "none"; d.style.opacity = 0; d.style.transform = "scale(.3)"; });
+    growBars.forEach(function(b){ b.style.transition = "none"; b.style.transform = "scaleY(0)"; });
+    void document.body.offsetWidth; // force reflow
+    drawPaths.forEach(function(p){ p.style.transition = "stroke-dashoffset 1.1s cubic-bezier(.3,.7,.2,1)"; p.style.strokeDashoffset = 0; });
+    setTimeout(function(){
+      drawDots.forEach(function(d, i){
+        d.style.transition = "opacity .35s ease, transform .35s cubic-bezier(.3,.7,.2,1)";
+        setTimeout(function(){ d.style.opacity = ""; d.style.transform = "scale(1)"; }, i * 90);
+      });
+    }, 250);
+    growBars.forEach(function(b){
+      requestAnimationFrame(function(){
+        b.style.transition = "transform 1s cubic-bezier(.3,.7,.2,1)";
+        b.style.transform = "scaleY(1)";
+      });
+    });
+    trainingPlayed = true;
+  }
+
+  /* ---------- ToC search ---------- */
+  var tocSearch = document.getElementById("tocSearch");
+  var tocRows = Array.prototype.slice.call(document.querySelectorAll(".toc-row"));
+  var tocEmpty = document.getElementById("tocEmpty");
+
+  tocSearch.addEventListener("input", function(){
+    var q = tocSearch.value.trim().toLowerCase();
+    var visible = 0;
+    tocRows.forEach(function(row){
+      var haystack = (row.textContent + " " + (row.getAttribute("data-text") || "")).toLowerCase();
+      var match = q === "" || haystack.indexOf(q) !== -1;
+      row.style.display = match ? "" : "none";
+      if (match) visible++;
+    });
+    tocEmpty.style.display = visible === 0 ? "block" : "none";
+  });
+
+  /* ---------- initial boot ---------- */
+  moveIndicator("home");
+  window.addEventListener("load", function(){ moveIndicator("home"); });
+  if (!prefersReducedMotion()) {
+    retriggerStagger(sections.home);
+    countUpFromZero(document.getElementById("heroKcalNum"), 1900, 0, "");
+  } else {
+    sections.home.classList.add("anim-in");
+  }
+
+})();
+</script>
+</body>
+</html>

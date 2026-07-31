@@ -1,0 +1,1012 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Nutrition wrapper — draft 3 (data-as-decoration)</title>
+<style>
+  :root{
+    --bg: #0F1012;
+    --bg-tint: #17181B;       /* card / panel background */
+    --bg-tint-2: #1D1F23;     /* slightly raised, for nested chart cards */
+    --text: #F5F6F7;          /* 17.6:1 on bg */
+    --text-secondary: #A6ACB5;/* 8.3:1 on bg */
+    --text-muted: #808690;    /* 5.2:1 on bg */
+    --hairline: #2A2C30;
+
+    /* ---- data palette: one hue per macro/energy, consistent everywhere ---- */
+    --c-energy: #F4762E;      /* orange  — energy / kcal        · 6.78:1 on bg */
+    --c-energy-2: #FFAD73;
+    --c-protein: #2DD9A3;     /* teal    — protein               · 10.49:1 on bg */
+    --c-protein-2: #8FEFCF;
+    --c-fat: #A78BFA;         /* violet  — fat                    · 7.00:1 on bg */
+    --c-fat-2: #D6C9FF;
+    --c-carb: #4FA8FF;        /* blue    — carbohydrate           · 7.60:1 on bg */
+    --c-carb-2: #A9D6FF;
+
+    --accent: var(--c-energy);
+    --accent-ink: #0F1012;
+    --radius-pill: 999px;
+    --radius-card: 18px;
+    --sans: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+
+    --ease-spring: cubic-bezier(.34, 1.56, .64, 1);
+  }
+
+  *{ box-sizing:border-box; }
+  html,body{ margin:0; padding:0; height:100%; background:var(--bg); color:var(--text); overflow:hidden; }
+  body{
+    font-family: var(--sans);
+    -webkit-font-smoothing: antialiased;
+    overflow-x:hidden;
+  }
+  button, input{ font-family:inherit; }
+  ::selection{ background:var(--accent); color:var(--accent-ink); }
+  a{ color:var(--accent); }
+
+  button:focus-visible, input:focus-visible, [tabindex]:focus-visible{
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+  }
+
+  svg text{ font-family: var(--sans); }
+
+  /* ============ app frame ============ */
+  .phone{
+    max-width:412px;
+    margin:0 auto;
+    height:100vh;
+    background:var(--bg);
+    position:relative;
+    display:flex; flex-direction:column;
+    overflow:hidden;
+  }
+
+  .screen{ display:none; flex-direction:column; flex:1; min-height:0; }
+  .screen.is-active{ display:flex; }
+
+  .screen-scroll{
+    flex:1; min-height:0; overflow-y:auto; overflow-x:hidden;
+    padding: .2rem 1.15rem calc(96px + env(safe-area-inset-bottom));
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior:contain;
+  }
+
+  .page-header{
+    display:flex; align-items:center; justify-content:space-between;
+    padding: .9rem 1.15rem .2rem;
+  }
+  .page-header h1{ font-size:.98rem; font-weight:700; margin:0; letter-spacing:.01em; }
+  .header-actions{ display:flex; align-items:center; gap:.3rem; }
+  .icon-btn{
+    background:none; border:none; color:var(--text-muted);
+    width:2.1rem; height:2.1rem; display:flex; align-items:center; justify-content:center;
+    border-radius:var(--radius-pill); cursor:pointer;
+  }
+  .icon-btn:hover{ color:var(--text); }
+  .icon-btn svg{ width:1.15rem; height:1.15rem; }
+
+  .section-label{
+    font-size:.72rem; text-transform:uppercase; letter-spacing:.08em;
+    color:var(--text-muted); font-weight:700; margin: 1.4rem 0 .5rem;
+  }
+  .dek{ color:var(--text-secondary); font-size:.9rem; line-height:1.5; margin:.2rem 0 .9rem; }
+
+  /* ============ chart card — the one legitimate container, used everywhere now ============ */
+  .card{
+    background:var(--bg-tint);
+    border:1px solid var(--hairline);
+    border-radius:var(--radius-card);
+    padding:1rem 1rem 1.1rem;
+    margin: .5rem 0 1rem;
+  }
+  .card-title{ font-size:.8rem; font-weight:700; color:var(--text); margin-bottom:.2rem; }
+  .card-note{ font-size:.76rem; color:var(--text-muted); line-height:1.5; margin-top:.6rem; }
+
+  /* ============ actions ============ */
+  .btn{
+    display:inline-flex; align-items:center; justify-content:center; gap:.4rem;
+    background:var(--accent); color:var(--accent-ink);
+    border:none; border-radius:var(--radius-pill);
+    font-weight:700; font-size:.86rem; padding:.7rem 1.3rem;
+    cursor:pointer;
+  }
+
+  /* citation marker button */
+  .cite{
+    display:inline-flex; align-items:center; justify-content:center;
+    min-width:1.35rem; height:1.35rem; padding:0 .35rem;
+    border-radius:var(--radius-pill);
+    background:transparent; border:1.5px solid var(--accent); color:var(--accent);
+    font-size:.68rem; font-weight:700; font-variant-numeric: tabular-nums;
+    cursor:pointer; margin:0 .1rem; vertical-align:2px;
+  }
+  .cite:hover, .cite:focus-visible{ background:var(--accent); color:var(--accent-ink); }
+
+  /* ============ Home — ring hero ============ */
+  .ring-wrap{ position:relative; width:min(72vw, 258px); margin:.4rem auto .2rem; }
+  .ring-wrap svg{ display:block; width:100%; height:auto; }
+  .ring-center{
+    position:absolute; inset:0; display:flex; flex-direction:column;
+    align-items:center; justify-content:center; text-align:center; pointer-events:none;
+  }
+  .ring-figure{
+    font-size: clamp(2.3rem, 11vw, 2.9rem); font-weight:800; line-height:1;
+    letter-spacing:-0.02em; color:var(--text); font-variant-numeric: tabular-nums;
+  }
+  .ring-figure .unit{ font-size:.36em; font-weight:700; color:var(--text-secondary); margin-left:.2rem; }
+  .ring-sub{ margin-top:.3rem; font-size:.68rem; text-transform:uppercase; letter-spacing:.07em; color:var(--text-muted); font-weight:600; }
+
+  .macro-legend{ display:flex; justify-content:space-between; gap:.5rem; margin-top:.9rem; }
+  .macro-chip{ flex:1; display:flex; flex-direction:column; align-items:center; gap:.3rem; padding:.6rem .3rem; background:var(--bg-tint-2); border-radius:14px; }
+  .macro-chip .dot{ width:9px; height:9px; border-radius:50%; }
+  .macro-chip .val{ font-size:1.05rem; font-weight:800; font-variant-numeric: tabular-nums; color:var(--text); }
+  .macro-chip .lbl{ font-size:.66rem; color:var(--text-muted); text-transform:uppercase; letter-spacing:.05em; }
+  .macro-chip .kcal{ font-size:.68rem; color:var(--text-secondary); }
+
+  .hr-list{ margin-top:.2rem; }
+  .hr-row{
+    display:flex; align-items:center; justify-content:space-between; gap:.75rem;
+    padding: .8rem 0;
+    border-bottom:1px solid var(--hairline);
+    background:none; border-left:none; border-right:none; border-top:none;
+    width:100%; text-align:left; color:var(--text); cursor:pointer;
+  }
+  .hr-row .main{ display:flex; flex-direction:column; gap:.15rem; min-width:0; }
+  .hr-row .title{ font-size:.94rem; font-weight:600; color:var(--text); }
+  .hr-row .sub{ font-size:.78rem; font-style:italic; color:var(--text-muted); }
+  .hr-row .chev{ color:var(--text-muted); flex:0 0 auto; }
+  .hr-row .chev svg{ width:1rem; height:1rem; }
+
+  /* ============ reading page ============ */
+  .tier-mix{ display:flex; align-items:center; gap:.7rem; margin: .4rem 0 1rem; }
+  .tier-mix-bar{ flex:1; height:10px; border-radius:6px; overflow:hidden; display:flex; background:var(--bg-tint-2); }
+  .tier-mix-seg{ height:100%; background:var(--accent); }
+  .tier-mix-txt{ font-size:.72rem; color:var(--text-muted); line-height:1.4; }
+
+  .prose h2{ font-size:.86rem; font-weight:700; color:var(--text); margin: 1.4rem 0 .5rem; }
+  .prose p{ font-size:.94rem; line-height:1.65; color:var(--text-secondary); margin:0 0 .2rem; }
+
+  .overlay{
+    position:absolute; inset:0; z-index:40;
+    background: rgba(15,16,18,.94);
+    display:flex; flex-direction:column; justify-content:flex-end;
+  }
+  .overlay[hidden]{ display:none; }
+  .sheet{
+    background:var(--bg-tint);
+    padding:1.3rem 1.15rem calc(1.6rem + env(safe-area-inset-bottom));
+    border-top:1px solid var(--hairline);
+    border-radius: 20px 20px 0 0;
+  }
+  .sheet .ref-num{ color:var(--accent); font-weight:800; font-size:1.4rem; }
+  .sheet .ref-title{ font-size:.98rem; font-weight:700; margin:.4rem 0 .2rem; }
+  .sheet .ref-meta{ font-size:.82rem; color:var(--text-muted); margin-bottom:.8rem; }
+  .strength{ display:flex; align-items:center; gap:.6rem; margin-bottom:1rem; }
+  .strength-blocks{ display:flex; gap:3px; }
+  .strength-blocks span{ width:12px; height:18px; border-radius:3px; background:var(--bg-tint-2); }
+  .strength-blocks span.on{ background:var(--accent); }
+  .strength-txt{ font-size:.78rem; color:var(--text-secondary); line-height:1.4; }
+  .sheet .btn{ width:100%; }
+
+  /* ============ food page ============ */
+  .donut-row{ display:flex; align-items:center; gap:1.1rem; }
+  .donut-wrap{ position:relative; width:120px; height:120px; flex:0 0 auto; }
+  .donut-wrap svg{ width:100%; height:100%; display:block; }
+  .donut-center{ position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center; pointer-events:none; }
+  .donut-center .v{ font-size:1.3rem; font-weight:800; color:var(--text); font-variant-numeric: tabular-nums; }
+  .donut-center .l{ font-size:.6rem; color:var(--text-muted); text-transform:uppercase; letter-spacing:.05em; }
+  .donut-legend{ flex:1; display:flex; flex-direction:column; gap:.55rem; }
+  .donut-legend .row{ display:flex; align-items:center; justify-content:space-between; gap:.5rem; font-size:.82rem; }
+  .donut-legend .row .lab{ display:flex; align-items:center; gap:.45rem; color:var(--text-secondary); }
+  .donut-legend .dot{ width:9px; height:9px; border-radius:50%; flex:0 0 auto; }
+  .donut-legend .row b{ color:var(--text); font-variant-numeric: tabular-nums; }
+
+  .table-scroll{ overflow-x:auto; margin-top:.4rem; -webkit-overflow-scrolling:touch; }
+  table.foods{ border-collapse:collapse; width:100%; min-width:660px; font-size:.82rem; }
+  table.foods th{
+    text-align:left; font-weight:600; color:var(--text-muted);
+    font-size:.68rem; text-transform:uppercase; letter-spacing:.05em;
+    padding:.5rem .6rem .5rem 0; border-bottom:1px solid var(--hairline);
+    white-space:nowrap;
+  }
+  table.foods td{
+    padding:.65rem .6rem .65rem 0; border-bottom:1px solid var(--hairline);
+    color:var(--text-secondary); white-space:nowrap; vertical-align:middle;
+  }
+  table.foods td.name{ color:var(--text); font-weight:600; }
+  table.foods td.state{ font-style:italic; color:var(--text-muted); font-size:.76rem; }
+  table.foods td.protein-cell{ min-width:5.4rem; }
+  .spark{ display:block; height:4px; border-radius:3px; background:var(--c-protein); margin-top:.3rem; opacity:.85; }
+  table.foods input{
+    width:4.2rem; background:var(--bg-tint-2); border:1px solid var(--hairline);
+    color:var(--text); border-radius:var(--radius-pill);
+    padding:.4rem .7rem; font-size:.84rem; text-align:right;
+    font-variant-numeric: tabular-nums;
+  }
+  table.foods input:focus-visible{ outline:2px solid var(--accent); outline-offset:1px; }
+  .food-note{ font-size:.78rem; color:var(--text-muted); margin-top:.8rem; line-height:1.5; }
+
+  /* ============ training page ============ */
+  .chart-caption{ font-size:.76rem; color:var(--text-muted); margin-top:.5rem; line-height:1.5; }
+  .legend{ display:flex; gap:1rem; margin-top:.5rem; flex-wrap:wrap; }
+  .legend .item{ display:flex; align-items:center; gap:.4rem; font-size:.76rem; color:var(--text-muted); }
+  .legend .dot{ width:8px; height:8px; border-radius:50%; }
+
+  .radial-row{ display:flex; align-items:center; gap:1.1rem; }
+  .radial-legend{ flex:1; display:flex; flex-direction:column; gap:.6rem; }
+  .radial-legend .row{ display:flex; align-items:center; justify-content:space-between; font-size:.82rem; }
+  .radial-legend .lab{ display:flex; align-items:center; gap:.5rem; color:var(--text-secondary); min-width:0; }
+  .radial-legend .lab .sub{ display:block; font-size:.72rem; font-style:italic; color:var(--text-muted); }
+  .radial-legend .dot{ width:9px; height:9px; border-radius:50%; flex:0 0 auto; margin-top:.15rem; }
+  .radial-legend b{ color:var(--text); font-variant-numeric:tabular-nums; flex:0 0 auto; }
+
+  .changelog-row{ padding:.75rem 0; border-bottom:1px solid var(--hairline); }
+  .changelog-row:last-child{ border-bottom:none; }
+  .changelog-row .tag{ font-size:.68rem; text-transform:uppercase; letter-spacing:.06em; font-weight:700; }
+  .changelog-row .tag.removed{ color:var(--text-muted); }
+  .changelog-row .tag.kept{ color:var(--c-protein); }
+  .changelog-row .ex{ font-size:.9rem; font-weight:600; color:var(--text); margin:.2rem 0 .15rem; }
+  .changelog-row .reason{ font-size:.82rem; color:var(--text-secondary); line-height:1.5; }
+
+  /* ============ ToC ============ */
+  .toc-box{ background:var(--bg-tint); border:1px solid var(--hairline); border-radius:var(--radius-card); padding:1rem 1.05rem 1.2rem; margin-top:.6rem; }
+  .toc-search{
+    display:flex; align-items:center; gap:.5rem;
+    background:var(--bg); border:1px solid var(--hairline);
+    border-radius:var(--radius-pill); padding:.6rem 1rem; margin-bottom:.4rem;
+  }
+  .toc-search svg{ width:1rem; height:1rem; color:var(--text-muted); flex:0 0 auto; }
+  .toc-search input{ flex:1; background:none; border:none; color:var(--text); font-size:.9rem; }
+  .toc-search input::placeholder{ color:var(--text-muted); }
+  .toc-row{ display:flex; align-items:center; justify-content:space-between; padding:.75rem .1rem; border-bottom:1px solid var(--hairline); }
+  .toc-row:last-child{ border-bottom:none; }
+  .toc-row.child{ padding-left:1rem; }
+  .toc-row .t{ font-size:.9rem; color:var(--text); }
+  .toc-row.child .t{ color:var(--text-secondary); font-size:.86rem; }
+  .toc-row .badge{ font-size:.68rem; color:var(--text-muted); }
+  .toc-empty{ font-size:.84rem; color:var(--text-muted); padding:1rem .1rem; display:none; }
+
+  /* ============ floating bottom nav — the only navigation ============ */
+  .tabbar{
+    position:fixed; left:0; right:0; bottom:14px;
+    margin:0 auto; width:calc(100% - 32px); max-width:380px;
+    background: rgba(23,24,27,.92);
+    -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px);
+    border-radius:var(--radius-pill);
+    display:flex; align-items:stretch; justify-content:space-between;
+    padding:.35rem; z-index:30;
+    box-shadow: 0 0 0 1px var(--hairline), 0 10px 30px rgba(0,0,0,.45);
+  }
+  .tab-glow{
+    position:absolute; top:.35rem; bottom:.35rem; left:.35rem;
+    width: calc((100% - .7rem) / 5);
+    border-radius:var(--radius-pill);
+    background: radial-gradient(circle at 50% 40%, rgba(244,118,46,.28), rgba(244,118,46,0) 70%);
+    transition: transform .5s var(--ease-spring);
+    pointer-events:none;
+  }
+  .tab{
+    position:relative; flex:1; display:flex; flex-direction:column; align-items:center; gap:.2rem;
+    background:none; border:none; color:var(--text-muted);
+    padding:.5rem .2rem .45rem; border-radius:var(--radius-pill); cursor:pointer;
+    transition: color .3s var(--ease-spring), transform .4s var(--ease-spring);
+  }
+  .tab svg{ width:1.2rem; height:1.2rem; transition: transform .4s var(--ease-spring); }
+  .tab .tl{ font-size:.62rem; font-weight:600; letter-spacing:.02em; }
+  .tab[aria-current="page"]{ color:var(--accent); transform:translateY(-2px); }
+  .tab[aria-current="page"] svg{ transform:scale(1.14); }
+
+  @media (prefers-reduced-motion: reduce){
+    *{ scroll-behavior:auto !important; transition:none !important; animation:none !important; }
+  }
+
+  @media (prefers-color-scheme: light){
+    :root:not([data-force-dark]){
+      /* dark stays the intended default — see report */
+      --bg:#0F1012; --bg-tint:#17181B; --bg-tint-2:#1D1F23;
+      --text:#F5F6F7; --text-secondary:#A6ACB5; --text-muted:#808690;
+    }
+  }
+</style>
+</head>
+<body>
+
+  <!-- shared gradient/def library, referenced by url(#id) from every chart in the document -->
+  <svg width="0" height="0" style="position:absolute" aria-hidden="true">
+    <defs>
+      <linearGradient id="gradEnergy" x1="0" y1="0" x2="1" y2="1">
+        <stop offset="0%" stop-color="var(--c-energy-2)"/>
+        <stop offset="100%" stop-color="var(--c-energy)"/>
+      </linearGradient>
+      <linearGradient id="gradProtein" x1="0" y1="0" x2="1" y2="1">
+        <stop offset="0%" stop-color="var(--c-protein-2)"/>
+        <stop offset="100%" stop-color="var(--c-protein)"/>
+      </linearGradient>
+      <linearGradient id="gradFat" x1="0" y1="0" x2="1" y2="1">
+        <stop offset="0%" stop-color="var(--c-fat-2)"/>
+        <stop offset="100%" stop-color="var(--c-fat)"/>
+      </linearGradient>
+      <linearGradient id="gradCarb" x1="0" y1="0" x2="1" y2="1">
+        <stop offset="0%" stop-color="var(--c-carb-2)"/>
+        <stop offset="100%" stop-color="var(--c-carb)"/>
+      </linearGradient>
+      <linearGradient id="gradEnergyArea" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0%" stop-color="var(--c-energy)" stop-opacity=".55"/>
+        <stop offset="100%" stop-color="var(--c-energy)" stop-opacity="0"/>
+      </linearGradient>
+      <linearGradient id="gradVolBar" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0%" stop-color="var(--c-energy-2)"/>
+        <stop offset="100%" stop-color="var(--c-energy)"/>
+      </linearGradient>
+    </defs>
+  </svg>
+
+  <main class="phone">
+
+    <!-- ========================= 1. HOME ========================= -->
+    <section class="screen is-active" id="screen-home" aria-label="Home">
+      <div class="page-header">
+        <h1>Today</h1>
+        <button class="icon-btn" aria-label="Settings" title="Settings">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+        </button>
+      </div>
+
+      <div class="screen-scroll">
+        <div class="ring-wrap" id="homeRingWrap">
+          <svg viewBox="0 0 240 240" aria-hidden="true">
+            <circle cx="120" cy="120" r="100" fill="none" stroke="var(--bg-tint-2)" stroke-width="20"/>
+            <g id="homeRingArcs"></g>
+          </svg>
+          <div class="ring-center">
+            <div class="ring-figure" id="homeKcalFigure">0<span class="unit">kcal</span></div>
+            <div class="ring-sub">Calorie target · training day</div>
+          </div>
+        </div>
+
+        <div class="macro-legend" role="group" aria-label="Today's macro targets, share of energy target">
+          <div class="macro-chip">
+            <span class="dot" style="background:var(--c-protein)"></span>
+            <span class="val" data-count-to="180">0</span>
+            <span class="lbl">Protein g</span>
+            <span class="kcal">720 kcal</span>
+          </div>
+          <div class="macro-chip">
+            <span class="dot" style="background:var(--c-fat)"></span>
+            <span class="val" data-count-to="50">0</span>
+            <span class="lbl">Fat g</span>
+            <span class="kcal">450 kcal</span>
+          </div>
+          <div class="macro-chip">
+            <span class="dot" style="background:var(--c-carb)"></span>
+            <span class="val" data-count-to="180">0</span>
+            <span class="lbl">Carb g</span>
+            <span class="kcal">720 kcal</span>
+          </div>
+        </div>
+        <p class="card-note" style="margin:.6rem 0 0;">Ring shows the target's energy composition by macro — protein 720 + fat 450 + carb 720 = 1,890 of the 1,900 kcal target (remainder is rounding), not intake logged so far.</p>
+
+        <div class="section-label">Pinned</div>
+        <nav class="hr-list" aria-label="Pinned shortcuts">
+          <button class="hr-row" data-goto="reading">
+            <span class="main"><span class="title">Protein</span><span class="sub">Nutrition info</span></span>
+            <span class="chev"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg></span>
+          </button>
+          <button class="hr-row" data-goto="food">
+            <span class="main"><span class="title">Food calculator</span></span>
+            <span class="chev"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg></span>
+          </button>
+          <button class="hr-row" data-goto="training">
+            <span class="main"><span class="title">Training</span><span class="sub">Est. 1RM · volume · sets</span></span>
+            <span class="chev"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg></span>
+          </button>
+        </nav>
+      </div>
+    </section>
+
+    <!-- ========================= 2. READING ========================= -->
+    <section class="screen" id="screen-reading" aria-label="Reading — Protein" style="position:relative;">
+      <div class="page-header">
+        <h1>Protein</h1>
+        <button class="icon-btn" data-goto="home" aria-label="Go to Home">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M3 11l9-8 9 8"/><path d="M5 10v10h14V10"/></svg>
+        </button>
+      </div>
+      <div class="screen-scroll" id="readingScroll">
+        <p class="dek">How much protein the evidence supports, why the number goes up in a deficit, and how to spread it across the day.</p>
+
+        <div class="tier-mix" aria-label="Evidence mix for this page: 1 systematic review, 4 guideline or position-stand references">
+          <div class="tier-mix-bar" aria-hidden="true">
+            <div class="tier-mix-seg" style="width:20%; opacity:1;"></div>
+            <div class="tier-mix-seg" style="width:80%; opacity:.6;"></div>
+          </div>
+          <div class="tier-mix-txt">1 systematic review (Tier 1) · 4 guideline / position-stand refs (Tier 2)</div>
+        </div>
+
+        <div class="prose">
+          <h2>Baseline requirements</h2>
+          <p>EFSA has set the Population Reference Intake for protein at 0.83 g per kg of body weight per day for adults <button class="cite" data-ref="7">7</button>. The US Recommended Dietary Allowance is 0.8 g per kg of body weight per day <button class="cite" data-ref="8">8</button>. Both figures describe the amount needed to avoid deficiency in a general adult population — not the amount that optimises training adaptations.</p>
+
+          <h2>If you train</h2>
+          <p>For most exercising individuals, a daily protein intake of 1.4 to 2.0 g per kg of body weight is sufficient to build and maintain muscle mass <button class="cite" data-ref="9">9</button>.</p>
+
+          <h2>If you train while in a calorie deficit</h2>
+          <p>During a calorie deficit, resistance-trained individuals may need higher protein intakes of about 2.3 to 3.1 g per kg per day to maximise retention of lean body mass <button class="cite" data-ref="9">9</button>. A systematic review and meta-analysis found that protein intakes above the RDA are associated with greater retention of lean body mass than consuming the RDA, with larger effects under energy restriction combined with resistance training <button class="cite" data-ref="10">10</button>.</p>
+
+          <h2>Distribution across the day</h2>
+          <p>For maximising muscle protein synthesis, the ISSN position stand recommends ingesting roughly 20 to 40 g of high-quality protein — about 0.25 to 0.40 g per kg of body mass — every three to four hours <button class="cite" data-ref="11">11</button>.</p>
+        </div>
+      </div>
+
+      <div class="overlay" id="citeOverlay" hidden>
+        <div class="sheet">
+          <div class="ref-num" id="citeNum">7</div>
+          <div class="ref-title" id="citeTitle"></div>
+          <div class="ref-meta" id="citeMeta"></div>
+          <div class="strength">
+            <div class="strength-blocks" id="citeBlocks" aria-hidden="true"></div>
+            <div class="strength-txt" id="citeTierTxt"></div>
+          </div>
+          <button class="btn" id="backToReading">Back to reading</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- ========================= 3. FOOD ========================= -->
+    <section class="screen" id="screen-food" aria-label="Food calculator">
+      <div class="page-header">
+        <h1>Food calculator</h1>
+        <button class="icon-btn" data-goto="home" aria-label="Go to Home">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M3 11l9-8 9 8"/><path d="M5 10v10h14V10"/></svg>
+        </button>
+      </div>
+      <div class="screen-scroll">
+        <div class="card">
+          <div class="card-title" id="totalKcal">0 kcal running total</div>
+          <div class="donut-row">
+            <div class="donut-wrap">
+              <svg viewBox="0 0 120 120" aria-hidden="true">
+                <circle cx="60" cy="60" r="50" fill="none" stroke="var(--bg-tint-2)" stroke-width="12"/>
+                <g id="foodRingArcs"></g>
+              </svg>
+              <div class="donut-center">
+                <span class="v" id="donutCenterVal">0</span>
+                <span class="l">g total</span>
+              </div>
+            </div>
+            <div class="donut-legend">
+              <div class="row"><span class="lab"><span class="dot" style="background:var(--c-protein)"></span>Protein</span><b id="totalProtein">0.0 g</b></div>
+              <div class="row"><span class="lab"><span class="dot" style="background:var(--c-fat)"></span>Fat</span><b id="totalFat">0.0 g</b></div>
+              <div class="row"><span class="lab"><span class="dot" style="background:var(--c-carb)"></span>Carb</span><b id="totalCarb">0.0 g</b></div>
+              <div class="row"><span class="lab" style="color:var(--text-muted)">Fibre</span><b id="totalFibre" style="color:var(--text-muted)">0.0 g</b></div>
+            </div>
+          </div>
+          <p class="card-note">Ring redraws live from grams entered below, split by Atwater energy contribution (protein/carb 4 kcal/g, fat 9 kcal/g) — a separate figure from the "kcal running total" above, which sums each food's own label kcal/100 g.</p>
+        </div>
+
+        <div class="section-label">Enter grams per food</div>
+        <div class="table-scroll">
+          <table class="foods" id="foodTable">
+            <thead>
+              <tr>
+                <th>Food</th><th>State</th><th>kcal/100g</th><th>Protein</th><th>Fat</th><th>Carb</th><th>Fibre</th><th>Grams</th>
+              </tr>
+            </thead>
+            <tbody>
+              <!-- rows injected by JS from FOODS array to guarantee the calculator and the table never drift apart -->
+            </tbody>
+          </table>
+        </div>
+        <p class="food-note">Per-100 g values above are generic reference figures for the food as described in the State column — not yet matched against Toni's actual product labels (Skyr brand, whey brand). Label-sourced macros are a tracked backlog item for the real knowledge base; this calculator uses representative figures so the design can be reviewed with realistic numbers. Protein spark-bars are scaled to whey isolate (80 g/100 g) as the row maximum.</p>
+      </div>
+    </section>
+
+    <!-- ========================= 4. TRAINING ========================= -->
+    <section class="screen" id="screen-training" aria-label="Training">
+      <div class="page-header">
+        <h1>Training</h1>
+        <button class="icon-btn" data-goto="home" aria-label="Go to Home">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M3 11l9-8 9 8"/><path d="M5 10v10h14V10"/></svg>
+        </button>
+      </div>
+      <div class="screen-scroll">
+        <div class="card">
+          <div class="card-title">3,988 kg session volume load</div>
+          <div style="font-size:.76rem; color:var(--text-muted); margin-bottom:.5rem;">27 Jul — confirmed</div>
+
+          <div class="section-label" style="margin-top:.2rem;">Estimated 1RM — Lat Pulldown</div>
+          <svg viewBox="0 0 380 90" width="100%" height="90" role="img" aria-label="Estimated one-rep max trend for lat pulldown, flat and unloaded from 12 June through a bodyweight-only gap, rising to 30 kg confirmed 27 July">
+            <line x1="0" y1="70" x2="380" y2="70" stroke="var(--hairline)" stroke-width="1"/>
+            <path id="oneRmArea" d="" fill="url(#gradEnergyArea)"></path>
+            <path id="oneRmGapLine" d="M40,55 L120,55 L200,55" fill="none" stroke="var(--text-muted)" stroke-width="1.5" stroke-dasharray="2 5" opacity="0.55"/>
+            <circle cx="40" cy="55" r="3" fill="var(--text-muted)" opacity="0.55"/>
+            <circle cx="120" cy="55" r="3" fill="var(--text-muted)" opacity="0.55"/>
+            <circle cx="200" cy="55" r="3" fill="var(--text-muted)" opacity="0.55"/>
+            <path id="oneRmLine" d="" fill="none" stroke="var(--c-energy)" stroke-width="2.4"/>
+            <circle cx="340" cy="30" r="4.5" fill="var(--c-energy)"/>
+            <text x="340" y="19" fill="var(--text)" font-size="11" text-anchor="end" font-weight="700">30 kg</text>
+            <text x="40" y="84" fill="var(--text-muted)" font-size="9">12 Jun</text>
+            <text x="200" y="84" fill="var(--text-muted)" font-size="9">gap — bodyweight only</text>
+            <text x="340" y="84" fill="var(--text-muted)" font-size="9" text-anchor="end">27 Jul</text>
+          </svg>
+          <p class="chart-caption">Only one loaded session is confirmed since the restart (27 Jul, 30 kg) — the filled area is drawn only where real load data exists. Between the two seca scans he trained twice, bodyweight-only; the muted dotted line marks that real gap, not a rendering artefact.</p>
+        </div>
+
+        <div class="card">
+          <div class="card-title">Weekly volume load</div>
+          <svg viewBox="0 0 380 92" width="100%" height="92" role="img" aria-label="Weekly volume load: weeks 1 to 3 have no logged external-load session, week 4 totals 3,988 kilograms">
+            <line x1="0" y1="78" x2="380" y2="78" stroke="var(--hairline)" stroke-width="1"/>
+            <rect id="vbar1" x="20" y="78" width="26" height="0" rx="4" fill="var(--bg-tint-2)"/>
+            <rect id="vbar2" x="90" y="78" width="26" height="0" rx="4" fill="var(--bg-tint-2)"/>
+            <rect id="vbar3" x="160" y="78" width="26" height="0" rx="4" fill="var(--bg-tint-2)"/>
+            <rect id="vbar4" x="230" y="78" width="26" height="0" rx="4" fill="url(#gradVolBar)"/>
+            <text id="vbar4Label" x="243" y="15" fill="var(--text)" font-size="11" text-anchor="middle" font-weight="700" opacity="0">3,988</text>
+            <text x="33" y="90" fill="var(--text-muted)" font-size="9" text-anchor="middle">wk 1</text>
+            <text x="103" y="90" fill="var(--text-muted)" font-size="9" text-anchor="middle">wk 2</text>
+            <text x="173" y="90" fill="var(--text-muted)" font-size="9" text-anchor="middle">wk 3</text>
+            <text x="243" y="90" fill="var(--text-muted)" font-size="9" text-anchor="middle">wk 4</text>
+          </svg>
+          <p class="chart-caption">Weeks 1–3 show no logged external-load session (kg) — not zero effort, just nothing to sum. Week 4 is the 27 Jul session.</p>
+        </div>
+
+        <div class="card">
+          <div class="card-title">Sets per muscle group — 27 Jul session</div>
+          <div class="radial-row">
+            <div class="donut-wrap">
+              <svg viewBox="0 0 120 120" aria-hidden="true">
+                <circle cx="60" cy="60" r="50" fill="none" stroke="var(--bg-tint-2)" stroke-width="14"/>
+                <g id="muscleRingArcs"></g>
+              </svg>
+              <div class="donut-center">
+                <span class="v">18</span>
+                <span class="l">sets</span>
+              </div>
+            </div>
+            <div class="radial-legend">
+              <div class="row"><span class="lab"><span class="dot" style="background:var(--c-protein)"></span><span>Back<span class="sub">Lat pulldown · row · dumbbell row</span></span></span><b>9</b></div>
+              <div class="row"><span class="lab"><span class="dot" style="background:var(--c-fat)"></span><span>Rear delts<span class="sub">Face pull</span></span></span><b>3</b></div>
+              <div class="row"><span class="lab"><span class="dot" style="background:var(--c-carb)"></span><span>Biceps<span class="sub">Bicep curl · hammer curl</span></span></span><b>6</b></div>
+            </div>
+          </div>
+          <p class="card-note">18 working sets split evenly (3 sets/exercise) across the 6 main lifts logged 27 Jul, +3 warm-up sets = 21 total — matches the session log exactly. The muscle-group split is a reasonable even-split inference, not yet confirmed against per-set Hevy data. Colours here are categorical (by muscle group), unrelated to the macro colour key elsewhere in the app.</p>
+        </div>
+
+        <div class="section-label">Routine changelog — WorkOut folder "3-Day Split — Gym"</div>
+        <div>
+          <div class="changelog-row">
+            <div class="tag removed">Removed</div>
+            <div class="ex">Leg Extension</div>
+            <div class="reason">Redundant against Leg Press and Bulgarian Split Squat.</div>
+          </div>
+          <div class="changelog-row">
+            <div class="tag removed">Removed</div>
+            <div class="ex">Rear Delt Reverse Fly</div>
+            <div class="reason">Face Pull on WorkOut #1 already covers rear delts.</div>
+          </div>
+          <div class="changelog-row">
+            <div class="tag removed">Removed</div>
+            <div class="ex">Standing Calf Raise</div>
+            <div class="reason">Lowest priority cut.</div>
+          </div>
+          <div class="changelog-row">
+            <div class="tag removed">Removed</div>
+            <div class="ex">Chest Press Machine</div>
+            <div class="reason">Third consecutive flat/incline press. Chest volume trimmed 12 → 9 sets to match Back's 9.</div>
+          </div>
+          <div class="changelog-row">
+            <div class="tag kept">Kept — deliberately</div>
+            <div class="ex">Seated Leg Curl</div>
+            <div class="reason">RDL trains the hamstring as a hip extensor; the curl trains it as a knee flexor. Not redundant.</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ========================= 5. TABLE OF CONTENTS ========================= -->
+    <section class="screen" id="screen-toc" aria-label="Table of contents">
+      <div class="page-header">
+        <h1>Contents</h1>
+        <button class="icon-btn" data-goto="home" aria-label="Go to Home">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M3 11l9-8 9 8"/><path d="M5 10v10h14V10"/></svg>
+        </button>
+      </div>
+      <div class="screen-scroll">
+        <div class="toc-box">
+          <div class="toc-search">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.35-4.35"/></svg>
+            <input type="search" id="tocSearch" aria-label="Search table of contents" placeholder="Search pages…">
+          </div>
+          <div id="tocList">
+            <div class="toc-row" data-goto="home"><span class="t">Home</span></div>
+            <div class="toc-row" data-text="nutrition info"><span class="t">Nutrition info</span><span class="badge">section</span></div>
+            <div class="toc-row child" data-goto="reading"><span class="t">Energy balance</span></div>
+            <div class="toc-row child" data-goto="reading"><span class="t">Protein</span></div>
+            <div class="toc-row child" data-text="carbohydrates fibre"><span class="t">Carbohydrates &amp; fibre</span></div>
+            <div class="toc-row child" data-text="dietary fat"><span class="t">Dietary fat</span></div>
+            <div class="toc-row child" data-text="micronutrients"><span class="t">Micronutrients</span></div>
+            <div class="toc-row child" data-text="meal timing"><span class="t">Meal timing</span></div>
+            <div class="toc-row" data-goto="food"><span class="t">Food calculator</span></div>
+            <div class="toc-row" data-goto="training"><span class="t">Training</span></div>
+            <div class="toc-row" data-text="about sources"><span class="t">About &amp; sources</span></div>
+          </div>
+          <p class="toc-empty" id="tocEmpty">No pages match.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ floating pill nav — the only navigation, always visible ============ -->
+    <nav class="tabbar" aria-label="Primary">
+      <div class="tab-glow" id="tabGlow" aria-hidden="true"></div>
+      <button class="tab" data-goto="home" aria-current="page">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M3 11l9-8 9 8"/><path d="M5 10v10h14V10"/></svg>
+        <span class="tl">Home</span>
+      </button>
+      <button class="tab" data-goto="reading">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M4 5.5C4 4.7 4.7 4 5.5 4H11v16H5.5A1.5 1.5 0 0 1 4 18.5z"/><path d="M20 5.5c0-.8-.7-1.5-1.5-1.5H13v16h5.5a1.5 1.5 0 0 0 1.5-1.5z"/></svg>
+        <span class="tl">Read</span>
+      </button>
+      <button class="tab" data-goto="food">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M6 3v7a2 2 0 0 0 2 2h0a2 2 0 0 0 2-2V3"/><path d="M8 12v9"/><path d="M17 3c-1.7 0-3 2-3 5s1.3 5 3 5"/><path d="M17 3v16"/></svg>
+        <span class="tl">Food</span>
+      </button>
+      <button class="tab" data-goto="training">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M4 12h2M18 12h2M6 8v8M18 8v8M8 12h8"/></svg>
+        <span class="tl">Train</span>
+      </button>
+      <button class="tab" data-goto="toc">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M4 6h16M4 12h16M4 18h10"/></svg>
+        <span class="tl">ToC</span>
+      </button>
+    </nav>
+
+  </main>
+
+<script>
+(function(){
+  "use strict";
+
+  var reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+  /* ---------- easing + small animation helpers ---------- */
+  function easeOutBack(t){
+    var c1 = 1.70158, c3 = c1 + 1;
+    return 1 + c3 * Math.pow(t - 1, 3) + c1 * Math.pow(t - 1, 2);
+  }
+  function easeOutCubic(t){ return 1 - Math.pow(1 - t, 3); }
+
+  // Animate a numeric value from `from` to `to` over `duration` ms, springy easing.
+  function animateValue(from, to, duration, onFrame, ease){
+    ease = ease || easeOutBack;
+    if (reduceMotion || !duration){ onFrame(to); return; }
+    var start = null;
+    function step(ts){
+      if (start === null) start = ts;
+      var t = Math.min(1, (ts - start) / duration);
+      var eased = ease(t);
+      onFrame(from + (to - from) * eased);
+      if (t < 1) requestAnimationFrame(step);
+      else onFrame(to);
+    }
+    requestAnimationFrame(step);
+  }
+
+  function animateNumberEl(el, to, decimals, duration, delay){
+    delay = delay || 0;
+    var from = 0;
+    function run(){
+      animateValue(from, to, duration, function(v){
+        el.textContent = v.toFixed(decimals);
+      }, easeOutBack);
+    }
+    if (delay) setTimeout(run, delay); else run();
+  }
+
+  // Build a multi-segment ring inside `groupEl` (a <g>) around (cx,cy) radius r stroke sw.
+  // segments: [{value, gradId}], animates each arc's length in with a stagger.
+  function buildRing(groupEl, cx, cy, r, sw, segments, opts){
+    opts = opts || {};
+    groupEl.innerHTML = "";
+    var total = segments.reduce(function(s, seg){ return s + seg.value; }, 0) || 1;
+    var circumference = 2 * Math.PI * r;
+    var cumulative = 0;
+    segments.forEach(function(seg, i){
+      var frac = seg.value / total;
+      var segLen = frac * circumference;
+      var startDeg = (cumulative / circumference) * 360 - 90;
+      var circle = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+      circle.setAttribute("cx", cx);
+      circle.setAttribute("cy", cy);
+      circle.setAttribute("r", r);
+      circle.setAttribute("fill", "none");
+      circle.setAttribute("stroke", "url(#" + seg.gradId + ")");
+      circle.setAttribute("stroke-width", sw);
+      circle.setAttribute("stroke-linecap", segments.length > 1 ? "butt" : "round");
+      circle.setAttribute("transform", "rotate(" + startDeg + " " + cx + " " + cy + ")");
+      groupEl.appendChild(circle);
+      var delay = (opts.stagger || 0) * i;
+      var duration = opts.duration || 800;
+      setTimeout(function(){
+        animateValue(0, segLen, duration, function(len){
+          circle.setAttribute("stroke-dasharray", Math.max(0, len) + " " + circumference);
+        }, easeOutBack);
+      }, delay);
+      cumulative += segLen;
+    });
+  }
+
+  /* ---------- screen switching, driven by the bottom nav (only navigation) ---------- */
+  var screens = ["home","reading","food","training","toc"];
+  var sections = {};
+  screens.forEach(function(id){ sections[id] = document.getElementById("screen-" + id); });
+
+  var tabGlow = document.getElementById("tabGlow");
+  var tabButtons = Array.prototype.slice.call(document.querySelectorAll(".tabbar .tab"));
+
+  function moveGlowTo(id){
+    var idx = screens.indexOf(id);
+    if (idx < 0 || !tabGlow) return;
+    var pct = idx * 100;
+    tabGlow.style.transform = "translateX(" + (idx * 100) + "%)";
+  }
+
+  var homeAnimated = false, foodAnimated = false, trainingAnimated = false;
+
+  function showScreen(id){
+    screens.forEach(function(s){
+      sections[s].classList.toggle("is-active", s === id);
+    });
+    tabButtons.forEach(function(b){
+      if (b.getAttribute("data-goto") === id) b.setAttribute("aria-current","page");
+      else b.removeAttribute("aria-current");
+    });
+    moveGlowTo(id);
+    document.querySelectorAll(".screen.is-active .screen-scroll").forEach(function(el){ el.scrollTop = 0; });
+
+    if (id === "home") runHomeAnimation();
+    if (id === "food" && !foodAnimated){ foodAnimated = true; }
+    if (id === "training") runTrainingAnimation();
+  }
+
+  document.querySelectorAll("[data-goto]").forEach(function(el){
+    el.addEventListener("click", function(){ showScreen(el.getAttribute("data-goto")); });
+  });
+
+  /* ---------- Home: energy ring + macro count-up ---------- */
+  function runHomeAnimation(){
+    var arcsGroup = document.getElementById("homeRingArcs");
+    buildRing(arcsGroup, 120, 120, 100, 20, [
+      { value: 720, gradId: "gradProtein" },
+      { value: 450, gradId: "gradFat" },
+      { value: 720, gradId: "gradCarb" }
+    ], { stagger: 120, duration: 900 });
+
+    var kcalEl = document.getElementById("homeKcalFigure");
+    animateValue(0, 1900, 900, function(v){
+      kcalEl.innerHTML = Math.round(v).toLocaleString("en-US") + '<span class="unit">kcal</span>';
+    }, easeOutBack);
+
+    document.querySelectorAll("#screen-home [data-count-to]").forEach(function(el, i){
+      var to = Number(el.getAttribute("data-count-to"));
+      animateNumberEl(el, to, 0, 700, 150 + i * 90);
+    });
+  }
+
+  /* ---------- citation round-trip ---------- */
+  var REFS = {
+    "7":  { title:"EFSA sets population reference intakes for protein", meta:"European Food Safety Authority · 2012", tier:2, tierTxt:"Guideline / position stand" },
+    "8":  { title:"Recommended Dietary Allowances: 10th Edition", meta:"National Research Council (US) · 1989 · National Academies Press", tier:2, tierTxt:"Guideline / position stand" },
+    "9":  { title:"International Society of Sports Nutrition Position Stand: protein and exercise", meta:"Jäger R, et al. (ISSN) · 2017 · JISSN", tier:2, tierTxt:"Guideline / position stand" },
+    "10": { title:"Protein Intake Greater than the RDA Differentially Influences Whole-Body Lean Mass Responses — a Systematic Review and Meta-analysis", meta:"Hudson JL, Wang Y, Bergia RE III, Campbell WW · 2019 · Advances in Nutrition", tier:1, tierTxt:"Systematic review / meta-analysis" },
+    "11": { title:"ISSN Position Stand: nutrient timing", meta:"Kerksick CM, et al. (ISSN) · 2017 · JISSN", tier:2, tierTxt:"Guideline / position stand" }
+  };
+
+  var readingScroll = document.getElementById("readingScroll");
+  var overlay = document.getElementById("citeOverlay");
+  var savedScrollTop = 0;
+
+  function renderStrength(tier){
+    var blocksEl = document.getElementById("citeBlocks");
+    blocksEl.innerHTML = "";
+    var filled = 6 - tier; // Tier 1 (strongest) = 5 filled blocks, Tier 5 = 1
+    for (var i = 0; i < 5; i++){
+      var span = document.createElement("span");
+      if (i < filled) span.className = "on";
+      blocksEl.appendChild(span);
+    }
+  }
+
+  document.querySelectorAll(".cite").forEach(function(btn){
+    btn.addEventListener("click", function(){
+      var ref = REFS[btn.getAttribute("data-ref")];
+      if (!ref) return;
+      savedScrollTop = readingScroll.scrollTop;
+      document.getElementById("citeNum").textContent = "[" + btn.getAttribute("data-ref") + "]";
+      document.getElementById("citeTitle").textContent = ref.title;
+      document.getElementById("citeMeta").textContent = ref.meta;
+      renderStrength(ref.tier);
+      document.getElementById("citeTierTxt").textContent = "Tier " + ref.tier + " of 5 — " + ref.tierTxt;
+      overlay.hidden = false;
+    });
+  });
+
+  document.getElementById("backToReading").addEventListener("click", function(){
+    overlay.hidden = true;
+    // restore the EXACT recorded offset, not a re-anchored scroll.
+    readingScroll.scrollTop = savedScrollTop;
+  });
+
+  /* ---------- food calculator ---------- */
+  var FOODS = [
+    { name:"Skyr natur",     state:"as prepared, ready-to-eat", kcal:63,  protein:11,  fat:0.2, carb:4,  fibre:0   },
+    { name:"Vollkornbrot",   state:"as sold, baked loaf",       kcal:215, protein:7.5, fat:1.5, carb:40, fibre:6.5 },
+    { name:"Pasta",          state:"dry, uncooked",             kcal:360, protein:13,  fat:1.5, carb:71, fibre:3   },
+    { name:"Rice",           state:"dry, uncooked",              kcal:360, protein:7,   fat:0.6, carb:80, fibre:1.3 },
+    { name:"Potatoes",       state:"raw, unpeeled",             kcal:77,  protein:2,   fat:0.1, carb:17, fibre:2.2 },
+    { name:"Olive oil",      state:"as sold, liquid",           kcal:884, protein:0,   fat:100, carb:0,  fibre:0   },
+    { name:"Whey isolate",   state:"powder, as sold (dry scoop)",kcal:380, protein:80,  fat:3,   carb:4,  fibre:0   }
+  ];
+  var maxProtein = FOODS.reduce(function(m, f){ return Math.max(m, f.protein); }, 1);
+
+  var tbody = document.querySelector("#foodTable tbody");
+  FOODS.forEach(function(f, i){
+    var tr = document.createElement("tr");
+    var sparkPct = Math.round((f.protein / maxProtein) * 100);
+    tr.innerHTML =
+      '<td class="name">' + f.name + '</td>' +
+      '<td class="state">' + f.state + '</td>' +
+      '<td>' + f.kcal + '</td>' +
+      '<td class="protein-cell">' + f.protein + ' g<span class="spark" style="width:' + sparkPct + '%"></span></td>' +
+      '<td>' + f.fat + ' g</td>' +
+      '<td>' + f.carb + ' g</td>' +
+      '<td>' + f.fibre + ' g</td>' +
+      '<td><input type="number" inputmode="decimal" min="0" step="1" value="0" aria-label="Grams of ' + f.name + '" data-idx="' + i + '"></td>';
+    tbody.appendChild(tr);
+  });
+
+  var totalKcalEl = document.getElementById("totalKcal");
+  var totalProteinEl = document.getElementById("totalProtein");
+  var totalFatEl = document.getElementById("totalFat");
+  var totalCarbEl = document.getElementById("totalCarb");
+  var totalFibreEl = document.getElementById("totalFibre");
+  var donutCenterEl = document.getElementById("donutCenterVal");
+  var foodRingArcs = document.getElementById("foodRingArcs");
+
+  function recompute(){
+    var inputs = document.querySelectorAll("#foodTable input");
+    var kcal=0, protein=0, fat=0, carb=0, fibre=0;
+    inputs.forEach(function(inp){
+      var f = FOODS[Number(inp.getAttribute("data-idx"))];
+      var g = parseFloat(inp.value) || 0;
+      var mult = g / 100;
+      kcal += f.kcal * mult;
+      protein += f.protein * mult;
+      fat += f.fat * mult;
+      carb += f.carb * mult;
+      fibre += f.fibre * mult;
+    });
+    totalKcalEl.textContent = Math.round(kcal).toLocaleString("en-US") + " kcal running total";
+    totalProteinEl.textContent = protein.toFixed(1) + " g";
+    totalFatEl.textContent = fat.toFixed(1) + " g";
+    totalCarbEl.textContent = carb.toFixed(1) + " g";
+    totalFibreEl.textContent = fibre.toFixed(1) + " g";
+
+    var totalG = protein + fat + carb;
+    donutCenterEl.textContent = totalG > 0 ? Math.round(totalG) : "0";
+
+    var pKcal = protein * 4, fKcal = fat * 9, cKcal = carb * 4;
+    var energySegs = (pKcal + fKcal + cKcal) > 0
+      ? [
+          { value: pKcal, gradId: "gradProtein" },
+          { value: fKcal, gradId: "gradFat" },
+          { value: cKcal, gradId: "gradCarb" }
+        ]
+      : [ { value: 1, gradId: "gradProtein" } ]; // empty-state: faint full track, no misleading single colour claim
+
+    // quick redraw, no long spring on every keystroke — but still eased and instant under reduced motion
+    foodRingArcs.innerHTML = "";
+    var total = energySegs.reduce(function(s, seg){ return s + seg.value; }, 0) || 1;
+    var circumference = 2 * Math.PI * 50;
+    var cumulative = 0;
+    energySegs.forEach(function(seg){
+      var frac = seg.value / total;
+      var segLen = (pKcal + fKcal + cKcal) > 0 ? frac * circumference : 0;
+      var startDeg = (cumulative / circumference) * 360 - 90;
+      var circle = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+      circle.setAttribute("cx", 60); circle.setAttribute("cy", 60); circle.setAttribute("r", 50);
+      circle.setAttribute("fill", "none");
+      circle.setAttribute("stroke", "url(#" + seg.gradId + ")");
+      circle.setAttribute("stroke-width", 12);
+      circle.setAttribute("transform", "rotate(" + startDeg + " 60 60)");
+      circle.style.transition = reduceMotion ? "none" : "stroke-dasharray .35s " + "cubic-bezier(.34,1.56,.64,1)";
+      circle.setAttribute("stroke-dasharray", segLen + " " + circumference);
+      foodRingArcs.appendChild(circle);
+      cumulative += segLen;
+    });
+  }
+
+  tbody.addEventListener("input", recompute);
+  recompute();
+
+  /* ---------- training charts ---------- */
+  function runTrainingAnimation(){
+    if (trainingAnimated) return;
+    trainingAnimated = true;
+
+    // 1RM area + line: confirmed segment only, x 200->340, y 55->30, baseline y=78
+    var lineFinal = "M200,55 L340,30";
+    var areaFinal = "M200,55 L340,30 L340,78 L200,78 Z";
+    var lineEl = document.getElementById("oneRmLine");
+    var areaEl = document.getElementById("oneRmArea");
+    if (reduceMotion){
+      lineEl.setAttribute("d", lineFinal);
+      areaEl.setAttribute("d", areaFinal);
+    } else {
+      lineEl.setAttribute("d", lineFinal);
+      areaEl.setAttribute("d", areaFinal);
+      areaEl.style.opacity = 0;
+      lineEl.style.opacity = 0;
+      setTimeout(function(){
+        areaEl.style.transition = "opacity .7s ease-out";
+        lineEl.style.transition = "opacity .7s ease-out";
+        areaEl.style.opacity = 1;
+        lineEl.style.opacity = 1;
+      }, 60);
+    }
+
+    // weekly volume bars — grow from baseline (y=78) upward
+    var bars = [
+      { id:"vbar1", y:74, h:4 },
+      { id:"vbar2", y:74, h:4 },
+      { id:"vbar3", y:74, h:4 },
+      { id:"vbar4", y:20, h:58 }
+    ];
+    bars.forEach(function(b, i){
+      var rect = document.getElementById(b.id);
+      setTimeout(function(){
+        animateValue(0, b.h, 700, function(h){
+          rect.setAttribute("height", h);
+          rect.setAttribute("y", 78 - h);
+        }, easeOutBack);
+      }, i * 90);
+    });
+    setTimeout(function(){
+      var lbl = document.getElementById("vbar4Label");
+      lbl.style.transition = reduceMotion ? "none" : "opacity .4s ease-out";
+      lbl.setAttribute("opacity", 1);
+    }, 90 * 3 + 500);
+
+    // sets-per-muscle-group radial
+    var muscleArcs = document.getElementById("muscleRingArcs");
+    buildRing(muscleArcs, 60, 60, 50, 14, [
+      { value: 9, gradId: "gradProtein" },
+      { value: 3, gradId: "gradFat" },
+      { value: 6, gradId: "gradCarb" }
+    ], { stagger: 110, duration: 750 });
+  }
+
+  /* ---------- ToC search ---------- */
+  var tocSearch = document.getElementById("tocSearch");
+  var tocRows = Array.prototype.slice.call(document.querySelectorAll(".toc-row"));
+  var tocEmpty = document.getElementById("tocEmpty");
+
+  tocSearch.addEventListener("input", function(){
+    var q = tocSearch.value.trim().toLowerCase();
+    var visible = 0;
+    tocRows.forEach(function(row){
+      var haystack = (row.textContent + " " + (row.getAttribute("data-text") || "")).toLowerCase();
+      var match = q === "" || haystack.indexOf(q) !== -1;
+      row.style.display = match ? "" : "none";
+      if (match) visible++;
+    });
+    tocEmpty.style.display = visible === 0 ? "block" : "none";
+  });
+
+  /* ---------- initial paint ---------- */
+  moveGlowTo("home");
+  runHomeAnimation();
+
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<meta name="theme-color" content="#0F1012" />
+<title>Five creative drafts — from Athletic</title>
+<!--
+  Round 3, 2026-07-31. All five derive from v2/draft-1 ("Athletic": #0F1012 +
+  #F4762E, numeral-first, floating bottom pill nav). Two changes applied to every
+  one: the top preview bar is deleted, and the bottom nav is the only navigation.
+  Toni explicitly lifted his earlier design restrictions for this round -- cards,
+  gradients, rings, glow, extra accent colours and motion are all in play.
+  Previews only; not precached, live app untouched.
+-->
+<style>
+  :root{
+    --bg:#0F1012; --ink:#F5F6F7; --soft:#A6ACB5; --faint:#808690;
+    --rule:rgba(245,246,247,.12); --accent:#F4762E;
+  }
+  *{ box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+  html,body{ margin:0; }
+  body{
+    background:
+      radial-gradient(120% 80% at 90% -10%, rgba(244,118,46,.16), transparent 60%),
+      var(--bg);
+    color:var(--ink);
+    font-family:system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
+    line-height:1.6; min-height:100vh;
+    padding:calc(2rem + env(safe-area-inset-top)) 1.25rem calc(2.5rem + env(safe-area-inset-bottom));
+    max-width:40rem; margin:0 auto;
+  }
+  .kicker{ font-size:.66rem; letter-spacing:.14em; text-transform:uppercase; color:var(--faint); margin:0 0 .55rem; }
+  h1{ font-size:clamp(1.8rem,7.5vw,2.3rem); line-height:1.05; margin:0 0 .65rem;
+      font-weight:900; letter-spacing:-.03em; text-transform:uppercase; }
+  .dek{ color:var(--soft); margin:0 0 2rem; font-size:.95rem; }
+  a.card{
+    display:block; text-decoration:none; color:inherit; position:relative;
+    padding:1.2rem 1.1rem; margin:0 0 .85rem;
+    background:linear-gradient(180deg, rgba(255,255,255,.05), rgba(255,255,255,.02));
+    border-radius:18px;
+    box-shadow:0 1px 0 rgba(255,255,255,.06) inset, 0 10px 26px rgba(0,0,0,.45);
+  }
+  a.card:active{ transform:translateY(1px); }
+  a.card:focus-visible{ outline:2px solid var(--accent); outline-offset:3px; }
+  .top{ display:flex; align-items:baseline; gap:.65rem; }
+  .n{ font-size:2.2rem; font-weight:900; line-height:.9; color:var(--accent);
+      font-variant-numeric:tabular-nums; letter-spacing:-.04em; }
+  .name{ font-size:1.1rem; font-weight:800; letter-spacing:-.01em; }
+  .desc{ color:var(--soft); font-size:.9rem; margin:.4rem 0 0; }
+  .tag{ display:inline-block; margin-top:.6rem; font-size:.64rem; letter-spacing:.1em;
+        text-transform:uppercase; color:var(--accent); }
+  .note{ color:var(--faint); font-size:.83rem; margin-top:1.8rem; }
+  .note strong{ color:var(--ink); }
+  @media (prefers-reduced-motion: reduce){ *{ transition:none!important; animation:none!important; } }
+</style>
+</head>
+<body>
+  <p class="kicker">Round 3 · built on “Athletic”</p>
+  <h1>Five ways to bring it to life</h1>
+  <p class="dek">All five keep draft 1’s DNA — near-black, burnt orange, big numerals — with the top bar removed and the bottom nav as the only navigation. Restrictions off: boxes, gradients, rings, glow, extra colour and motion are all in play.</p>
+
+  <a class="card" href="draft-1.html">
+    <span class="top"><span class="n">1</span><span class="name">Depth &amp; glow</span></span>
+    <p class="desc">Layered elevation, an orange bloom behind the hero figure, frosted-glass nav, gradient atmosphere. Rich and physical.</p>
+    <span class="tag">Glassmorphism · elevation</span>
+  </a>
+
+  <a class="card" href="draft-2.html">
+    <span class="top"><span class="n">2</span><span class="name">Editorial sport</span></span>
+    <p class="desc">Magazine-cover typography — enormous headlines, tight tracking, oversized section numerals, torn-edge accents, ticket-stub nav.</p>
+    <span class="tag">Type as the hero</span>
+  </a>
+
+  <a class="card" href="draft-3.html">
+    <span class="top"><span class="n">3</span><span class="name">Data alive</span></span>
+    <p class="desc">The numbers are the decoration: composition rings, gradient area charts, and a macro donut that redraws as you add food. A colour per macro.</p>
+    <span class="tag">Charts everywhere</span>
+  </a>
+
+  <a class="card" href="draft-4.html">
+    <span class="top"><span class="n">4</span><span class="name">Material</span></span>
+    <p class="desc">Film grain, halftone fields, embossed surfaces and a palette warmed toward brown. Feels like worn equipment rather than a dashboard.</p>
+    <span class="tag">Texture · tactile</span>
+  </a>
+
+  <a class="card" href="draft-5.html">
+    <span class="top"><span class="n">5</span><span class="name">Kinetic</span></span>
+    <p class="desc">Alive on open: numbers count up, content staggers in, the nav indicator slides, charts draw themselves, adding a food feels good.</p>
+    <span class="tag">Motion · energy</span>
+  </a>
+
+  <p class="note"><strong>Tell me the number and what to change.</strong> Food values are still placeholders, not yet sourced from BLS or labels. Training screens use your real 27 July session and are marked illustrative where real history doesn’t exist yet.</p>
+</body>
+</html>
